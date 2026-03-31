@@ -34,6 +34,16 @@ var contract_turns: int = 0   # 契约剩余回合
 var resonance_stacks: int = 0  # 共鸣积累层数
 var silenced: bool = false     # 沉默标记
 
+# 相机抖动
+var camera_shake_intensity: float = 0.0
+var camera_shake_duration: float = 0.0
+var camera_shake_timer: float = 0.0
+var camera_offset: Vector2 = Vector2.ZERO
+var battle_camera: Camera2D
+
+# 粒子效果系统
+var particle_container: Node2D
+
 # UI
 var hp_label: Label
 var mp_label: Label
@@ -54,6 +64,11 @@ var shop_tabs: Array = ["⚔️ 武器", "🛡️ 防具", "💍 饰品", "🧪 
 var shop_item_buttons: Array = []
 var shop_nearby: bool = false
 var shop_sign_pos: Vector2 = Vector2(0, 0)
+
+# 背包
+var inventory_ui: Control
+var inventory_item_buttons: Array = []
+var inventory_open: bool = false
 
 # 商店数据
 const SHOP_WEAPONS = [
@@ -104,6 +119,10 @@ var wall_rects: Array = []
 
 func _ready():
 	randomize()
+	# 初始化粒子容器
+	particle_container = Node2D.new()
+	particle_container.name = "ParticleContainer"
+	add_child(particle_container)
 	_show_title_screen()
 
 func _show_title_screen():
@@ -248,7 +267,7 @@ func _show_title_screen():
 	var tip = Label.new()
 	tip.position = Vector2(0, 420)
 	tip.size = Vector2(1000, 25)
-	tip.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E)"
+	tip.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I)"
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
 	tip.add_theme_font_size_override("font_size", 13)
@@ -348,7 +367,7 @@ func _setup_ui():
 	# 提示操作
 	var hint_label = Label.new()
 	hint_label.position = Vector2(1070, 80)
-	hint_label.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E)"
+	hint_label.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I)"
 	hint_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	add_child(hint_label)
 	
@@ -418,7 +437,7 @@ func _setup_player():
 	player.add_child(col)
 	
 	add_child(player)
-	show_message("WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E)")
+	show_message("WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I)")
 
 func _create_knight_texture() -> ImageTexture:
 	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
@@ -718,6 +737,7 @@ func _reveal_area(cx: int, cy: int, radius: int):
 						fog.color = Color(0.02, 0.02, 0.04, max(0, alpha))
 
 func _process(delta):
+	_update_camera_shake(delta)
 	if game_state == State.EXPLORE:
 		_process_explore(delta)
 	elif game_state == State.BATTLE:
@@ -782,6 +802,16 @@ func _process_explore(delta):
 	if shop_nearby and Input.is_action_pressed("ui_select") and is_player_turn:
 		_open_shop()
 	
+	# 背包检测 (I键)
+	if Input.is_key_pressed(KEY_I) and is_player_turn and not inventory_open and game_state == State.EXPLORE:
+		_open_inventory()
+		return
+	
+	# 关闭背包 (I键或ESC)
+	if inventory_open and (Input.is_key_pressed(KEY_I) or Input.is_key_pressed(KEY_ESCAPE)):
+		_close_inventory()
+		return
+	
 	_update_ui()
 	_update_minimap()
 
@@ -808,6 +838,296 @@ func _update_ui():
 	mp_label.text = "MP: %d/%d" % [player_data.mp, player_data.max_mp]
 	gold_label.text = "💰 %d" % player_data.gold
 	floor_label.text = "第 %d 层 · 探索中" % current_floor
+
+# ==================== 背包系统 ====================
+
+func _open_inventory():
+	if inventory_open:
+		return
+	inventory_open = true
+	if minimap_container:
+		minimap_container.visible = false
+	_create_inventory_ui()
+	show_message("背包 (按 I 或 ESC 关闭)")
+
+func _close_inventory():
+	if inventory_ui != null:
+		inventory_ui.queue_free()
+		inventory_ui = null
+	for btn in inventory_item_buttons:
+		if btn != null and is_instance_valid(btn):
+			btn.queue_free()
+	inventory_item_buttons.clear()
+	inventory_open = false
+	if minimap_container:
+		minimap_container.visible = true
+	show_message("")
+
+func _create_inventory_ui():
+	if inventory_ui != null:
+		inventory_ui.queue_free()
+	inventory_item_buttons.clear()
+	
+	inventory_ui = Control.new()
+	inventory_ui.name = "InventoryUI"
+	inventory_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(inventory_ui)
+	
+	# 背景遮罩
+	var overlay = ColorRect.new()
+	overlay.size = Vector2(1280, 720)
+	overlay.color = Color(0, 0, 0, 0.82)
+	overlay.position = Vector2(0, 0)
+	overlay.gui_input.connect(_on_inventory_overlay_click)
+	inventory_ui.add_child(overlay)
+	
+	# 背包面板
+	var inv_panel = Panel.new()
+	inv_panel.name = "InventoryPanel"
+	inv_panel.position = Vector2(340, 80)
+	inv_panel.size = Vector2(600, 560)
+	inv_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
+	inv_panel.add_theme_stylebox_override("panel", _create_stylebox())
+	inventory_ui.add_child(inv_panel)
+	
+	# 标题
+	var title = Label.new()
+	title.position = Vector2(20, 15)
+	title.text = "🎒 背包"
+	title.add_theme_color_override("font_color", PALETTE.gold)
+	title.add_theme_font_size_override("font_size", 20)
+	inv_panel.add_child(title)
+	
+	# 金币显示
+	var gold_disp = Label.new()
+	gold_disp.name = "InvGold"
+	gold_disp.position = Vector2(400, 15)
+	gold_disp.text = "💰 %d 金币" % player_data.gold
+	gold_disp.add_theme_color_override("font_color", PALETTE.gold)
+	inv_panel.add_child(gold_disp)
+	
+	# 物品数量显示
+	var count_lbl = Label.new()
+	count_lbl.name = "ItemCount"
+	count_lbl.position = Vector2(20, 50)
+	count_lbl.text = "物品数: %d" % player_data.inventory.size()
+	count_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.6))
+	inv_panel.add_child(count_lbl)
+	
+	# 物品列表区域
+	var item_area = Panel.new()
+	item_area.name = "ItemArea"
+	item_area.position = Vector2(20, 85)
+	item_area.size = Vector2(560, 320)
+	item_area.self_modulate = Color(0, 0, 0, 0.3)
+	item_area.add_theme_stylebox_override("panel", _create_stylebox())
+	inv_panel.add_child(item_area)
+	
+	# 绘制物品列表
+	_draw_inventory_items(item_area)
+	
+	# 关闭按钮
+	var close_btn = _create_action_button("❌ 关闭 (I)", Vector2(220, 460))
+	close_btn.pressed.connect(_close_inventory)
+	close_btn.size = Vector2(160, 55)
+	inv_panel.add_child(close_btn)
+	
+	# 角色装备信息（底部）
+	var equip_panel = Panel.new()
+	equip_panel.name = "EquipPanel"
+	equip_panel.position = Vector2(20, 420)
+	equip_panel.size = Vector2(560, 100)
+	equip_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.9)
+	equip_panel.add_theme_stylebox_override("panel", _create_stylebox())
+	inv_panel.add_child(equip_panel)
+	
+	var eq_title = Label.new()
+	eq_title.position = Vector2(15, 10)
+	eq_title.text = "当前装备"
+	eq_title.add_theme_color_override("font_color", PALETTE.gold)
+	equip_panel.add_child(eq_title)
+	
+	var wpn = player_data.weapon
+	var arm = player_data.armor
+	var acc = player_data.accessory
+	
+	var wpn_text = "⚔️ " + (wpn.get("name", "无") if wpn.size() > 0 else "无")
+	var arm_text = "🛡️ " + (arm.get("name", "无") if arm.size() > 0 else "无")
+	var acc_text = "💍 " + (acc.get("name", "无") if acc.size() > 0 else "无")
+	
+	var wpn_lbl = Label.new()
+	wpn_lbl.position = Vector2(15, 38)
+	wpn_lbl.text = wpn_text
+	wpn_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	equip_panel.add_child(wpn_lbl)
+	
+	var arm_lbl = Label.new()
+	arm_lbl.position = Vector2(220, 38)
+	arm_lbl.text = arm_text
+	arm_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	equip_panel.add_child(arm_lbl)
+	
+	var acc_lbl = Label.new()
+	acc_lbl.position = Vector2(420, 38)
+	acc_lbl.text = acc_text
+	acc_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	equip_panel.add_child(acc_lbl)
+	
+	# 属性显示
+	var stat_lbl = Label.new()
+	stat_lbl.position = Vector2(15, 65)
+	stat_lbl.text = "ATK: %d  |  DEF: %d  |  SPD: %d  |  LUK: %d" % [
+		player_data.attack_power(), player_data.defense(),
+		player_data.spd + player_data.accessory.get("spd", 0),
+		player_data.luk + player_data.accessory.get("luk", 0)
+	]
+	stat_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.6))
+	equip_panel.add_child(stat_lbl)
+
+func _on_inventory_overlay_click(event: InputEvent):
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_close_inventory()
+
+func _draw_inventory_items(item_area: Panel):
+	for btn in inventory_item_buttons:
+		if btn != null and is_instance_valid(btn):
+			btn.queue_free()
+	inventory_item_buttons.clear()
+	
+	if player_data.inventory.size() == 0:
+		var empty_lbl = Label.new()
+		empty_lbl.name = "EmptyLabel"
+		empty_lbl.text = "背包是空的"
+		empty_lbl.position = Vector2(200, 140)
+		empty_lbl.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+		empty_lbl.add_theme_font_size_override("font_size", 16)
+		item_area.add_child(empty_lbl)
+		inventory_item_buttons.append(empty_lbl)
+		return
+	
+	var start_x = 15
+	var start_y = 15
+	var cols = 3
+	var idx = 0
+	
+	for inv_item in player_data.inventory:
+		var row = idx / cols
+		var col = idx % cols
+		var bx = start_x + col * 175
+		var by = start_y + row * 85
+		var btn = _create_inventory_item_button(inv_item, Vector2(bx, by))
+		item_area.add_child(btn)
+		inventory_item_buttons.append(btn)
+		idx += 1
+
+func _create_inventory_item_button(inv_item: Dictionary, pos: Vector2) -> Button:
+	var btn = Button.new()
+	btn.position = pos
+	btn.size = Vector2(170, 78)
+	
+	var item_name = inv_item.get("type", "???")
+	var count = inv_item.get("count", 1)
+	var heal_hp = inv_item.get("heal_hp", 0)
+	var heal_mp = inv_item.get("heal_mp", 0)
+	
+	var icon = "❤️"
+	if heal_mp > 0:
+		icon = "💙"
+	
+	var desc_text = ""
+	if heal_hp > 0:
+		desc_text = "恢复 %d%% HP" % heal_hp
+	elif heal_mp > 0:
+		desc_text = "恢复 %d%% MP" % heal_mp
+	else:
+		desc_text = "稀有物品"
+	
+	var can_use = (heal_hp > 0 or heal_mp > 0)
+	
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.06, 0.06, 0.1, 0.95)
+	style.border_color = PALETTE.gold if can_use else Color(0.3, 0.3, 0.3)
+	style.border_width_left = 1; style.border_width_top = 1
+	style.border_width_right = 1; style.border_width_bottom = 1
+	style.corner_radius_top_left = 3; style.corner_radius_top_right = 3
+	style.corner_radius_bottom_right = 3; style.corner_radius_bottom_left = 3
+	btn.add_theme_stylebox_override("normal", style)
+	btn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.75) if can_use else Color(0.4, 0.4, 0.4))
+	
+	# 物品图标和名称
+	var icon_lbl = Label.new()
+	icon_lbl.position = Vector2(10, 8)
+	icon_lbl.text = icon + " " + item_name
+	icon_lbl.add_theme_color_override("font_color", PALETTE.gold if can_use else Color(0.4, 0.4, 0.4))
+	icon_lbl.add_theme_font_size_override("font_size", 14)
+	btn.add_child(icon_lbl)
+	
+	# 数量
+	var count_lbl = Label.new()
+	count_lbl.position = Vector2(10, 32)
+	count_lbl.text = "× %d" % count
+	count_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.6))
+	count_lbl.add_theme_font_size_override("font_size", 13)
+	btn.add_child(count_lbl)
+	
+	# 描述
+	var desc_lbl = Label.new()
+	desc_lbl.position = Vector2(10, 52)
+	desc_lbl.text = desc_text
+	desc_lbl.add_theme_color_override("font_color", Color(0.5, 0.8, 0.5) if can_use else Color(0.4, 0.4, 0.4))
+	desc_lbl.add_theme_font_size_override("font_size", 11)
+	btn.add_child(desc_lbl)
+	
+	if can_use:
+		btn.pressed.connect(_on_inventory_item_used.bind(inv_item))
+	
+	return btn
+
+func _on_inventory_item_used(inv_item: Dictionary):
+	var heal_hp = inv_item.get("heal_hp", 0)
+	var heal_mp = inv_item.get("heal_mp", 0)
+	
+	# 检查是否能使用
+	var used = false
+	
+	if heal_hp > 0 and player_data.hp < player_data.max_hp:
+		player_data.hp = min(player_data.max_hp, player_data.hp + int(player_data.max_hp * heal_hp / 100.0))
+		used = true
+	if heal_mp > 0 and player_data.mp < player_data.max_mp:
+		player_data.mp = min(player_data.max_mp, player_data.mp + int(player_data.max_mp * heal_mp / 100.0))
+		used = true
+	
+	if used:
+		# 减少数量
+		var item_name = inv_item.get("type", "???")
+		var item_idx = -1
+		for i in range(player_data.inventory.size()):
+			if player_data.inventory[i].get("type") == item_name:
+				item_idx = i
+				break
+		
+		if item_idx >= 0:
+			player_data.inventory[item_idx]["count"] -= 1
+			if player_data.inventory[item_idx]["count"] <= 0:
+				player_data.inventory.remove_at(item_idx)
+		
+		show_message("使用了 %s！" % item_name)
+		_update_ui()
+		
+		# 刷新背包UI
+		var inv_panel = inventory_ui.get_node_or_null("InventoryPanel")
+		if inv_panel:
+			var item_area = inv_panel.get_node_or_null("ItemArea")
+			if item_area:
+				_draw_inventory_items(item_area)
+			var gold_disp = inv_panel.get_node_or_null("InvGold")
+			if gold_disp:
+				gold_disp.text = "💰 %d 金币" % player_data.gold
+			var count_lbl = inv_panel.get_node_or_null("ItemCount")
+			if count_lbl:
+				count_lbl.text = "物品数: %d" % player_data.inventory.size()
+	else:
+		show_message("状态已满，无法使用！")
 
 # ==================== 小地图系统 ====================
 
