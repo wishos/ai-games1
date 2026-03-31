@@ -42,6 +42,10 @@ var floor_label: Label
 var message_label: Label
 var job_label: Label
 
+# 小地图
+var minimap_container: Control
+var minimap_tiles: Array = []  # 2D array of ColorRects
+
 # 商店
 var shop_ui: Control
 var shop_items: Array = []
@@ -266,6 +270,7 @@ func _on_job_selected(job_id: int):
 	_setup_walls()
 	_setup_player()
 	game_state = State.EXPLORE
+	_update_minimap()  # 初始化小地图
 	print("八方旅人 - Octopath Adventure 已启动!")
 	print("当前职业: " + player_data.get_job_name())
 	print("技能: " + str(player_data.skills))
@@ -346,6 +351,9 @@ func _setup_ui():
 	hint_label.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E)"
 	hint_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	add_child(hint_label)
+	
+	# 小地图面板 (右下角)
+	_create_minimap()
 	
 	_update_ui()
 
@@ -775,6 +783,7 @@ func _process_explore(delta):
 		_open_shop()
 	
 	_update_ui()
+	_update_minimap()
 
 func _next_floor():
 	if current_floor < 8:
@@ -787,6 +796,7 @@ func _next_floor():
 			var fog = fog_map[key]
 			fog.color = Color(0.02, 0.02, 0.04, 0.95)
 		_reveal_area(player_tile_x, player_tile_y, 5)
+		_update_minimap()
 		show_message(">> 深入第 %d 层..." % current_floor)
 		floor_label.text = "第 %d 层" % current_floor
 	else:
@@ -798,6 +808,102 @@ func _update_ui():
 	mp_label.text = "MP: %d/%d" % [player_data.mp, player_data.max_mp]
 	gold_label.text = "💰 %d" % player_data.gold
 	floor_label.text = "第 %d 层 · 探索中" % current_floor
+
+# ==================== 小地图系统 ====================
+
+# 小地图尺寸 (80x45 地图，缩小显示)
+const MINIMAP_COLS: int = 80
+const MINIMAP_ROWS: int = 45
+const MINIMAP_CELL: int = 2  # 每个小地图格子的像素大小
+
+func _create_minimap():
+	minimap_container = Control.new()
+	minimap_container.name = "MinimapContainer"
+	minimap_container.position = Vector2(1060, 575)
+	minimap_container.size = Vector2(MINIMAP_COLS * MINIMAP_CELL + 20, MINIMAP_ROWS * MINIMAP_CELL + 35)
+	minimap_container.self_modulate = Color(0.04, 0.04, 0.08, 0.9)
+	minimap_container.add_theme_stylebox_override("panel", _create_stylebox())
+	add_child(minimap_container)
+	
+	# 小地图标题
+	var mm_title = Label.new()
+	mm_title.name = "MinimapTitle"
+	mm_title.position = Vector2(8, 6)
+	mm_title.text = "🗺️ 小地图"
+	mm_title.add_theme_color_override("font_color", PALETTE.gold)
+	mm_title.add_theme_font_size_override("font_size", 11)
+	minimap_container.add_child(mm_title)
+	
+	# 小地图格子区域
+	var mm_grid = Control.new()
+	mm_grid.name = "MinimapGrid"
+	mm_grid.position = Vector2(8, 26)
+	mm_grid.size = Vector2(MINIMAP_COLS * MINIMAP_CELL, MINIMAP_ROWS * MINIMAP_CELL)
+	mm_grid.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	minimap_container.add_child(mm_grid)
+	
+	# 预创建所有小地图格子 (2x2像素 each = 160x90 display)
+	minimap_tiles.clear()
+	for y in range(MINIMAP_ROWS):
+		minimap_tiles.append([])
+		for x in range(MINIMAP_COLS):
+			var cell = ColorRect.new()
+			cell.name = "mc_%d_%d" % [x, y]
+			cell.size = Vector2(MINIMAP_CELL, MINIMAP_CELL)
+			cell.position = Vector2(x * MINIMAP_CELL, y * MINIMAP_CELL)
+			cell.color = Color(0.02, 0.02, 0.04, 0.95)  # 初始全黑(未探索)
+			mm_grid.add_child(cell)
+			minimap_tiles[y].append(cell)
+
+func _update_minimap():
+	if minimap_tiles.size() == 0:
+		return
+	
+	# 临时存储玩家和商店位置
+	var player_mx: int = -1
+	var player_my: int = -1
+	var shop_mx: int = -1
+	var shop_my: int = -1
+	
+	# 商店位置 (tile坐标30,22)
+	shop_mx = 30 * MINIMAP_CELL
+	shop_my = 22 * MINIMAP_CELL
+	
+	# 玩家位置
+	var px = int(player.position.x / 16)
+	var py = int((player.position.y - 200) / 16)  # 偏移200是地面起始y
+	px = clamp(px, 0, MINIMAP_COLS - 1)
+	py = clamp(py, 0, MINIMAP_ROWS - 1)
+	player_mx = px * MINIMAP_CELL
+	player_my = py * MINIMAP_CELL
+	
+	# 更新每个格子
+	for y in range(MINIMAP_ROWS):
+		for x in range(MINIMAP_COLS):
+			var key = str(x) + "_" + str(y)
+			var cell = minimap_tiles[y][x]
+			
+			# 检查是否探索过 (fog alpha < 0.5 表示已探索)
+			var explored = false
+			if fog_map.has(key):
+				var fog = fog_map[key]
+				if fog.color.a < 0.5:
+					explored = true
+			
+			# 判断是否是玩家或商店位置
+			var is_player = (x * MINIMAP_CELL == player_mx and y * MINIMAP_CELL == player_my)
+			var is_shop = (x * MINIMAP_CELL == shop_mx and y * MINIMAP_CELL == shop_my)
+			
+			if is_player:
+				cell.color = PALETTE.gold  # 玩家: 金色
+			elif is_shop:
+				cell.color = Color(1.0, 0.6, 0.1, 1.0)  # 商店: 琥珀色
+			elif explored:
+				# 已探索区域: 草绿色
+				cell.color = PALETTE.grass_1
+			else:
+				# 未探索: 深黑色
+				cell.color = Color(0.02, 0.02, 0.04, 0.95)
 
 # ==================== 商店系统 ====================
 
@@ -811,6 +917,8 @@ func _get_shop_items_by_tab(tab: int) -> Array:
 
 func _open_shop():
 	game_state = State.SHOP
+	if minimap_container:
+		minimap_container.visible = false
 	_create_shop_ui()
 	show_message("欢迎光临商店！")
 
@@ -823,6 +931,8 @@ func _close_shop():
 			btn.queue_free()
 	shop_item_buttons.clear()
 	game_state = State.EXPLORE
+	if minimap_container:
+		minimap_container.visible = true
 	show_message("下次再来！")
 
 func _process_shop(delta):
@@ -1193,6 +1303,9 @@ func _start_battle():
 		_check_battle_end()
 
 func _create_battle_ui():
+	# 隐藏小地图
+	if minimap_container:
+		minimap_container.visible = false
 	# 暗色遮罩
 	var overlay = ColorRect.new()
 	overlay.name = "BattleOverlay"
@@ -2001,6 +2114,9 @@ func _close_battle_ui():
 	poison_damage = 0
 	trapped = false
 	_update_ui()
+	if minimap_container:
+		minimap_container.visible = true
+	_update_minimap()
 
 func _game_over():
 	_close_battle_ui()
