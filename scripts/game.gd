@@ -1,8 +1,8 @@
 extends Node2D
 
 # 游戏状态
-enum State { EXPLORE, BATTLE, DIALOG, SHOP }
-var game_state = State.EXPLORE
+enum State { TITLE, EXPLORE, BATTLE, DIALOG, SHOP }
+var game_state = State.TITLE
 
 # 玩家数据
 var player_data: PlayerData
@@ -96,18 +96,180 @@ var wall_rects: Array = []
 
 func _ready():
 	randomize()
-	_setup_player_data()
+	_show_title_screen()
+
+func _show_title_screen():
+	# 全屏背景
+	var bg = ColorRect.new()
+	bg.name = "TitleBG"
+	bg.size = Vector2(1280, 720)
+	bg.color = PALETTE.sky_top
+	add_child(bg)
+	
+	# 半透明遮罩
+	var overlay = ColorRect.new()
+	overlay.name = "TitleOverlay"
+	overlay.size = Vector2(1280, 720)
+	overlay.position = Vector2(0, 0)
+	overlay.color = Color(0, 0, 0, 0.6)
+	add_child(overlay)
+	
+	# 标题面板
+	var title_panel = Panel.new()
+	title_panel.name = "TitlePanel"
+	title_panel.position = Vector2(140, 20)
+	title_panel.size = Vector2(1000, 680)
+	title_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
+	title_panel.add_theme_stylebox_override("panel", _create_stylebox())
+	add_child(title_panel)
+	
+	# 游戏标题
+	var game_title = Label.new()
+	game_title.name = "GameTitle"
+	game_title.position = Vector2(0, 20)
+	game_title.size = Vector2(1000, 60)
+	game_title.text = "⚔️ 八方旅人 ⚔️"
+	game_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	game_title.add_theme_color_override("font_color", PALETTE.gold)
+	game_title.add_theme_font_size_override("font_size", 36)
+	title_panel.add_child(game_title)
+	
+	var subtitle = Label.new()
+	subtitle.position = Vector2(0, 75)
+	subtitle.size = Vector2(1000, 30)
+	subtitle.text = "OCTOPATH ADVENTURE"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7))
+	subtitle.add_theme_font_size_override("font_size", 14)
+	title_panel.add_child(subtitle)
+	
+	# 选择职业标签
+	var select_label = Label.new()
+	select_label.position = Vector2(0, 115)
+	select_label.size = Vector2(1000, 35)
+	select_label.text = "━━━━━━  选择你的职业  ━━━━━━"
+	select_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	select_label.add_theme_color_override("font_color", Color(0.7, 0.6, 0.3))
+	select_label.add_theme_font_size_override("font_size", 16)
+	title_panel.add_child(select_label)
+	
+	# 职业数据
+	var job_list: Array = [
+		{"id": PlayerData.Job.WARRIOR, "name": "⚔️ 战士", "desc": "高血量 · 猛击/防御/冲锋", "color": Color(0.9, 0.3, 0.3)},
+		{"id": PlayerData.Job.MAGE, "name": "🔮 法师", "desc": "高魔攻 · 火球/冰霜/闪电", "color": Color(0.3, 0.3, 1.0)},
+		{"id": PlayerData.Job.HUNTER, "name": "🏹 猎人", "desc": "高速度 · 狙击/陷阱/毒箭", "color": Color(0.3, 0.8, 0.3)},
+		{"id": PlayerData.Job.THIEF, "name": "🗡️ 盗贼", "desc": "高暴击 · 背刺/暗影/消失", "color": Color(0.6, 0.3, 0.8)},
+		{"id": PlayerData.Job.PRIEST, "name": "💚 牧师", "desc": "治疗 · 治疗/护盾/复活", "color": Color(0.3, 0.9, 0.5)},
+		{"id": PlayerData.Job.KNIGHT, "name": "🛡️ 骑士", "desc": "高防御 · 格挡/斩击/神圣", "color": Color(0.5, 0.7, 0.9)},
+		{"id": PlayerData.Job.BARD, "name": "🎵 吟游诗人", "desc": "辅助 · 鼓舞/旋律/沉默", "color": Color(0.9, 0.6, 0.2)},
+		{"id": PlayerData.Job.SUMMONER, "name": "🔥 召唤师", "desc": "召唤 · 召唤/契约/共鸣", "color": Color(1.0, 0.4, 0.2)},
+	]
+	
+	# 职业按钮网格 (4×2)
+	var start_x = 60
+	var start_y = 160
+	var btn_w = 210
+	var btn_h = 110
+	var cols = 4
+	
+	for i in range(job_list.size()):
+		var job = job_list[i]
+		var row = i / cols
+		var col = i % cols
+		var bx = start_x + col * (btn_w + 20)
+		var by = start_y + row * (btn_h + 15)
+		
+		var job_btn = Button.new()
+		job_btn.name = "JobBtn_%d" % job["id"]
+		job_btn.position = Vector2(bx, by)
+		job_btn.size = Vector2(btn_w, btn_h)
+		job_btn.add_theme_font_size_override("font_size", 15)
+		var jstyle = StyleBoxFlat.new()
+		jstyle.bg_color = Color(0.06, 0.06, 0.1, 0.95)
+		jstyle.border_color = job["color"]
+		jstyle.border_width_left = 2; jstyle.border_width_top = 2
+		jstyle.border_width_right = 2; jstyle.border_width_bottom = 2
+		jstyle.corner_radius_top_left = 5; jstyle.corner_radius_top_right = 5
+		jstyle.corner_radius_bottom_right = 5; jstyle.corner_radius_bottom_left = 5
+		job_btn.add_theme_stylebox_override("normal", jstyle)
+		var hstyle = StyleBoxFlat.new()
+		hstyle.bg_color = Color(0.15, 0.12, 0.05, 0.95)
+		hstyle.border_color = PALETTE.gold
+		hstyle.border_width_left = 2; hstyle.border_width_top = 2
+		hstyle.border_width_right = 2; hstyle.border_width_bottom = 2
+		hstyle.corner_radius_top_left = 5; hstyle.corner_radius_top_right = 5
+		hstyle.corner_radius_bottom_right = 5; hstyle.corner_radius_bottom_left = 5
+		job_btn.add_theme_stylebox_override("hover", hstyle)
+		var pstyle = StyleBoxFlat.new()
+		pstyle.bg_color = Color(0.03, 0.03, 0.06, 0.95)
+		pstyle.border_color = PALETTE.gold
+		pstyle.border_width_left = 2; pstyle.border_width_top = 2
+		pstyle.border_width_right = 2; pstyle.border_width_bottom = 2
+		pstyle.corner_radius_top_left = 5; pstyle.corner_radius_top_right = 5
+		pstyle.corner_radius_bottom_right = 5; pstyle.corner_radius_bottom_left = 5
+		job_btn.add_theme_stylebox_override("pressed", pstyle)
+		
+		# 职业名称
+		var jname = Label.new()
+		jname.position = Vector2(10, 8)
+		jname.text = job["name"]
+		jname.add_theme_color_override("font_color", job["color"])
+		jname.add_theme_font_size_override("font_size", 16)
+		job_btn.add_child(jname)
+		
+		# 职业描述
+		var jdesc = Label.new()
+		jdesc.position = Vector2(10, 38)
+		jdesc.text = job["desc"]
+		jdesc.add_theme_color_override("font_color", Color(0.65, 0.65, 0.6))
+		jdesc.add_theme_font_size_override("font_size", 12)
+		job_btn.add_child(jdesc)
+		
+		# 提示
+		var jhint = Label.new()
+		jhint.position = Vector2(10, 75)
+		jhint.text = "[ 点击选择 ]"
+		jhint.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+		jhint.add_theme_font_size_override("font_size", 11)
+		job_btn.add_child(jhint)
+		
+		job_btn.pressed.connect(_on_job_selected.bind(job["id"]))
+		title_panel.add_child(job_btn)
+	
+	# 底部说明
+	var tip = Label.new()
+	tip.position = Vector2(0, 420)
+	tip.size = Vector2(1000, 25)
+	tip.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E)"
+	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tip.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+	tip.add_theme_font_size_override("font_size", 13)
+	title_panel.add_child(tip)
+
+func _on_job_selected(job_id: int):
+	# 清理标题画面
+	var title_bg = get_node_or_null("TitleBG")
+	var title_ov = get_node_or_null("TitleOverlay")
+	var title_pn = get_node_or_null("TitlePanel")
+	if title_bg: title_bg.queue_free()
+	if title_ov: title_ov.queue_free()
+	if title_pn: title_pn.queue_free()
+	
+	# 设置职业
+	_setup_player_data(job_id)
 	_setup_ui()
 	_generate_map()
 	_setup_walls()
 	_setup_player()
+	game_state = State.EXPLORE
 	print("八方旅人 - Octopath Adventure 已启动!")
 	print("当前职业: " + player_data.get_job_name())
 	print("技能: " + str(player_data.skills))
+	show_message("欢迎，%s！你的冒险开始了..." % player_data.get_job_name())
 
-func _setup_player_data():
+func _setup_player_data(job_id: int = PlayerData.Job.WARRIOR):
 	player_data = PlayerData.new()
-	player_data.job = PlayerData.Job.WARRIOR
+	player_data.job = job_id
 	player_data._setup_job_skills()
 
 func _setup_ui():
@@ -233,7 +395,7 @@ func _setup_player():
 	
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
-	var texture = _create_knight_texture()
+	var texture = _create_job_texture(player_data.job)
 	sprite.texture = texture
 	player.add_child(sprite)
 	
@@ -292,6 +454,206 @@ func _create_knight_texture() -> ImageTexture:
 	
 	var texture = ImageTexture.create_from_image(img)
 	return texture
+
+func _create_job_texture(job: int) -> ImageTexture:
+	match job:
+		PlayerData.Job.WARRIOR: return _create_knight_texture()
+		PlayerData.Job.MAGE: return _create_mage_texture()
+		PlayerData.Job.HUNTER: return _create_hunter_texture()
+		PlayerData.Job.THIEF: return _create_thief_texture()
+		PlayerData.Job.PRIEST: return _create_priest_texture()
+		PlayerData.Job.KNIGHT: return _create_knight_texture()
+		PlayerData.Job.BARD: return _create_bard_texture()
+		PlayerData.Job.SUMMONER: return _create_summoner_texture()
+	return _create_knight_texture()
+
+func _create_mage_texture() -> ImageTexture:
+	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var robe = Color("#3a2a6a")
+	var skin = Color("#e8c8a0")
+	var hair = Color("#8a6a2a")
+	var staff = Color("#6a4a2a")
+	var orb = Color("#4a9fff")
+	# Robe
+	_set_pixel_line(img, 10, 14, 22, 14, robe)
+	_set_pixel_line(img, 9, 16, 23, 16, robe)
+	_set_pixel_line(img, 9, 18, 23, 18, robe)
+	_set_pixel_line(img, 9, 20, 23, 20, robe)
+	_set_pixel_line(img, 9, 22, 23, 22, robe)
+	_set_pixel_line(img, 10, 24, 22, 24, robe)
+	_set_pixel_line(img, 11, 26, 21, 26, robe)
+	_set_pixel_line(img, 12, 28, 20, 28, robe)
+	# Head
+	_set_pixel_line(img, 12, 4, 20, 4, hair)
+	_set_pixel_line(img, 12, 6, 20, 6, hair)
+	_set_pixel_line(img, 12, 8, 20, 8, skin)
+	_set_pixel_line(img, 12, 10, 20, 10, skin)
+	_set_pixel_line(img, 13, 12, 19, 12, skin)
+	img.set_pixel(14, 10, Color.BLUE)
+	img.set_pixel(18, 10, Color.BLUE)
+	# Staff
+	_set_pixel_line(img, 25, 4, 25, 28, staff)
+	img.set_pixel(25, 3, orb)
+	img.set_pixel(24, 4, orb)
+	img.set_pixel(26, 4, orb)
+	var tex = ImageTexture.create_from_image(img)
+	return tex
+
+func _create_hunter_texture() -> ImageTexture:
+	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var cloak = Color("#4a6a2a")
+	var leather = Color("#8a6a3a")
+	var skin = Color("#e8c8a0")
+	var bow = Color("#6a4a2a")
+	# Cloak
+	_set_pixel_line(img, 8, 16, 23, 16, cloak)
+	_set_pixel_line(img, 7, 18, 24, 18, cloak)
+	_set_pixel_line(img, 7, 20, 24, 20, cloak)
+	_set_pixel_line(img, 7, 22, 24, 22, cloak)
+	_set_pixel_line(img, 8, 24, 23, 24, cloak)
+	_set_pixel_line(img, 9, 26, 22, 26, cloak)
+	# Leather armor
+	_set_pixel_line(img, 10, 14, 22, 14, leather)
+	_set_pixel_line(img, 10, 16, 22, 16, leather)
+	_set_pixel_line(img, 10, 18, 22, 18, leather)
+	_set_pixel_line(img, 10, 20, 22, 20, leather)
+	# Head
+	_set_pixel_line(img, 12, 4, 20, 4, Color("#5a3a1a"))
+	_set_pixel_line(img, 12, 6, 20, 6, Color("#5a3a1a"))
+	_set_pixel_line(img, 13, 8, 19, 8, skin)
+	_set_pixel_line(img, 13, 10, 19, 10, skin)
+	img.set_pixel(14, 9, Color.BLACK)
+	img.set_pixel(18, 9, Color.BLACK)
+	# Bow
+	_set_pixel_line(img, 26, 6, 26, 26, bow)
+	_set_pixel_line(img, 24, 8, 24, 24, bow)
+	var tex = ImageTexture.create_from_image(img)
+	return tex
+
+func _create_thief_texture() -> ImageTexture:
+	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var dark = Color("#2a2a3a")
+	var cloak = Color("#3a3a5a")
+	var skin = Color("#e8c8a0")
+	var dagger = Color("#c0c0c0")
+	# Dark cloak
+	_set_pixel_line(img, 8, 16, 23, 16, dark)
+	_set_pixel_line(img, 7, 18, 24, 18, dark)
+	_set_pixel_line(img, 7, 20, 24, 20, dark)
+	_set_pixel_line(img, 7, 22, 24, 22, dark)
+	_set_pixel_line(img, 7, 24, 24, 24, dark)
+	_set_pixel_line(img, 8, 26, 23, 26, dark)
+	# Hood
+	_set_pixel_line(img, 10, 4, 22, 4, dark)
+	_set_pixel_line(img, 10, 6, 22, 6, dark)
+	_set_pixel_line(img, 10, 8, 22, 8, dark)
+	_set_pixel_line(img, 11, 10, 21, 10, skin)
+	_set_pixel_line(img, 11, 12, 21, 12, skin)
+	img.set_pixel(14, 10, Color.YELLOW)
+	img.set_pixel(18, 10, Color.YELLOW)
+	# Daggers
+	_set_pixel_line(img, 26, 14, 26, 22, dagger)
+	_set_pixel_line(img, 5, 14, 5, 22, dagger)
+	var tex = ImageTexture.create_from_image(img)
+	return tex
+
+func _create_priest_texture() -> ImageTexture:
+	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var robe = Color("#e8e8f0")
+	var accent = Color("#c9a227")
+	var skin = Color("#e8c8a0")
+	var staff = Color("#c0c0c0")
+	var heal = Color("#80ff80")
+	# White robe
+	_set_pixel_line(img, 10, 14, 22, 14, robe)
+	_set_pixel_line(img, 9, 16, 23, 16, robe)
+	_set_pixel_line(img, 9, 18, 23, 18, robe)
+	_set_pixel_line(img, 9, 20, 23, 20, robe)
+	_set_pixel_line(img, 9, 22, 23, 22, robe)
+	_set_pixel_line(img, 10, 24, 22, 24, robe)
+	_set_pixel_line(img, 11, 26, 21, 26, robe)
+	# Head w/ halo
+	_set_pixel_line(img, 12, 4, 20, 4, accent)
+	_set_pixel_line(img, 12, 6, 20, 6, Color("#f0e8c0"))
+	_set_pixel_line(img, 13, 8, 19, 8, skin)
+	_set_pixel_line(img, 13, 10, 19, 10, skin)
+	img.set_pixel(15, 9, Color.BLACK)
+	img.set_pixel(17, 9, Color.BLACK)
+	# Staff
+	_set_pixel_line(img, 25, 2, 25, 28, staff)
+	img.set_pixel(25, 2, heal)
+	img.set_pixel(24, 3, heal)
+	img.set_pixel(26, 3, heal)
+	var tex = ImageTexture.create_from_image(img)
+	return tex
+
+func _create_bard_texture() -> ImageTexture:
+	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var coat = Color("#8a4a2a")
+	var shirt = Color("#c9a227")
+	var skin = Color("#e8c8a0")
+	var lute = Color("#6a3a1a")
+	# Colorful coat
+	_set_pixel_line(img, 9, 14, 23, 14, coat)
+	_set_pixel_line(img, 8, 16, 24, 16, coat)
+	_set_pixel_line(img, 8, 18, 24, 18, coat)
+	_set_pixel_line(img, 8, 20, 24, 20, coat)
+	_set_pixel_line(img, 8, 22, 24, 22, coat)
+	_set_pixel_line(img, 9, 24, 23, 24, coat)
+	_set_pixel_line(img, 10, 26, 22, 26, coat)
+	# Shirt accent
+	_set_pixel_line(img, 13, 16, 19, 16, shirt)
+	_set_pixel_line(img, 13, 18, 19, 18, shirt)
+	# Head
+	_set_pixel_line(img, 12, 4, 20, 4, Color("#8a6a2a"))
+	_set_pixel_line(img, 12, 6, 20, 6, Color("#8a6a2a"))
+	_set_pixel_line(img, 13, 8, 19, 8, skin)
+	_set_pixel_line(img, 13, 10, 19, 10, skin)
+	img.set_pixel(14, 9, Color.BLACK)
+	img.set_pixel(18, 9, Color.BLACK)
+	# Lute
+	_set_pixel_line(img, 26, 14, 26, 22, lute)
+	img.set_pixel(27, 18, lute)
+	var tex = ImageTexture.create_from_image(img)
+	return tex
+
+func _create_summoner_texture() -> ImageTexture:
+	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var robe = Color("#4a1a4a")
+	var rune = Color("#ff4aff")
+	var skin = Color("#e8c8a0")
+	var staff = Color("#3a2a1a")
+	var demon = Color("#ff4040")
+	# Dark robe
+	_set_pixel_line(img, 10, 14, 22, 14, robe)
+	_set_pixel_line(img, 9, 16, 23, 16, robe)
+	_set_pixel_line(img, 9, 18, 23, 18, robe)
+	_set_pixel_line(img, 9, 20, 23, 20, robe)
+	_set_pixel_line(img, 9, 22, 23, 22, robe)
+	_set_pixel_line(img, 10, 24, 22, 24, robe)
+	_set_pixel_line(img, 11, 26, 21, 26, robe)
+	# Rune collar
+	_set_pixel_line(img, 11, 14, 21, 14, rune)
+	# Head
+	_set_pixel_line(img, 12, 4, 20, 4, Color("#2a1a3a"))
+	_set_pixel_line(img, 12, 6, 20, 6, Color("#2a1a3a"))
+	_set_pixel_line(img, 13, 8, 19, 8, skin)
+	_set_pixel_line(img, 13, 10, 19, 10, skin)
+	img.set_pixel(14, 9, demon)
+	img.set_pixel(18, 9, demon)
+	# Staff w/ orb
+	_set_pixel_line(img, 25, 4, 25, 28, staff)
+	img.set_pixel(25, 3, rune)
+	img.set_pixel(24, 4, rune)
+	img.set_pixel(26, 4, rune)
+	var tex = ImageTexture.create_from_image(img)
+	return tex
 
 func _set_pixel_line(img: Image, x1: int, y: int, x2: int, y2: int, col: Color):
 	for x in range(x1, x2 + 1):
