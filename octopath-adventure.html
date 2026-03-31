@@ -99,7 +99,19 @@ const bC=document.getElementById('bc'),bX=bC.getContext('2d');
 
 const W=800,H=560,T=40,COLS=W/T,ROWS=H/T;
 
-const P2={sky1:'#1a1528',sky2:'#3d2a4a',grass1:'#3a5a2a',grass2:'#4a6a35',grass3:'#2a4a1a',path:'#8a7a5a',wall:'#4a4a5a',wallT:'#6a6a7a',cape:'#8b2942',armor:'#4a6a8a',skin:'#e8c8a0',hair:'#3a2a1a',slime:'#5aaa5a',skel:'#d8d8c0',demon:'#aa2244',dragon:'#661133',gold:'#c9a227'};
+const P2={
+  sky1:'#1a2840',sky2:'#3d5070',sky3:'#5a7a9a',
+  sun:'#ffdd88',sunGlow:'rgba(255,220,140,0.4)',
+  hill1:'#2a4a30',hill2:'#3a5a40',hill3:'#4a6a50',
+  grass1:'#3a6028',grass2:'#4a7035',grass3:'#2a5020',grass4:'#5a8040',
+  treeTrunk:'#5a4030',treeLeaves:'#2a6020',treeLeaves2:'#3a7030',treeDark:'#1a4015',
+  flower1:'#ff6688',flower2:'#ffaa44',flower3:'#ffdd66',flower4:'#aa88ff',
+  path:'#8a7050',pathDark:'#6a5030',pathLight:'#aa9070',
+  water:'#3388aa',waterLight:'#55aacc',waterDark:'#226688',
+  wall:'#4a4a5a',wallT:'#6a6a7a',
+  cape:'#8b2942',armor:'#4a6a8a',skin:'#e8c8a0',hair:'#3a2a1a',
+  slime:'#5aaa5a',skel:'#d8d8c0',demon:'#aa2244',dragon:'#661133',gold:'#c9a227'
+};
 
 let P={hp:120,maxHp:120,mp:30,maxMp:30,exp:0,level:1,atk:14,def:6,spd:5,luk:3,gold:0,inv:[{t:'potion',n:2}]};
 let map=[],fog=[],pl={x:5,y:5},fl=1,steps=0,enemies=[],chests=[],stX=0,stY=0;
@@ -129,43 +141,199 @@ function updParts(){pX.clearRect(0,0,W,H);parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;
 
 function drawBG(){
   const ctx=bgX,w=W,h=H;
-  const sky=ctx.createLinearGradient(0,0,0,h*0.6);
-  sky.addColorStop(0,P2.sky1);sky.addColorStop(1,P2.sky2);
+  
+  // Sky gradient
+  const sky=ctx.createLinearGradient(0,0,0,h*0.65);
+  sky.addColorStop(0,P2.sky1);sky.addColorStop(0.5,P2.sky2);sky.addColorStop(1,P2.sky3);
   ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
   
-  // Sun
-  const sx=w*0.75,sy=h*0.18;
-  const gl=ctx.createRadialGradient(sx,sy,0,sx,sy,100);gl.addColorStop(0,'rgba(255,200,100,0.35)');gl.addColorStop(1,'transparent');
-  ctx.fillStyle=gl;ctx.fillRect(sx-120,sy-120,240,240);
-  ctx.fillStyle='#ffaa44';ctx.beginPath();ctx.arc(sx,sy,24,0,Math.PI*2);ctx.fill();
+  // Sun with glow
+  const sx=w*0.72,sy=h*0.15;
+  const gl=ctx.createRadialGradient(sx,sy,0,sx,sy,150);gl.addColorStop(0,P2.sunGlow);gl.addColorStop(0.5,'rgba(255,200,100,0.15)');gl.addColorStop(1,'transparent');
+  ctx.fillStyle=gl;ctx.fillRect(sx-180,sy-180,360,360);
+  ctx.fillStyle=P2.sun;ctx.beginPath();ctx.arc(sx,sy,32,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,255,200,0.6)';ctx.beginPath();ctx.arc(sx,sy,20,0,Math.PI*2);ctx.fill();
   
-  // Clouds
-  function cloud(cx,cy,s){ctx.fillStyle='rgba(200,180,220,0.5)';ctx.beginPath();ctx.arc(cx,cy,16*s,0,Math.PI*2);ctx.arc(cx+20*s,cy-4*s,20*s,0,Math.PI*2);ctx.arc(cx+44*s,cy,18*s,0,Math.PI*2);ctx.fill();}
-  cloud(w*0.2,h*0.14,1.1);cloud(w*0.55,h*0.1,0.8);
+  // Clouds (more variety)
+  function cloud(cx,cy,s,op=0.6){ctx.fillStyle=`rgba(230,220,240,${op})`;ctx.beginPath();ctx.arc(cx,cy,18*s,0,Math.PI*2);ctx.arc(cx+24*s,cy-6*s,22*s,0,Math.PI*2);ctx.arc(cx+50*s,cy,20*s,0,Math.PI*2);ctx.arc(cx+30*s,cy+8*s,15*s,0,Math.PI*2);ctx.fill();}
+  cloud(w*0.15,h*0.12,1.2,0.7);cloud(w*0.45,h*0.08,0.9,0.5);cloud(w*0.7,h*0.18,1.0,0.6);cloud(w*0.9,h*0.1,0.7,0.4);
   
-  // Hills
-  ctx.fillStyle='#2a3a2a';
+  // Distant mountains
+  ctx.fillStyle='#1a2a35';
   ctx.beginPath();ctx.moveTo(0,h*0.5);
-  for(let x=0;x<=w;x+=30)ctx.lineTo(x,h*0.46+Math.sin(x*0.012)*18+Math.sin(x*0.025)*12);
+  for(let x=0;x<=w;x+=40)ctx.lineTo(x,h*0.42+Math.sin(x*0.008)*25+Math.sin(x*0.02)*18);
   ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.fill();
   
-  ctx.fillStyle='#3a4a35';
-  ctx.beginPath();ctx.moveTo(0,h*0.55);
-  for(let x=0;x<=w;x+=25)ctx.lineTo(x,h*0.52+Math.sin(x*0.016+1)*15+Math.sin(x*0.03)*10);
+  // Far hills (dark green forest)
+  ctx.fillStyle=P2.hill1;
+  ctx.beginPath();ctx.moveTo(0,h*0.52);
+  for(let x=0;x<=w;x+=25)ctx.lineTo(x,h*0.48+Math.sin(x*0.01+2)*20+Math.sin(x*0.025)*15);
   ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.fill();
   
-  // Ground
-  const gr=ctx.createLinearGradient(0,h*0.6,0,h);gr.addColorStop(0,P2.grass2);gr.addColorStop(1,P2.grass1);
+  // Mid hills with trees
+  ctx.fillStyle=P2.hill2;
+  ctx.beginPath();ctx.moveTo(0,h*0.58);
+  for(let x=0;x<=w;x+=20)ctx.lineTo(x,h*0.54+Math.sin(x*0.012+1)*18+Math.sin(x*0.028)*12);
+  ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.fill();
+  
+  // Draw trees on mid hills
+  for(let x=20;x<w;x+=60){
+    const ty=h*0.52+Math.sin(x*0.012+1)*18+Math.sin(x*0.028)*12-20;
+    drawTree(ctx,x,ty,0.8,'pine');
+  }
+  
+  // Near hills
+  ctx.fillStyle=P2.hill3;
+  ctx.beginPath();ctx.moveTo(0,h*0.62);
+  for(let x=0;x<=w;x+=18)ctx.lineTo(x,h*0.58+Math.sin(x*0.015)*15+Math.sin(x*0.03+2)*10);
+  ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.fill();
+  
+  // Draw more trees on near hills
+  for(let x=30;x<w;x+=80){
+    const ty=h*0.55+Math.sin(x*0.015)*15+Math.sin(x*0.03+2)*10-25;
+    drawTree(ctx,x,ty,1.0,'oak');
+  }
+  
+  // Ground - rich grassland
+  const gr=ctx.createLinearGradient(0,h*0.6,0,h);gr.addColorStop(0,P2.grass4);gr.addColorStop(0.3,P2.grass2);gr.addColorStop(1,P2.grass1);
   ctx.fillStyle=gr;ctx.fillRect(0,h*0.6,w,h*0.4);
   
-  // Path
-  ctx.fillStyle=P2.path;
+  // Ground texture - grass patches
+  ctx.fillStyle=P2.grass3;
+  for(let i=0;i<100;i++){
+    const gx=Math.random()*w,gy=h*0.6+Math.random()*h*0.38;
+    ctx.fillRect(gx,gy,3+Math.random()*4,2);
+  }
+  
+  // Winding path through meadow
+  ctx.strokeStyle=P2.path;ctx.lineWidth=50;ctx.lineCap='round';ctx.lineJoin='round';
   ctx.beginPath();
-  ctx.moveTo(w*0.35,h*0.6);
-  ctx.quadraticCurveTo(w*0.5,h*0.68,w*0.65,h*0.82);
-  ctx.quadraticCurveTo(w*0.5,h*0.88,w*0.35,h*0.92);
-  ctx.quadraticCurveTo(w*0.4,h*0.76,w*0.35,h*0.6);
-  ctx.fill();
+  ctx.moveTo(-20,h*0.75);
+  ctx.bezierCurveTo(w*0.2,h*0.7,w*0.3,h*0.85,w*0.5,h*0.78);
+  ctx.bezierCurveTo(w*0.7,h*0.7,w*0.8,h*0.88,w*0.85,h*0.82);
+  ctx.bezierCurveTo(w*0.9,h*0.76,w*0.95,h*0.92,w*w+20,h*0.88);
+  ctx.stroke();
+  
+  // Path detail
+  ctx.strokeStyle=P2.pathLight;ctx.lineWidth=35;
+  ctx.beginPath();
+  ctx.moveTo(-20,h*0.75);
+  ctx.bezierCurveTo(w*0.2,h*0.7,w*0.3,h*0.85,w*0.5,h*0.78);
+  ctx.bezierCurveTo(w*0.7,h*0.7,w*0.8,h*0.88,w*0.85,h*0.82);
+  ctx.bezierCurveTo(w*0.9,h*0.76,w*0.95,h*0.92,w*w+20,h*0.88);
+  ctx.stroke();
+  
+  // Path edge detail
+  ctx.strokeStyle=P2.pathDark;ctx.lineWidth=2;
+  for(let i=0;i<w;i+=15){
+    const py=h*0.75+Math.sin(i*0.02)*0.05*h;
+    ctx.fillStyle=P2.grass2;
+    ctx.fillRect(i-2,py-8,4,6);
+  }
+  
+  // Scatter trees in foreground
+  const treePositions=[50,150,280,400,550,680,750];
+  treePositions.forEach(tx=>{
+    drawTree(ctx,tx,h*0.65+Math.random()*h*0.2,1.2,Math.random()>0.5?'pine':'oak');
+  });
+  
+  // Bushes
+  const bushPositions=[100,220,350,480,600,720];
+  bushPositions.forEach((bx,i)=>{
+    drawBush(ctx,bx,h*0.68+(i%2)*25+Math.random()*20,0.6+Math.random()*0.4);
+  });
+  
+  // Flowers
+  drawFlowers(ctx,0,h*0.65,w,h*0.35);
+  
+  // Pond/water feature
+  drawPond(ctx,w*0.15,h*0.78,60,35);
+  
+  // Birds (simple)
+  for(let i=0;i<5;i++){
+    const bx=(w*0.3+i*80)%w;
+    const by=h*0.2+Math.random()*h*0.15;
+    drawBird(ctx,bx,by);
+  }
+}
+
+function drawTree(ctx,x,y,scale,type){
+  // Trunk
+  ctx.fillStyle=P2.treeTrunk;
+  ctx.fillRect(x-4*scale,y,8*scale,25*scale);
+  ctx.fillRect(x-3*scale,y+5*scale,6*scale,20*scale);
+  
+  if(type==='pine'){
+    // Pine tree - triangular
+    ctx.fillStyle=P2.treeDark;
+    ctx.beginPath();ctx.moveTo(x,y-30*scale);ctx.lineTo(x-25*scale,y+5*scale);ctx.lineTo(x+25*scale,y+5*scale);ctx.fill();
+    ctx.fillStyle=P2.treeLeaves;
+    ctx.beginPath();ctx.moveTo(x,y-45*scale);ctx.lineTo(x-20*scale,y-10*scale);ctx.lineTo(x+20*scale,y-10*scale);ctx.fill();
+    ctx.fillStyle=P2.treeLeaves2;
+    ctx.beginPath();ctx.moveTo(x,y-55*scale);ctx.lineTo(x-12*scale,y-25*scale);ctx.lineTo(x+12*scale,y-25*scale);ctx.fill();
+  } else {
+    // Oak - round crown
+    ctx.fillStyle=P2.treeDark;
+    ctx.beginPath();ctx.arc(x,y-15*scale,22*scale,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=P2.treeLeaves;
+    ctx.beginPath();ctx.arc(x-8*scale,y-20*scale,16*scale,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+10*scale,y-18*scale,14*scale,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x,y-30*scale,12*scale,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#4a8030';
+    ctx.beginPath();ctx.arc(x-5*scale,y-25*scale,8*scale,0,Math.PI*2);ctx.fill();
+  }
+}
+
+function drawBush(ctx,x,y,scale){
+  ctx.fillStyle='#2a5020';
+  ctx.beginPath();ctx.arc(x,y,12*scale,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x-10*scale,y+3*scale,10*scale,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+10*scale,y+2*scale,9*scale,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#3a6030';
+  ctx.beginPath();ctx.arc(x-5*scale,y-3*scale,8*scale,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+6*scale,y-2*scale,7*scale,0,Math.PI*2);ctx.fill();
+}
+
+function drawFlowers(ctx,x,y,w,h){
+  const colors=[P2.flower1,P2.flower2,P2.flower3,P2.flower4,'#ffffff','#ff9966'];
+  for(let i=0;i<80;i++){
+    const fx=x+Math.random()*w;
+    const fy=y+Math.random()*h;
+    ctx.fillStyle=colors[Math.floor(Math.random()*colors.length)];
+    ctx.beginPath();ctx.arc(fx,fy,2+Math.random()*3,0,Math.PI*2);ctx.fill();
+    // Stem
+    ctx.strokeStyle='#3a6020';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(fx,fy);ctx.lineTo(fx,fy+8+Math.random()*8);ctx.stroke();
+  }
+}
+
+function drawPond(ctx,x,y,r1,r2){
+  // Water
+  const water=ctx.createRadialGradient(x,y,0,x,y,r1);
+  water.addColorStop(0,P2.waterLight);water.addColorStop(0.7,P2.water);water.addColorStop(1,P2.waterDark);
+  ctx.fillStyle=water;
+  ctx.beginPath();ctx.ellipse(x,y,r1,r2,0,0,Math.PI*2);ctx.fill();
+  
+  // Ripples
+  ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.ellipse(x,y,r1*0.6,r2*0.6,0,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.ellipse(x,y,r1*0.3,r2*0.3,0,0,Math.PI*2);ctx.stroke();
+  
+  // Reeds on edge
+  for(let i=0;i<5;i++){
+    const rx=x+r1*0.8+Math.random()*20;
+    const ry=y-Math.random()*10;
+    ctx.strokeStyle='#4a6030';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(rx,ry+10);ctx.lineTo(rx+3,ry-15-Math.random()*10);ctx.stroke();
+    ctx.fillStyle='#5a7040';
+    ctx.beginPath();ctx.ellipse(rx+3,ry-18-Math.random()*10,3,6,0,0,Math.PI*2);ctx.fill();
+  }
+}
+
+function drawBird(ctx,x,y){
+  ctx.strokeStyle='#333';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(x-5,y);ctx.lineTo(x,y-3);ctx.lineTo(x+5,y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x,y-3);ctx.lineTo(x,y+2);ctx.stroke();
 }
 
 function genMap(f){
@@ -188,7 +356,15 @@ function render(){
     const t=map[y][x];
     if(t===1){gX.fillStyle=P2.wall;gX.fillRect(x*T,y*T,T,T);gX.fillStyle=P2.wallT;gX.fillRect(x*T+2,y*T+2,T-4,6);}
     else if(t===2){gX.fillStyle=P2.grass2;gX.fillRect(x*T,y*T,T,T);gX.fillStyle=P2.gold;gX.fillRect(x*T+10,y*T+6,20,28);gX.fillStyle='#aa8800';for(let i=0;i<3;i++)gX.fillRect(x*T+12,y*T+10+i*9,16,4);}
-    else{gX.fillStyle=P2.grass1;gX.fillRect(x*T,y*T,T,T);if((x+y)%4===0){gX.fillStyle=P2.grass3;gX.fillRect(x*T+16,y*T+22,2,5);}}
+    else{gX.fillStyle=P2.grass1;gX.fillRect(x*T,y*T,T,T);gX.fillStyle=P2.grass2;gX.fillRect(x*T+2,y*T+2,T-4,T-4);
+      if((x+y)%3===0){gX.fillStyle=P2.grass3;gX.fillRect(x*T+8,y*T+12,2,6);gX.fillRect(x*T+24,y*T+28,2,4);}
+      if((x*y)%7===0){gX.fillStyle=P2.grass4;gX.fillRect(x*T+4,y*T+20,3,2);}
+      // Random flowers
+      if((x*7+y*13)%23===0){gX.fillStyle='#ff6688';gX.fillRect(x*T+14,y*T+8,3,3);}
+      if((x*11+y*17)%29===0){gX.fillStyle='#ffaa44';gX.fillRect(x*T+26,y*T+16,3,3);}
+      // Grass tufts
+      if((x+y)%5===0){gX.fillStyle=P2.grass3;gX.fillRect(x*T+16,y*T+26,2,8);gX.fillRect(x*T+20,y*T+24,2,6);}
+    }
   }
   chests.forEach(c=>{if(c.op||fog[c.y][c.x]===1)return;gX.fillStyle='#6a5a3a';gX.fillRect(c.x*T+10,c.y*T+18,20,12);gX.fillStyle='#cc9933';gX.fillRect(c.x*T+10,c.y*T+14,20,12);gX.fillStyle='#ffcc66';gX.fillRect(c.x*T+17,c.y*T+17,5,5);});
   enemies.forEach(e=>{if(!e.al||fog[e.y][e.x]===1)return;const b=ET[e.t];const ex=e.x*T+(T-32)/2,ey=e.y*T+(T-28)/2;gX.fillStyle=b.c;
