@@ -33,6 +33,7 @@ var contract_active: bool = false  # 契约标记
 var contract_turns: int = 0   # 契约剩余回合
 var resonance_stacks: int = 0  # 共鸣积累层数
 var silenced: bool = false     # 沉默标记
+var vanish_turns: int = 0      # 消失buff回合数
 
 # 相机抖动
 var camera_shake_intensity: float = 0.0
@@ -1585,6 +1586,7 @@ func _start_battle():
 	poison_turns = 0
 	trapped = false
 	enemy_stun_turns = 0
+	vanish_turns = 0
 	
 	# 生成敌人
 	var enemy_types = ["slime", "skeleton", "demon"]
@@ -2086,8 +2088,8 @@ func _on_skill_selected(skill_name: String):
 			_enemy_hit_effect()
 		"消失":
 			# 下回合必定先手+闪避
-			player_data.spd += 10
-			_battle_add_log("👤 消失！下回合必定先手并闪避")
+			vanish_turns = 1
+			_battle_add_log("👤 消失！下回合敌人攻击时50%%几率闪避")
 		# 牧师
 		"治疗":
 			var heal = int(player_data.max_hp * 0.4)
@@ -2233,6 +2235,29 @@ func _process_battle(delta: float):
 			return
 	
 	await get_tree().create_timer(0.5).timeout
+	
+	# 陷阱触发：敌人被困住，无法攻击并受到伤害
+	if trapped:
+		var trap_dmg = int(player_data.attack_power() * 1.2)
+		current_enemy["hp"] -= trap_dmg
+		trapped = false
+		_battle_add_log("🪤 陷阱触发！敌人被困住，受到 %d 伤害！" % trap_dmg)
+		_update_enemy_hp_bar()
+		if _check_battle_end():
+			return
+		await get_tree().create_timer(0.4).timeout
+		_start_player_turn()
+		return
+	
+	# 消失闪避检测
+	if vanish_turns > 0:
+		vanish_turns -= 1
+		if randf() < 0.5:
+			_battle_add_log("💨 消失！完美闪避了敌人攻击！")
+			_start_player_turn()
+			return
+		else:
+			_battle_add_log("💨 消失！闪避失败...")
 	
 	# 敌人攻击
 	var e_dmg = current_enemy["atk"] + randi() % 5 - 2
