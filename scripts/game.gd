@@ -29,6 +29,10 @@ var poison_stacks: int = 0   # 中毒层数
 var poison_damage: int = 0    # 每层中毒伤害
 var poison_turns: int = 0     # 中毒剩余回合
 var trapped: bool = false     # 陷阱触发标记
+var contract_active: bool = false  # 契约标记
+var contract_turns: int = 0   # 契约剩余回合
+var resonance_stacks: int = 0  # 共鸣积累层数
+var silenced: bool = false     # 沉默标记
 
 # UI
 var hp_label: Label
@@ -1173,6 +1177,11 @@ func _start_battle():
 	show_message("遭遇了 " + current_enemy["name"] + "！")
 	_create_battle_ui()
 	
+	# 重置召唤师状态
+	resonance_stacks = 0
+	contract_active = false
+	contract_turns = 0
+	
 	# 猎人陷阱被动检测
 	if player_data.job == PlayerData.Job.HUNTER and player_data.skills.has("陷阱"):
 		trapped = true
@@ -1511,7 +1520,7 @@ func _on_skill_menu():
 		"治疗": 15, "护盾": 10, "复活": 50,
 		"格挡": 0, "斩击": 15, "神圣": 25,
 		"鼓舞": 10, "旋律": 15, "沉默": 20,
-		"召唤": 20
+		"召唤": 20, "契约": 20, "共鸣": 25
 	}
 	
 	var skill_idx = 0
@@ -1564,7 +1573,7 @@ func _on_skill_selected(skill_name: String):
 		"治疗": 15, "护盾": 10, "复活": 50,
 		"格挡": 0, "斩击": 15, "神圣": 25,
 		"鼓舞": 10, "旋律": 15, "沉默": 20,
-		"召唤": 20
+		"召唤": 20, "契约": 20, "共鸣": 25
 	}
 	var cost = mp_cost.get(skill_name, 0)
 	if player_data.mp < cost:
@@ -1698,7 +1707,26 @@ func _on_skill_selected(skill_name: String):
 		"召唤":
 			var summon_dmg = int(player_data.attack_power() * 1.3 + player_data.luk * 2)
 			current_enemy["hp"] -= summon_dmg
-			_battle_add_log("🔥 召唤兽攻击！造成 %d 伤害" % summon_dmg)
+			resonance_stacks += 1
+			_battle_add_log("🔥 召唤兽攻击！造成 %d 伤害（共鸣+%d层）" % [summon_dmg, resonance_stacks])
+			_enemy_hit_effect()
+		"契约":
+			contract_active = true
+			contract_turns = 3
+			var contract_dmg = int(player_data.attack_power() * 1.2)
+			current_enemy["hp"] -= contract_dmg
+			current_enemy["atk"] = max(1, int(current_enemy["atk"] * 0.7))
+			_battle_add_log("📜 契约诅咒！造成 %d 伤害，敌人ATK降至70%%，持续3回合" % contract_dmg)
+			_enemy_hit_effect()
+		"共鸣":
+			if resonance_stacks < 1:
+				resonance_stacks = 1
+			var reso_dmg = int(current_enemy["max_hp"] * 0.15 * resonance_stacks)
+			var self_cost = int(player_data.max_hp * 0.05 * resonance_stacks)
+			current_enemy["hp"] -= reso_dmg
+			player_data.hp = max(1, player_data.hp - self_cost)
+			_battle_add_log("⚡ 共鸣爆发！造成 %d 伤害（%d层），自身消耗 %d HP" % [reso_dmg, resonance_stacks, self_cost])
+			resonance_stacks = 0
 			_enemy_hit_effect()
 	
 	_update_enemy_hp_bar()
@@ -1752,6 +1780,21 @@ func _process_battle(delta: float):
 		current_enemy["hp"] -= total_poison
 		_battle_add_log("毒素发作！受到 %d 伤害（%d层）" % [total_poison, poison_stacks])
 		poison_turns -= 1
+		_update_enemy_hp_bar()
+		if _check_battle_end():
+			return
+	
+	# 契约诅咒（生命吸取）
+	if contract_active:
+		var drain_dmg = int(player_data.attack_power() * 0.4)
+		current_enemy["hp"] -= drain_dmg
+		var heal_amt = int(drain_dmg * 0.5)
+		player_data.hp = min(player_data.max_hp, player_data.hp + heal_amt)
+		contract_turns -= 1
+		_battle_add_log("📜 契约吸取！对敌人造成 %d 伤害，回复 %d HP（剩余%d回合）" % [drain_dmg, heal_amt, contract_turns])
+		if contract_turns <= 0:
+			contract_active = false
+			_battle_add_log("📜 契约诅咒结束")
 		_update_enemy_hp_bar()
 		if _check_battle_end():
 			return
@@ -1929,6 +1972,8 @@ func _update_battle_player_ui():
 			if player_defending: parts.append("🛡️防御")
 			if player_shield > 0: parts.append("护盾%d" % player_shield)
 			if poison_turns > 0: parts.append("☠️中毒×%d" % poison_stacks)
+			if contract_active: parts.append("📜契约×%d" % contract_turns)
+			if resonance_stacks > 0: parts.append("⚡共鸣×%d" % resonance_stacks)
 			status_lbl.text = " ".join(parts) if parts.size() > 0 else ""
 
 func _battle_add_log(msg: String):
