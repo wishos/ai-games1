@@ -39,6 +39,31 @@ body{background:#08080c;min-height:100vh;display:flex;flex-direction:column;alig
 #so p{font-size:12px;color:#5a5a6a;line-height:2.2;text-align:center;margin-bottom:28px;}
 .sbtn{font-family:serif;font-size:14px;padding:12px 36px;background:transparent;color:#c9a227;border:1px solid #c9a227;cursor:pointer;letter-spacing:4px;}
 .sbtn:hover{background:#c9a227;color:#18182a;}
+
+/* Shop UI */
+#shp{display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(4,4,10,0.95);z-index:60;}
+#shp.on{display:flex;flex-direction:column;align-items:center;padding:20px;}
+#shp h2{color:#c9a227;font-size:18px;letter-spacing:6px;margin-bottom:4px;}
+#shp .sub{color:#6a6a7a;font-size:11px;margin-bottom:16px;}
+#shp-inner{display:flex;gap:20px;width:100%;max-width:700px;}
+.shp-col{flex:1;background:rgba(20,18,30,0.9);border:1px solid #3a3a5a;padding:12px;max-height:380px;overflow-y:auto;}
+.shp-col h3{color:#c9a227;font-size:12px;letter-spacing:2px;border-bottom:1px solid #3a3a5a;padding-bottom:8px;margin-bottom:8px;}
+.shp-item{display:flex;align-items:center;justify-content:space-between;padding:6px 4px;border-bottom:1px solid #2a2a3a;font-size:11px;}
+.shp-item:hover{background:rgba(201,162,39,0.1);}
+.shp-item.nobuy{opacity:0.4;}
+.shp-name{color:#e8e4d9;}
+.shp-desc{color:#6a6a7a;font-size:10px;}
+.shp-price{color:#c9a227;white-space:nowrap;}
+.shp-buy{padding:3px 10px;background:#c9a227;color:#18182a;border:none;font-size:10px;cursor:pointer;}
+.shp-buy:hover{background:#ffd700;}
+.shp-buy:disabled{background:#4a4a5a;color:#6a6a7a;cursor:not-allowed;}
+#shp-equip{flex:0.3;background:rgba(20,18,30,0.9);border:1px solid #3a3a5a;padding:12px;}
+#shp-equip h3{color:#c9a227;font-size:12px;letter-spacing:2px;border-bottom:1px solid #3a3a5a;padding-bottom:8px;margin-bottom:8px;}
+.eq-slot{display:flex;align-items:center;justify-content:space-between;padding:5px 4px;border-bottom:1px solid #2a2a3a;font-size:11px;}
+.eq-name{color:#e8e4d9;}
+.eq-empty{color:#4a4a5a;font-style:italic;}
+#shp-close{position:absolute;top:12px;right:16px;color:#6a6a7a;font-size:20px;cursor:pointer;}
+#shp-close:hover{color:#c9a227;}
 </style>
 </head>
 <body>
@@ -65,7 +90,7 @@ body{background:#08080c;min-height:100vh;display:flex;flex-direction:column;alig
 </div>
 </div>
 
-<div id="info">WASD移动 · 撞墙遇敌 · 寻找楼梯通往下一层</div>
+<div id="info">WASD移动 · U打开商店 · 撞墙遇敌 · 寻找楼梯通往下一层</div>
 <canvas id="mm" width="100" height="100"></canvas>
 
 <div id="bo"><canvas id="bc" width="800" height="560"></canvas>
@@ -87,6 +112,30 @@ body{background:#08080c;min-height:100vh;display:flex;flex-direction:column;alig
 <h2>HD-2D 像素冒险</h2>
 <p>WASD 移动角色<br>探索广袤的幻想世界<br>击败强敌，寻找命运的真谛</p>
 <button class="sbtn" id="btn-go">开 始 旅 程</button>
+</div>
+
+<div id="shp">
+<span id="shp-close">✕</span>
+<h2>商 店</h2>
+<div class="sub">金币: <span id="shp-gold">0</span></div>
+<div id="shp-inner">
+<div class="shp-col" id="shp-weapons">
+<h3>⚔️ 武器</h3></div>
+<div class="shp-col" id="shp-armors">
+<h3>🛡️ 防具</h3></div>
+<div class="shp-col" id="shp-potions">
+<h3>💊 药水</h3></div>
+<div id="shp-equip">
+<h3>📦 装备</h3>
+<div id="eq-weapon" class="eq-slot"><span class="eq-empty">无武器</span></div>
+<div id="eq-armor" class="eq-slot"><span class="eq-empty">无护甲</span></div>
+<div id="eq-accessory" class="eq-slot"><span class="eq-empty">无饰品</span></div>
+<div style="margin-top:12px;border-top:1px solid #3a3a5a;padding-top:8px;">
+<div class="sub" style="margin-bottom:4px;">背包:</div>
+<div id="eq-inv" style="font-size:10px;color:#8a8078;"></div>
+</div>
+</div>
+</div>
 </div>
 </div>
 
@@ -120,9 +169,121 @@ let parts=[];
 
 const ET={slime:{n:'史莱姆',h:25,a:6,d:2,s:3,e:12,g:8,c:'#5aaa5a'},skeleton:{n:'骷髅战士',h:40,a:12,d:5,s:4,e:25,g:15,c:'#d8d8c0'},demon:{n:'深渊恶魔',h:80,a:22,d:8,s:5,e:60,g:45,c:'#aa2244'},dragon:{n:'远古巨龙',h:300,a:40,d:20,s:6,e:300,g:500,c:'#661133'}};
 
+// Shop items
+const SHOP={
+  weapons:[
+    {n:'短剑',d:'ATK+5',p:100,a:{atk:5},s:1},
+    {n:'长剑',d:'ATK+12',p:300,a:{atk:12},s:2},
+    {n:'焰光剑',d:'ATK+25',p:800,a:{atk:25},s:3},
+    {n:'龙牙刃',d:'ATK+50',p:2000,a:{atk:50},s:4},
+    {n:'神圣长剑',d:'ATK+100',p:5000,a:{atk:100},s:5}
+  ],
+  armors:[
+    {n:'皮甲',d:'DEF+3 HP+20',p:80,a:{def:3,hp:20},s:1},
+    {n:'锁甲',d:'DEF+8 HP+50',p:250,a:{def:8,hp:50},s:2},
+    {n:'银铠甲',d:'DEF+18 HP+100',p:600,a:{def:18,hp:100},s:3},
+    {n:'龙鳞甲',d:'DEF+35 HP+200',p:1500,a:{def:35,hp:200},s:4},
+    {n:'神圣铠甲',d:'DEF+70 HP+400',p:4000,a:{def:70,hp:400},s:5}
+  ],
+  accessories:[
+    {n:'幸运符',d:'SPD+1 LUK+1',p:60,a:{spd:1,luk:1},s:1},
+    {n:'敏捷戒指',d:'SPD+2 LUK+2',p:200,a:{spd:2,luk:2},s:2},
+    {n:'疾风吊坠',d:'SPD+4 LUK+4',p:400,a:{spd:4,luk:4},s:3},
+    {n:'龙之爪',d:'SPD+8 LUK+8',p:1000,a:{spd:8,luk:8},s:4},
+    {n:'凤凰之羽',d:'SPD+15 LUK+15',p:3000,a:{spd:15,luk:15},s:5}
+  ],
+  potions:[
+    {n:'小血药',d:'恢复30% HP',p:20,a:{type:'potion',hp:0.3},s:0},
+    {n:'大血药',d:'恢复80% HP',p:80,a:{type:'potion',hp:0.8},s:0},
+    {n:'小蓝药',d:'恢复30% MP',p:30,a:{type:'mpotion',mp:0.3},s:0},
+    {n:'大蓝药',d:'恢复80% MP',p:100,a:{type:'mpotion',mp:0.8},s:0}
+  ]
+};
+
+let shopOpen=false;
+
+// Initialize player with equipment slots
+P.weapon=null;P.armor=null;P.accessory=null;
+
+function calcBonus(){return{atk:P.weapon?P.weapon.a.atk:0,def:P.armor?P.armor.a.def:0,spd:P.accessory?P.accessory.a.spd:0,luk:P.accessory?P.accessory.a.luk:0};}
+
+function openShop(){
+  if(inB)return;
+  shopOpen=true;
+  document.getElementById('shp').classList.add('on');
+  renderShop();
+}
+function closeShop(){
+  shopOpen=false;
+  document.getElementById('shp').classList.remove('on');
+}
+function renderShop(){
+  document.getElementById('shp-gold').textContent=P.gold;
+  renderShopCol('weapons','shp-weapons');
+  renderShopCol('armors','shp-armors');
+  renderShopCol('potions','shp-potions');
+  // Equipment slots
+  document.getElementById('eq-weapon').innerHTML=P.weapon?`<span class="eq-name">⚔️ ${P.weapon.n}</span><span style="color:#6a6a7a">${P.weapon.d}</span>`:'<span class="eq-empty">无武器</span>';
+  document.getElementById('eq-armor').innerHTML=P.armor?`<span class="eq-name">🛡️ ${P.armor.n}</span><span style="color:#6a6a7a">${P.armor.d}</span>`:'<span class="eq-empty">无护甲</span>';
+  document.getElementById('eq-accessory').innerHTML=P.accessory?`<span class="eq-name">💍 ${P.accessory.n}</span><span style="color:#6a6a7a">${P.accessory.d}</span>`:'<span class="eq-empty">无饰品</span>';
+  // Inventory
+  const invDiv=document.getElementById('eq-inv');
+  if(P.inv.length===0){invDiv.innerHTML='<span style="color:#4a4a5a">空空如也</span>';}
+  else{invDiv.innerHTML=P.inv.map(i=>`${i.t==='potion'?'💊':'💧'}${i.t==='potion'?'血药':'蓝药'} x${i.n}`).join('<br>');}
+}
+function renderShopCol(type,divId){
+  const col=document.getElementById(divId);
+  const stars='★'.repeat(Math.min(fl,5));
+  col.innerHTML=`<h3>${type==='weapons'?'⚔️ 武器':type==='armors'?'🛡️ 防具':'💊 药水'} (层数:${fl})</h3>`;
+  SHOP[type].forEach((item,idx)=>{
+    const canBuy=P.gold>=item.p&&item.s<=fl;
+    const locked=item.s>fl;
+    const div=document.createElement('div');
+    div.className='shp-item'+(locked||!canBuy?' nobuy':'');
+    div.innerHTML=`
+      <div><div class="shp-name">${item.n}</div><div class="shp-desc">${item.d}${locked?' [需第'+item.s+'层]':''}</div></div>
+      <div style="text-align:right;">
+        <div class="shp-price">💰${item.p}</div>
+        <button class="shp-buy" ${!canBuy?'disabled':''} onclick="buyItem('${type}',${idx})">购买</button>
+      </div>`;
+    col.appendChild(div);
+  });
+}
+function buyItem(type,idx){
+  const item=SHOP[type][idx];
+  if(P.gold<item.p||item.s>fl)return;
+  P.gold-=item.p;
+  if(item.a.type==='potion'||item.a.type==='mpotion'){
+    const t=item.a.type==='potion'?'potion':'mpotion';
+    const exist=P.inv.find(i=>i.t===t);
+    if(exist){exist.n++;}
+    else{P.inv.push({t:t,n:1});}
+    bl(`💊 购买 ${item.n}！`);
+  } else {
+    // Equipment - auto equip if better
+    if(type==='weapons'){
+      if(!P.weapon||P.weapon.s<item.s){P.weapon=item;bl(`⚔️ 装备 ${item.n}！ATK+${item.a.atk}`);}
+      else{P.gold+=Math.floor(item.p*0.7);bl(`⚔️ 已拥有更好的武器，退款${Math.floor(item.p*0.7)}`);}
+    } else if(type==='armors'){
+      if(!P.armor||P.armor.s<item.s){P.armor=item;P.maxHp+=item.a.hp;P.hp=Math.min(P.hp+item.a.hp,P.maxHp);bl(`🛡️ 装备 ${item.n}！DEF+${item.a.def} HP+${item.a.hp}`);}
+      else{P.gold+=Math.floor(item.p*0.7);bl(`🛡️ 已拥有更好的护甲，退款${Math.floor(item.p*0.7)}`);}
+    } else if(type==='accessories'){
+      if(!P.accessory||P.accessory.s<item.s){P.accessory=item;bl(`💍 装备 ${item.n}！SPD+${item.a.spd} LUK+${item.a.luk}`);}
+      else{P.gold+=Math.floor(item.p*0.7);bl(`💍 已拥有更好的饰品，退款${Math.floor(item.p*0.7)}`);}
+    }
+    saveD();
+  }
+  renderShop();
+  updUI();
+}
+
 function xpN(lv){return Math.floor(Math.pow(lv,1.5)*60);}
-function gHP(){return P.maxHp;}function gMP(){return P.maxMp;}
-function gATK(){return P.atk;}function gDEF(){return P.def;}function gSPD(){return P.spd;}function gLUK(){return P.luk;}
+function gHP(){const b=calcBonus();return P.maxHp+(P.armor?P.armor.a.hp:0);}
+function gMP(){return P.maxMp;}
+function gATK(){ return P.atk+(P.weapon?P.weapon.a.atk:0);}
+function gDEF(){return P.def+(P.armor?P.armor.a.def:0);}
+function gSPD(){return P.spd+(P.accessory?P.accessory.a.spd:0);}
+function gLUK(){return P.luk+(P.accessory?P.accessory.a.luk:0);}
 
 function lvlUp(){while(P.exp>=xpN(P.level)){P.exp-=xpN(P.level);P.level++;P.maxHp+=12;P.maxMp+=4;P.hp=gHP();P.mp=gMP();P.atk+=2;P.def+=1;P.spd+=1;P.luk+=1;bl(`<span class="bv">🎉 Lv.${P.level}！能力提升！</span>`);}}
 
@@ -499,7 +660,7 @@ function renderB(){
 }
 
 function saveD(){localStorage.setItem('octopath',JSON.stringify({P,fl,steps}));}
-function loadD(){const d=localStorage.getItem('octopath');if(d){const da=JSON.parse(d);P={...P,...da.P};fl=da.fl;steps=da.steps||0;}}
+function loadD(){const d=localStorage.getItem('octopath');if(d){const da=JSON.parse(d);P={...P,...da.P,weapon:P.weapon||da.P.weapon,armor:P.armor||da.P.armor,accessory:P.accessory||da.P.accessory};fl=da.fl;steps=da.steps||0;if(P.armor)P.maxHp+=P.armor.a.hp;}}
 
 function startG(){
   document.getElementById('so').style.display='none';
@@ -518,7 +679,11 @@ document.addEventListener('keydown',e=>{
   if(e.key==='s'||e.key==='S'||e.key==='ArrowDown')move(0,1);
   if(e.key==='a'||e.key==='A'||e.key==='ArrowLeft')move(-1,0);
   if(e.key==='d'||e.key==='D'||e.key==='ArrowRight')move(1,0);
+  if(e.key==='u'||e.key==='U'){if(shopOpen)closeShop();else openShop();}
+  if(e.key==='Escape'&&shopOpen)closeShop();
 });
+
+document.getElementById('shp-close').onclick=closeShop;
 
 function loop(){updParts();requestAnimationFrame(loop);}
 loop();
