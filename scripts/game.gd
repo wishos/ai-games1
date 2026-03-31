@@ -100,6 +100,9 @@ const SHOP_POTIONS = [
 	{"name": "大蓝药",  "heal_hp": 0,  "heal_mp": 80, "price": 100, "icon": "💘"},
 ]
 
+# 音频管理器
+var audio_manager: Node
+
 # 调色板 (Octopath风格)
 const PALETTE = {
 	"sky_top": Color("#1a1528"),
@@ -124,7 +127,16 @@ func _ready():
 	particle_container = Node2D.new()
 	particle_container.name = "ParticleContainer"
 	add_child(particle_container)
+	# 初始化音频管理器
+	_setup_audio()
 	_show_title_screen()
+
+func _setup_audio():
+	audio_manager = preload("res://scripts/audio_manager.gd").new()
+	audio_manager.name = "AudioManager"
+	add_child(audio_manager)
+	# 播放标题音乐
+	audio_manager.play_bgm("title")
 
 func _show_title_screen():
 	# 全屏背景
@@ -291,6 +303,9 @@ func _on_job_selected(job_id: int):
 	_setup_player()
 	game_state = State.EXPLORE
 	_update_minimap()  # 初始化小地图
+	# 切换到探索BGM
+	if audio_manager:
+		audio_manager.play_bgm("explore")
 	print("八方旅人 - Octopath Adventure 已启动!")
 	print("当前职业: " + player_data.get_job_name())
 	print("技能: " + str(player_data.skills))
@@ -1242,6 +1257,8 @@ func _open_shop():
 		minimap_container.visible = false
 	_create_shop_ui()
 	show_message("欢迎光临商店！")
+	if audio_manager:
+		audio_manager.play_bgm("shop")
 
 func _close_shop():
 	if shop_ui != null:
@@ -1255,6 +1272,8 @@ func _close_shop():
 	if minimap_container:
 		minimap_container.visible = true
 	show_message("下次再来！")
+	if audio_manager:
+		audio_manager.play_bgm("explore")
 
 func _process_shop(delta):
 	if Input.is_action_pressed("ui_cancel"):
@@ -1557,6 +1576,8 @@ func _on_shop_item_clicked(item: Dictionary):
 			2: # 饰品
 				player_data.accessory = item
 		show_message("购买了 %s 并装备！" % item["name"])
+	if audio_manager:
+		audio_manager.play_sfx("purchase")
 	
 	# 更新商店UI金币显示
 	var shop_panel = shop_ui.get_node_or_null("ShopPanel")
@@ -1608,6 +1629,12 @@ func _start_battle():
 	
 	show_message("遭遇了 " + current_enemy["name"] + "！")
 	_create_battle_ui()
+	# 切换到战斗BGM
+	if audio_manager:
+		if current_floor >= 7 or current_enemy["name"] == "远古巨龙":
+			audio_manager.play_bgm("boss")
+		else:
+			audio_manager.play_bgm("battle")
 	
 	# 重置召唤师状态
 	resonance_stacks = 0
@@ -2167,6 +2194,8 @@ func _on_skill_selected(skill_name: String):
 	_update_enemy_hp_bar()
 	_update_battle_player_ui()
 	_check_battle_end()
+	if audio_manager:
+		audio_manager.play_sfx("skill")
 	if game_state == State.BATTLE:
 		await get_tree().create_timer(0.4).timeout
 		_end_player_turn()
@@ -2276,6 +2305,8 @@ func _process_battle(delta: float):
 	e_dmg = max(1, e_dmg)
 	player_data.hp -= e_dmg
 	_battle_add_log("👹 %s 攻击！造成 %d 伤害" % [current_enemy["name"], e_dmg])
+	if audio_manager:
+		audio_manager.play_sfx("hit")
 	_update_battle_player_ui()
 	
 	if player_data.hp <= 0:
@@ -2298,6 +2329,11 @@ func _on_attack():
 	var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 	current_enemy["hp"] -= dmg
 	_battle_add_log("⚔️ 攻击！%s造成 %d 伤害" % ("暴击！" if is_crit else "", dmg))
+	if audio_manager:
+		if is_crit:
+			audio_manager.play_sfx("crit")
+		else:
+			audio_manager.play_sfx("attack")
 	_enemy_hit_effect()
 	_update_enemy_hp_bar()
 	_update_battle_player_ui()
@@ -2327,6 +2363,9 @@ func _on_flee():
 		game_state = State.EXPLORE
 		is_player_turn = true
 		show_message("逃离了战斗...")
+		if audio_manager:
+			audio_manager.play_sfx("flee")
+			audio_manager.play_bgm("explore")
 	else:
 		_battle_add_log("❌ 逃跑失败！")
 		is_player_turn = false
@@ -2383,6 +2422,11 @@ func _check_battle_end() -> bool:
 		_close_battle_ui()
 		game_state = State.EXPLORE
 		is_player_turn = true
+		# 播放胜利BGM并切换回探索
+		if audio_manager:
+			audio_manager.play_bgm("victory")
+			await get_tree().create_timer(4.0).timeout
+			audio_manager.play_bgm("explore")
 		show_message("击败了 %s！获得 %d EXP" % [current_enemy["name"], exp_gain])
 		return true
 	if player_data.hp <= 0:
@@ -2404,6 +2448,8 @@ func _exp_check():
 		player_data.spd += 1
 		player_data.luk += 1
 		_battle_add_log("⬆️ 升级！Lv.%d → Lv.%d" % [player_data.level - 1, player_data.level])
+		if audio_manager:
+			audio_manager.play_sfx("levelup")
 	show_message("升级了！Lv.%d" % player_data.level)
 
 func _update_enemy_hp_bar():
@@ -2468,6 +2514,9 @@ func _game_over():
 	game_state = State.EXPLORE
 	is_player_turn = false
 	show_message("💀 游戏结束！按R重新开始...")
+	if audio_manager:
+		audio_manager.play_sfx("death")
+		audio_manager.play_bgm("explore")
 	# 简单重置
 	player_data.hp = player_data.max_hp
 	player_data.mp = player_data.max_mp
