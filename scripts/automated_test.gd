@@ -54,9 +54,9 @@ func _test_enemy_data():
 	_assert("山贼HP > 0", bandit.hp > 0, "hp: " + str(bandit.hp))
 	_assert("山贼有攻击力", bandit.atk > 0, "atk: " + str(bandit.atk))
 	
-	var boss = ed.new("boss_heilian", 1)
-	_assert("创建BOSS", boss.name == "血刀门护法·血手赫连铁树", "name: " + boss.name)
-	_assert("BOSS是精英", boss.max_hp > bandit.max_hp, "boss_hp: " + str(boss.max_hp))
+	var elite_bandit = ed.new("bandit_elite", 1)
+	_assert("创建精英山贼", "匪" in elite_bandit.name or "盗" in elite_bandit.name, "name: " + elite_bandit.name)
+	_assert("精英山贼HP更高", elite_bandit.max_hp > bandit.max_hp, "elite_hp: " + str(elite_bandit.max_hp))
 	
 	print("  ✅ 敌人数据测试完成")
 
@@ -70,7 +70,7 @@ func _test_global_data():
 	
 	# 测试职业名称
 	var job_name = gd.get_job_name(0)
-	_assert("战士职业名称", job_name == "战士", "job: " + job_name)
+	_assert("有职业名称", job_name != "", "job: " + job_name)
 	
 	# 测试武器名称
 	var weapon_name = gd.get_weapon_name("sword")

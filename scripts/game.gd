@@ -4106,7 +4106,7 @@ func _process_battle(delta: float):
 		_spawn_enemy_damage("%d" % total_poison, "poison", Vector2(20, -10))
 		poison_turns -= 1
 		_update_enemy_hp_bar()
-		if _check_battle_end():
+		if await _check_battle_end():
 			return
 	
 	# 流星火雨灼烧
@@ -4116,7 +4116,7 @@ func _process_battle(delta: float):
 		_spawn_enemy_damage("%d" % meteor_burn_dmg, "poison", Vector2(-20, -10))
 		meteor_burn_turns -= 1
 		_update_enemy_hp_bar()
-		if _check_battle_end():
+		if await _check_battle_end():
 			return
 	
 	# 霜冻领域减速效果
@@ -4151,7 +4151,7 @@ func _process_battle(delta: float):
 		if player_data.hp <= 0:
 			player_data.hp = 1  # 不会倒下，但很危险
 			_battle_add_log("💢 血之狂暴！濒死状态！")
-		if _check_battle_end():
+		if await _check_battle_end():
 			return
 	
 	# 战吼buff处理（回合开始时减少）
@@ -4221,7 +4221,7 @@ func _process_battle(delta: float):
 			contract_active = false
 			_battle_add_log("📜 契约诅咒结束")
 		_update_enemy_hp_bar()
-		if _check_battle_end():
+		if await _check_battle_end():
 			return
 	
 	# 猎人T2: 致命陷阱DOT
@@ -4231,7 +4231,7 @@ func _process_battle(delta: float):
 		_spawn_enemy_damage("%d" % hunter_trap_dot_dmg, "poison", Vector2(-10, -10))
 		hunter_trap_turns -= 1
 		_update_enemy_hp_bar()
-		if _check_battle_end():
+		if await _check_battle_end():
 			return
 	
 	# 盗贼T2: 淬毒利刃DOT
@@ -4241,7 +4241,7 @@ func _process_battle(delta: float):
 		_spawn_enemy_damage("%d" % thief_poison_dmg, "poison", Vector2(10, -10))
 		thief_poison_turns -= 1
 		_update_enemy_hp_bar()
-		if _check_battle_end():
+		if await _check_battle_end():
 			return
 	
 	# 召唤师T2: 灵魂连接DOT
@@ -4251,7 +4251,7 @@ func _process_battle(delta: float):
 		_spawn_enemy_damage("%d" % summoner_soul_link_dmg, "debuff", Vector2(20, -10))
 		summoner_soul_link_turns -= 1
 		_update_enemy_hp_bar()
-		if _check_battle_end():
+		if await _check_battle_end():
 			return
 	
 	await get_tree().create_timer(0.5).timeout
@@ -4264,7 +4264,7 @@ func _process_battle(delta: float):
 		_battle_add_log("🪤 陷阱触发！敌人被困住，受到 %d 伤害！" % trap_dmg)
 		_spawn_enemy_damage("%d" % trap_dmg, "damage", Vector2(0, -30))
 		_update_enemy_hp_bar()
-		if _check_battle_end():
+		if await _check_battle_end():
 			return
 		await get_tree().create_timer(0.4).timeout
 		_start_player_turn()
@@ -4668,7 +4668,7 @@ func _on_attack():
 	_enemy_hit_effect()
 	_update_enemy_hp_bar()
 	_update_battle_player_ui()
-	if _check_battle_end():
+	if await _check_battle_end():
 		return
 	await get_tree().create_timer(0.4).timeout
 	_process_battle(0)
@@ -4744,7 +4744,7 @@ func _on_item():
 	else:
 		_battle_add_log("状态已经是满的！")
 
-func _check_battle_end() -> bool:
+async func _check_battle_end() -> bool:
 	if current_enemy["hp"] <= 0:
 		var exp_gain = current_enemy["exp"]
 		var gold_gain = current_enemy["gold"]
