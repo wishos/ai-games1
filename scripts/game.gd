@@ -1,8 +1,8 @@
 extends Node2D
 
 # 游戏状态
-enum State { TITLE, EXPLORE, BATTLE, DIALOG, SHOP }
-var game_state = State.TITLE
+enum State { TITLE, EXPLORE, BATTLE, DIALOG, SHOP, CLASS_SELECT }
+var game_state = State.CLASS_SELECT
 
 # 玩家数据
 var player_data: PlayerData
