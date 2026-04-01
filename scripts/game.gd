@@ -2624,7 +2624,11 @@ func _set_circle_line(img: Image, cx: int, cy: int, r: int, col: Color, thick: i
 		for y in range(cy-r-1, cy+r+2):
 			var dist = sqrt(pow(x-cx, 2) + pow(y-cy, 2))
 			if abs(dist - r) <= thick:
+				img.set_pixel(x, y, col)
 
+
+
+func _create_action_button(text: String, pos: Vector2) -> Button:
 	var btn = Button.new()
 	btn.text = text
 	btn.position = pos

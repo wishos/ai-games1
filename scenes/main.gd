@@ -1009,7 +1009,16 @@ func _create_player():
 	entity_layer.add_child(player)
 
 func _create_player_texture() -> ImageTexture:
-	var img = Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	# 16帧精灵图：4行(方向) x 4列(动画帧)
+	# 每帧32x32像素，间距2px
+	var frame_w = 28
+	var frame_h = 32
+	var padding = 2
+	var cols = 4
+	var rows = 4
+	var img_w = cols * (frame_w + padding) + padding
+	var img_h = rows * (frame_h + padding) + padding
+	var img = Image.create(img_w, img_h, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
 	
 	var job = GlobalData.player_data.get("job", 0)
@@ -1017,7 +1026,7 @@ func _create_player_texture() -> ImageTexture:
 	var armor = PALETTE.hero_armor
 	var skin = PALETTE.hero_skin
 	var hair = Color("#3a2a1a")
-	var sword = Color("#c0c0c0")
+	var sword = Color("#d0d0d0")
 	var gold = PALETTE.gold
 	
 	# 根据职业调整颜色
@@ -1031,21 +1040,62 @@ func _create_player_texture() -> ImageTexture:
 		6: armor = Color(0.3, 0.5, 0.8) # 华山 - 蓝白
 		7: armor = Color(0.4, 0.8, 0.4) # 嵩山 - 寒绿
 	
-	# 身体
-	_set_pixel_box(img, 20, 24, 44, 52, armor)  # 身体
-	_set_pixel_box(img, 24, 20, 40, 23, cape)  # 披风领口
-	
-	# 头部
-	_set_pixel_box(img, 22, 8, 42, 20, skin)  # 脸
-	_set_pixel_box(img, 22, 4, 42, 8, hair)   # 头发
-	
-	# 眼睛
-	img.set_pixel(28, 12, Color.BLACK)
-	img.set_pixel(36, 12, Color.BLACK)
-	
-	# 武器
-	_set_pixel_line(img, 46, 16, 46, 48, sword)
-	img.set_pixel(46, 14, gold)
+	# 绘制每一帧
+	for row in range(rows):
+		for col in range(cols):
+			var ox = padding + col * (frame_w + padding)  # 帧原点在整图中的偏移
+			var oy = padding + row * (frame_h + padding)
+			
+			# === 行走动画的腿部偏移 ===
+			var leg_offset = 0
+			var bob_offset = 0
+			if col > 0:  # 帧0是站立
+				leg_offset = sin(col * PI / 2) * 2  # 腿部交替
+				bob_offset = abs(sin(col * PI)) * 1  # 身体上下颠
+			
+			# === 脚部 ===
+			# 左脚
+			_set_pixel_box(img, ox + 6 - leg_offset, oy + 26, ox + 11 - leg_offset, oy + 31, Color(0.2, 0.15, 0.1))
+			# 右脚
+			_set_pixel_box(img, ox + 17 + leg_offset, oy + 26, ox + 22 + leg_offset, oy + 31, Color(0.2, 0.15, 0.1))
+			
+			# === 腿部 ===
+			_set_pixel_box(img, ox + 7, oy + 20 + bob_offset, ox + 12, oy + 26, armor)
+			_set_pixel_box(img, ox + 16, oy + 20 + bob_offset, ox + 21, oy + 26, armor)
+			
+			# === 身体/盔甲 ===
+			_set_pixel_box(img, ox + 5, oy + 10 + bob_offset, ox + 23, oy + 22, armor)
+			
+			# === 披风/背部 ===
+			_set_pixel_box(img, ox + 2, oy + 12 + bob_offset, ox + 6, oy + 24, cape)
+			
+			# === 头部 ===
+			_set_pixel_box(img, ox + 7, oy + 2, ox + 21, oy + 11, skin)  # 脸
+			_set_pixel_box(img, ox + 7, oy, ox + 21, oy + 3, hair)  # 头发
+			
+			# === 眼睛 ===
+			img.set_pixel(ox + 11, oy + 6, Color.BLACK)
+			img.set_pixel(ox + 17, oy + 6, Color.BLACK)
+			# 眼睛高光
+			img.set_pixel(ox + 12, oy + 5, Color.WHITE)
+			img.set_pixel(ox + 18, oy + 5, Color.WHITE)
+			
+			# === 武器（剑）===
+			# 剑身 - 根据方向稍有变化
+			_set_pixel_line(img, ox + 24, oy + 8 + bob_offset, ox + 26, oy + 24 + bob_offset, sword)
+			img.set_pixel(ox + 25, oy + 7 + bob_offset, gold)  # 剑柄顶
+			
+			# === 根据方向调整 ===
+			# row 0=下, row 1=上, row 2=左, row 3=右
+			if row == 0:  # 向下看 - 剑放右侧
+				pass
+			elif row == 1:  # 向上看 - 剑放左侧
+				_set_pixel_line(img, ox + 2, oy + 8 + bob_offset, ox + 4, oy + 24 + bob_offset, sword)
+				img.set_pixel(ox + 3, oy + 7 + bob_offset, gold)
+			elif row == 2:  # 向左 - 身体稍侧
+				_set_pixel_box(img, ox + 3, oy + 10 + bob_offset, ox + 25, oy + 22, armor)
+			elif row == 3:  # 向右 - 身体稍侧
+				_set_pixel_box(img, ox + 3, oy + 10 + bob_offset, ox + 25, oy + 22, armor)
 	
 	var tex = ImageTexture.create_from_image(img)
 	return tex
@@ -1250,6 +1300,111 @@ func _update_fog_around_player():
 						var alpha = max(0.0, 0.95 - (dist / radius) * 0.9)
 						fog.color = Color(0.02, 0.02, 0.05, alpha)
 
+func _create_minimap():
+	var map_panel = Panel.new()
+	map_panel.name = "MinimapPanel"
+	map_panel.position = Vector2(1070, 10)
+	map_panel.size = Vector2(200, 200)
+	map_panel.self_modulate = Color(0.02, 0.02, 0.05, 0.88)
+	map_panel.add_theme_stylebox_override("panel", _create_panel_style())
+	ui_layer.add_child(map_panel)
+	
+	# 地图标题
+	var map_title = Label.new()
+	map_title.position = Vector2(0, 2)
+	map_title.size = Vector2(200, 18)
+	map_title.text = "─ 小地图 ─"
+	map_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	map_title.add_theme_color_override("font_color", PALETTE.gold)
+	map_title.add_theme_font_size_override("font_size", 11)
+	map_panel.add_child(map_title)
+	
+	# 地图画布
+	var map_canvas = ColorRect.new()
+	map_canvas.name = "MapCanvas"
+	map_canvas.position = Vector2(10, 22)
+	map_canvas.size = Vector2(180, 168)
+	map_canvas.color = Color(0.02, 0.04, 0.08, 0.95)
+	map_panel.add_child(map_canvas)
+	
+	# 地图内容层
+	var map_content = Node2D.new()
+	map_content.name = "MapContent"
+	map_panel.add_child(map_content)
+	
+	# 地图缩放比例 (场景 1280x720 -> 小地图 180x168)
+	var map_scale_x = 180.0 / 1280.0
+	var map_scale_y = 168.0 / 720.0
+	
+	# 绘制场景元素到小地图
+	_draw_minimap_elements(map_content, map_scale_x, map_scale_y)
+	
+	# 玩家位置点
+	var player_dot = ColorRect.new()
+	player_dot.name = "PlayerDot"
+	player_dot.size = Vector2(4, 4)
+	player_dot.color = Color(0.2, 0.9, 0.2, 1.0)
+	map_content.add_child(player_dot)
+
+func _draw_minimap_elements(container: Node2D, sx: float, sy: float):
+	# 绘制建筑（作为小方块）
+	var buildings = [
+		{"x": 100, "y": 150, "w": 120, "h": 200},
+		{"x": 300, "y": 100, "w": 150, "h": 250},
+		{"x": 500, "y": 180, "w": 100, "h": 170},
+		{"x": 700, "y": 120, "w": 130, "h": 230},
+		{"x": 900, "y": 160, "w": 110, "h": 190},
+		{"x": 1050, "y": 140, "w": 140, "h": 210}
+	]
+	
+	for b in buildings:
+		var bld = ColorRect.new()
+		bld.size = Vector2(max(b["w"] * sx, 3), max(b["h"] * sy, 3))
+		bld.position = Vector2(b["x"] * sx, (b["y"] - 200) * sy)
+		bld.color = Color(0.3, 0.25, 0.35, 0.7)  # 紫色建筑
+		container.add_child(bld)
+	
+	# 绘制路径
+	var path = ColorRect.new()
+	path.size = Vector2(200, 6)
+	path.position = Vector2(540 * sx, (400 - 200) * sy)
+	path.color = Color(0.5, 0.4, 0.3, 0.5)
+	container.add_child(path)
+	
+	# 绘制NPC标记
+	for npc_data in current_scene_config.get("npcs", []):
+		var dot = ColorRect.new()
+		dot.size = Vector2(3, 3)
+		dot.position = Vector2(npc_data["pos"].x * sx - 1.5, (npc_data["pos"].y - 200) * sy - 1.5)
+		dot.color = PALETTE.gold
+		container.add_child(dot)
+
+func _update_minimap():
+	var map_panel = ui_layer.get_node_or_null("MinimapPanel")
+	if not map_panel:
+		return
+	
+	var map_content = map_panel.get_node_or_null("MapContent")
+	if not map_content:
+		return
+	
+	var player_dot = map_content.get_node_or_null("PlayerDot")
+	if player_dot and player:
+		# 地图缩放
+		var sx = 180.0 / 1280.0
+		var sy = 168.0 / 720.0
+		player_dot.position = Vector2(player.position.x * sx - 2, (player.position.y - 200) * sy - 2)
+	
+	# 更新NPC标记可见性（玩家靠近时高亮）
+	for npc in npcs:
+		if npc and player:
+			var dist = npc.position.distance_to(player.position)
+			for child in map_content.get_children():
+				if child.name.begins_with("NPC_"):
+					var npc_name = child.name.trim_prefix("NPC_")
+					if npc.name == npc_name:
+						child.modulate.a = 1.0 if dist < 150 else 0.4
+
 func _create_explore_ui():
 	for child in ui_layer.get_children():
 		if child.name != "ChapterOverlay" and child.name != "ChapterPanel":
@@ -1381,6 +1536,9 @@ func _create_explore_ui():
 	hint.add_theme_color_override("font_color", Color(0.4, 0.4, 0.45))
 	hint.add_theme_font_size_override("font_size", 11)
 	ui_layer.add_child(hint)
+	
+	# 小地图
+	_create_minimap()
 
 func _create_skill_bar():
 	var skill_panel = Panel.new()
@@ -1553,18 +1711,20 @@ func _process_explore(delta: float):
 			# 水平翻转跟随方向
 			player_sprite.flip_h = (velocity.x < 0)
 			
-			# 根据移动方向选择帧行
+			# 根据移动方向选择帧行（hframes=4, vframes=4）
+			# frame = row * hframes + col（行优先）
+			# 行0=下, 行1=上, 行2=侧面, 行3=背面
 			var frame_row = 0  # 默认向下
 			if velocity.y < 0:
-				frame_row = 3  # 向上
+				frame_row = 3  # 向上（背面）
 			elif velocity.y > 0:
-				frame_row = 0  # 向下
+				frame_row = 0  # 向下（正面）
 			elif velocity.x != 0:
-				frame_row = 1  # 侧面（行走）
+				frame_row = 2  # 侧面行走
 			
-			# 行走动画帧
-			var anim_frame = (int(Time.get_ticks_msec() / 180) % 2)
-			player_sprite.frame = frame_row * 4 + anim_frame
+			# 行走动画帧（4帧循环，但只用前3帧+站立）
+			var anim_t = int(Time.get_ticks_msec() / 160) % 4
+			player_sprite.frame = frame_row * 4 + anim_t
 		
 		# 更新迷雾
 		_update_fog_around_player()
@@ -1576,11 +1736,11 @@ func _process_explore(delta: float):
 			# 根据最后朝向选择站立帧
 			var idle_frame = 0
 			if player_direction.y < 0:
-				idle_frame = 12  # 向上
+				idle_frame = 12  # 向上（背面）- row 3, col 0
 			elif player_direction.y > 0:
-				idle_frame = 0   # 向下
+				idle_frame = 0   # 向下（正面）
 			else:
-				idle_frame = 4   # 侧面
+				idle_frame = 8   # 侧面站立 - row 2, col 0
 			player_sprite.frame = idle_frame
 	
 	# 冲刺
@@ -1618,6 +1778,11 @@ func _update_camera(delta: float):
 	
 	var target_pos = player.position
 	main_camera.position = main_camera.position.lerp(target_pos, camera_smoothing)
+	
+	# 更新视差背景滚动
+	if parallax_bg:
+		# 计算相对于场景中心的偏移，让视差层移动
+		parallax_bg.scroll_offset = main_camera.position - Vector2(640, 360)
 	
 	# 更新God Rays位置跟随相机
 	if god_ray_container:
@@ -1733,17 +1898,55 @@ func _perform_attack():
 			pass
 
 func _create_attack_effect(pos: Vector2):
-	var effect = ColorRect.new()
-	effect.size = Vector2(40, 40)
-	effect.position = pos - Vector2(20, 20)
-	effect.color = Color(1, 1, 0.5, 0.7)
-	effect.modulate = Color(1, 1, 1, 1)
-	entity_layer.add_child(effect)
+	# 创建剑气/刀光特效
+	var slash = Node2D.new()
+	slash.position = pos
+	slash.name = "AttackSlash"
+	entity_layer.add_child(slash)
 	
-	# 动画淡出
+	# 多个刀光条纹
+	for i in range(5):
+		var ray = ColorRect.new()
+		ray.name = "SlashRay_%d" % i
+		var angle = (i - 2) * 15.0  # 散开的角度
+		var length = 30 + randi() % 20
+		ray.size = Vector2(length, 4)
+		ray.position = Vector2(-length/2, -2)
+		ray.color = Color(1.0, 0.9, 0.3, 0.8)
+		# 旋转
+		ray.rotation = deg_to_rad(angle)
+		slash.add_child(ray)
+	
+	# 中心闪光
+	var flash = ColorRect.new()
+	flash.name = "SlashFlash"
+	flash.size = Vector2(20, 20)
+	flash.position = Vector2(-10, -10)
+	flash.color = Color(1.0, 1.0, 0.8, 0.9)
+	slash.add_child(flash)
+	
+	# 动画
 	var tween = create_tween()
-	tween.tween_property(effect, "modulate:a", 0.0, 0.2)
-	tween.tween_callback(effect.queue_free)
+	for child in slash.get_children():
+		tween.parallel().tween_property(child, "modulate:a", 0.0, 0.15 + i * 0.02)
+		tween.parallel().tween_property(child, "scale", Vector2(1.5, 1.5), 0.15 + i * 0.02)
+	tween.tween_callback(slash.queue_free)
+	
+	# 同时播放冲击波
+	_create_impact_wave(pos)
+
+func _create_impact_wave(pos: Vector2):
+	var wave = ColorRect.new()
+	wave.name = "ImpactWave"
+	wave.size = Vector2(30, 30)
+	wave.position = pos - Vector2(15, 15)
+	wave.color = Color(1.0, 0.8, 0.2, 0.6)
+	entity_layer.add_child(wave)
+	
+	var tween = create_tween()
+	tween.tween_property(wave, "size", Vector2(80, 80), 0.2)
+	tween.tween_property(wave, "modulate:a", 0.0, 0.2)
+	tween.tween_callback(wave.queue_free)
 
 # ==================== 对话系统 ====================
 
