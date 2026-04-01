@@ -35,6 +35,10 @@ var resonance_stacks: int = 0  # 共鸣积累层数
 var silenced: bool = false     # 沉默标记
 var vanish_turns: int = 0      # 消失buff回合数
 
+# 技能冷却系统
+var skill_cooldowns: Dictionary = {}  # {skill_name: remaining_turns}
+var battle_started: bool = false     # 战斗是否已开始（用于陷阱被动）
+
 # 相机抖动
 var camera_shake_intensity: float = 0.0
 var camera_shake_duration: float = 0.0
@@ -1920,6 +1924,9 @@ func _start_battle():
 	
 	show_message("遭遇了 " + current_enemy["name"] + "！")
 	_create_battle_ui()
+	# 重置技能冷却
+	skill_cooldowns.clear()
+	battle_started = true
 	# 切换到战斗BGM
 	if audio_manager:
 		if current_floor >= 7 or current_enemy["name"] == "远古巨龙":
@@ -1966,6 +1973,9 @@ func _start_boss_battle():
 	
 	show_message("⚠️ Boss战: " + current_enemy["name"] + "！")
 	_create_battle_ui()
+	# 重置技能冷却
+	skill_cooldowns.clear()
+	battle_started = true
 	if audio_manager:
 		audio_manager.play_bgm("boss")
 	
@@ -2135,6 +2145,14 @@ func _create_battle_ui():
 	status_label.add_theme_color_override("font_color", Color(0.5, 1, 0.5))
 	player_panel.add_child(status_label)
 	
+	# 技能冷却显示
+	var cd_label = Label.new()
+	cd_label.position = Vector2(20, 200)
+	cd_label.name = "CDLabel"
+	cd_label.text = ""
+	cd_label.add_theme_color_override("font_color", Color(0.8, 0.5, 0.2))
+	player_panel.add_child(cd_label)
+	
 	# 技能列表
 	var skill_list_label = Label.new()
 	skill_list_label.position = Vector2(20, 130)
@@ -2278,6 +2296,29 @@ func _create_enemy_texture(col: Color) -> ImageTexture:
 	return texture
 
 var _skill_menu_open: bool = false
+
+# 技能冷却数据（回合数，0=无冷却）
+var _SKILL_COOLDOWNS: Dictionary = {
+	# 战士
+	"猛击": 1, "防御": 0, "冲锋": 3,
+	# 法师
+	"火球": 1, "冰霜": 1, "闪电": 2,
+	# 猎人
+	"狙击": 1, "陷阱": 0, "毒箭": 2,
+	# 盗贼
+	"背刺": 1, "暗影": 2, "消失": 4,
+	# 牧师
+	"治疗": 2, "护盾": 3, "复活": 6,
+	# 骑士
+	"格挡": 1, "斩击": 1, "神圣": 3,
+	# 吟游诗人
+	"鼓舞": 3, "旋律": 3, "沉默": 3,
+	# 召唤师
+	"召唤": 3, "契约": 4, "共鸣": 2
+}
+
+func _get_skill_cooldown(skill: String) -> int:
+	return _SKILL_COOLDOWNS.get(skill, 1)
 var _skill_menu_buttons: Array = []
 
 func _on_skill_menu():
@@ -2316,25 +2357,43 @@ func _on_skill_menu():
 	var skill_idx = 0
 	for skill in player_data.skills:
 		var cost = mp_cost.get(skill, 0)
-		var can_use = player_data.mp >= cost
+		var cd_remaining = skill_cooldowns.get(skill, 0)
+		var cd_total = _get_skill_cooldown(skill)
+		var can_use = player_data.mp >= cost and cd_remaining <= 0
 		var row = skill_idx / 2
 		var col = skill_idx % 2
 		var sx = 15 + col * 140
 		var sy = 45 + row * 55
 		var sbtn = Button.new()
-		sbtn.text = skill + " (MP:" + str(cost) + ")"
+		var cd_text = ""
+		if cd_total > 0:
+			if cd_remaining > 0:
+				cd_text = " [CD:%d]" % cd_remaining
+			else:
+				cd_text = " [OK]"
+		sbtn.text = skill + " (MP:" + str(cost) + ")" + cd_text
 		sbtn.position = Vector2(sx, sy)
 		sbtn.size = Vector2(130, 48)
 		sbtn.add_theme_font_size_override("font_size", 13)
 		var sstyle = StyleBoxFlat.new()
 		sstyle.bg_color = Color(0.08, 0.08, 0.12, 0.95)
-		sstyle.border_color = PALETTE.gold if can_use else Color(0.3, 0.3, 0.3)
+		if cd_remaining > 0:
+			sstyle.border_color = Color(0.5, 0.1, 0.1)  # 深红色=冷却中
+		elif can_use:
+			sstyle.border_color = PALETTE.gold
+		else:
+			sstyle.border_color = Color(0.3, 0.3, 0.3)
 		sstyle.border_width_left = 1; sstyle.border_width_top = 1
 		sstyle.border_width_right = 1; sstyle.border_width_bottom = 1
 		sstyle.corner_radius_top_left = 3; sstyle.corner_radius_top_right = 3
 		sstyle.corner_radius_bottom_right = 3; sstyle.corner_radius_bottom_left = 3
 		sbtn.add_theme_stylebox_override("normal", sstyle)
-		sbtn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.75) if can_use else Color(0.35, 0.35, 0.35))
+		if cd_remaining > 0:
+			sbtn.add_theme_color_override("font_color", Color(0.5, 0.2, 0.2))  # 红色=冷却中
+		elif can_use:
+			sbtn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.75))
+		else:
+			sbtn.add_theme_color_override("font_color", Color(0.35, 0.35, 0.35))  # 灰色=MP不足
 		if can_use:
 			sbtn.pressed.connect(_on_skill_selected.bind(skill))
 		menu_panel.add_child(sbtn)
@@ -2371,6 +2430,13 @@ func _on_skill_selected(skill_name: String):
 		return
 	player_data.mp -= cost
 	pending_skill_index = -1
+	
+	# 检查冷却
+	var cd = _get_skill_cooldown(skill_name)
+	if cd > 0 and skill_cooldowns.get(skill_name, 0) > 0:
+		player_data.mp += cost  #  refunded
+		_battle_add_log("⚠️ %s 冷却中（还需%d回合）！" % [skill_name, skill_cooldowns[skill_name]])
+		return
 	
 	match skill_name:
 		# 战士
@@ -2522,6 +2588,10 @@ func _on_skill_selected(skill_name: String):
 	_update_enemy_hp_bar()
 	_update_battle_player_ui()
 	_check_battle_end()
+	# 应用冷却
+	var cd_to_set = _get_skill_cooldown(skill_name)
+	if cd_to_set > 0:
+		skill_cooldowns[skill_name] = cd_to_set
 	if audio_manager:
 		audio_manager.play_sfx("skill")
 	if game_state == State.BATTLE:
@@ -2944,6 +3014,11 @@ func _show_boss_phase_announcement(text: String):
 
 func _start_player_turn():
 	is_player_turn = true
+	# 递减所有技能冷却
+	for skill in skill_cooldowns.keys():
+		skill_cooldowns[skill] -= 1
+		if skill_cooldowns[skill] <= 0:
+			skill_cooldowns.erase(skill)
 	_update_battle_player_ui()
 
 func _on_attack():
@@ -3194,6 +3269,13 @@ func _update_battle_player_ui():
 			if contract_active: parts.append("📜契约×%d" % contract_turns)
 			if resonance_stacks > 0: parts.append("⚡共鸣×%d" % resonance_stacks)
 			status_lbl.text = " ".join(parts) if parts.size() > 0 else ""
+		# 更新技能冷却显示
+		var cd_lbl = player_panel.get_node_or_null("CDLabel")
+		if cd_lbl:
+			var cd_parts = []
+			for skill in skill_cooldowns:
+				cd_parts.append("%s:%d" % [skill, skill_cooldowns[skill]])
+			cd_lbl.text = "⏱️冷却: " + (", ".join(cd_parts) if cd_parts.size() > 0 else "无")
 
 func _battle_add_log(msg: String):
 	if battle_log:
