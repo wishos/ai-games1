@@ -416,6 +416,35 @@ function drawBG(){
     const by=h*0.2+Math.random()*h*0.15;
     drawBird(ctx,bx,by);
   }
+  
+  // Light rays (god rays from sun)
+  const sx=w*0.72,sy=h*0.15;
+  const rayCount=5;
+  ctx.save();
+  for(let i=0;i<rayCount;i++){
+    const angle=(i/(rayCount-1)-0.5)*0.8+0.2;
+    const rayLen=h*1.2;
+    const grad=ctx.createLinearGradient(sx,sy,sx+Math.sin(angle)*rayLen,sy+Math.cos(angle)*rayLen);
+    grad.addColorStop(0,'rgba(255,240,180,0.25)');
+    grad.addColorStop(0.3,'rgba(255,220,140,0.12)');
+    grad.addColorStop(0.6,'rgba(255,200,100,0.05)');
+    grad.addColorStop(1,'transparent');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.moveTo(sx-5,sy);
+    ctx.lineTo(sx+5,sy);
+    ctx.lineTo(sx+Math.sin(angle)*rayLen+30,sy+Math.cos(angle)*rayLen);
+    ctx.lineTo(sx+Math.sin(angle)*rayLen-30,sy+Math.cos(angle)*rayLen);
+    ctx.fill();
+  }
+  // Extra soft central glow
+  const glowGrad=ctx.createRadialGradient(sx,sy,0,sx,sy+50,200);
+  glowGrad.addColorStop(0,'rgba(255,240,180,0.15)');
+  glowGrad.addColorStop(0.5,'rgba(255,220,140,0.08)');
+  glowGrad.addColorStop(1,'transparent');
+  ctx.fillStyle=glowGrad;
+  ctx.fillRect(0,0,w,h);
+  ctx.restore();
 }
 
 function drawTree(ctx,x,y,scale,type){

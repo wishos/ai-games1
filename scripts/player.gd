@@ -28,7 +28,10 @@ var armor: Dictionary = {}
 var accessory: Dictionary = {}
 
 # 背包
-var inventory: Array = [{"type": "potion", "count": 2}]
+var inventory: Array = [
+	{"type": "小血药", "count": 2, "heal_hp": 30, "heal_mp": 0},
+	{"type": "小蓝药", "count": 1, "heal_hp": 0, "heal_mp": 30}
+]
 
 func _init():
 	_setup_job_skills()
