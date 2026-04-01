@@ -34,6 +34,11 @@ var contract_turns: int = 0   # 契约剩余回合
 var resonance_stacks: int = 0  # 共鸣积累层数
 var silenced: bool = false     # 沉默标记
 var vanish_turns: int = 0      # 消失buff回合数
+var berserk_turns: int = 0      # 血之狂暴buff回合数
+var berserk_atk_boost: int = 0  # 狂暴ATK加成值
+var battle_cry_turns: int = 0   # 战吼buff回合数
+var battle_cry_atk_boost: int = 0  # 战吼自身ATK加成
+var battle_cry_team_boost: int = 0  # 战吼队友ATK加成（对玩家=自身）
 
 # 技能冷却系统
 var skill_cooldowns: Dictionary = {}  # {skill_name: remaining_turns}
@@ -1902,6 +1907,11 @@ func _start_battle():
 	trapped = false
 	enemy_stun_turns = 0
 	vanish_turns = 0
+	berserk_turns = 0
+	berserk_atk_boost = 0
+	battle_cry_turns = 0
+	battle_cry_atk_boost = 0
+	battle_cry_team_boost = 0
 	
 	# 生成敌人
 	var enemy_types = ["slime", "skeleton", "demon"]
@@ -1960,6 +1970,11 @@ func _start_boss_battle():
 	trapped = false
 	enemy_stun_turns = 0
 	vanish_turns = 0
+	berserk_turns = 0
+	berserk_atk_boost = 0
+	battle_cry_turns = 0
+	battle_cry_atk_boost = 0
+	battle_cry_team_boost = 0
 	resonance_stacks = 0
 	contract_active = false
 	contract_turns = 0
@@ -2778,23 +2793,32 @@ var _skill_menu_open: bool = false
 
 # 技能冷却数据（回合数，0=无冷却）
 var _SKILL_COOLDOWNS: Dictionary = {
-	# 战士
+	# 战士 T1
 	"猛击": 1, "防御": 0, "冲锋": 3,
-	# 法师
+	# 战士 T2 (狂战士路线)
+	"血之狂暴": 4, "旋风斩": 3, "战吼": 3,
+	# 法师 T1
 	"火球": 1, "冰霜": 1, "闪电": 2,
-	# 猎人
+	# 猎人 T1
 	"狙击": 1, "陷阱": 0, "毒箭": 2,
-	# 盗贼
+	# 盗贼 T1
 	"背刺": 1, "暗影": 2, "消失": 4,
-	# 牧师
+	# 牧师 T1
 	"治疗": 2, "护盾": 3, "复活": 6,
-	# 骑士
+	# 骑士 T1
 	"格挡": 1, "斩击": 1, "神圣": 3,
-	# 吟游诗人
+	# 吟游诗人 T1
 	"鼓舞": 3, "旋律": 3, "沉默": 3,
-	# 召唤师
+	# 召唤师 T1
 	"召唤": 3, "契约": 4, "共鸣": 2
 }
+
+# 计算战斗中有效的攻击力（含buff加成）
+func _get_effective_atk() -> int:
+	var atk = player_data.attack_power()
+	atk += battle_cry_atk_boost  # 战吼ATK加成
+	atk += berserk_atk_boost     # 狂暴ATK加成
+	return atk
 
 func _get_skill_cooldown(skill: String) -> int:
 	return _SKILL_COOLDOWNS.get(skill, 1)
@@ -2824,6 +2848,7 @@ func _on_skill_menu():
 	
 	var mp_cost: Dictionary = {
 		"猛击": 10, "防御": 0, "冲锋": 20,
+		"血之狂暴": 15, "旋风斩": 25, "战吼": 15,
 		"火球": 15, "冰霜": 15, "闪电": 25,
 		"狙击": 10, "陷阱": 15, "毒箭": 20,
 		"背刺": 15, "暗影": 20, "消失": 25,
@@ -2838,7 +2863,11 @@ func _on_skill_menu():
 		var cost = mp_cost.get(skill, 0)
 		var cd_remaining = skill_cooldowns.get(skill, 0)
 		var cd_total = _get_skill_cooldown(skill)
-		var can_use = player_data.mp >= cost and cd_remaining <= 0
+		# T2技能需要Lv10
+		var t2_skills = ["血之狂暴", "旋风斩", "战吼"]
+		var is_t2 = t2_skills.has(skill)
+		var level_locked = is_t2 and player_data.level < 10
+		var can_use = player_data.mp >= cost and cd_remaining <= 0 and not level_locked
 		var row = skill_idx / 2
 		var col = skill_idx % 2
 		var sx = 15 + col * 140
@@ -2850,13 +2879,16 @@ func _on_skill_menu():
 				cd_text = " [CD:%d]" % cd_remaining
 			else:
 				cd_text = " [OK]"
-		sbtn.text = skill + " (MP:" + str(cost) + ")" + cd_text
+		var level_text = " Lv10" if is_t2 else ""
+		sbtn.text = skill + level_text + " (MP:" + str(cost) + ")" + cd_text
 		sbtn.position = Vector2(sx, sy)
 		sbtn.size = Vector2(130, 48)
 		sbtn.add_theme_font_size_override("font_size", 13)
 		var sstyle = StyleBoxFlat.new()
 		sstyle.bg_color = Color(0.08, 0.08, 0.12, 0.95)
-		if cd_remaining > 0:
+		if level_locked:
+			sstyle.border_color = Color(0.2, 0.2, 0.4)  # 深蓝色=等级不够
+		elif cd_remaining > 0:
 			sstyle.border_color = Color(0.5, 0.1, 0.1)  # 深红色=冷却中
 		elif can_use:
 			sstyle.border_color = PALETTE.gold
@@ -2867,7 +2899,9 @@ func _on_skill_menu():
 		sstyle.corner_radius_top_left = 3; sstyle.corner_radius_top_right = 3
 		sstyle.corner_radius_bottom_right = 3; sstyle.corner_radius_bottom_left = 3
 		sbtn.add_theme_stylebox_override("normal", sstyle)
-		if cd_remaining > 0:
+		if level_locked:
+			sbtn.add_theme_color_override("font_color", Color(0.25, 0.25, 0.5))  # 深蓝色=等级不够
+		elif cd_remaining > 0:
 			sbtn.add_theme_color_override("font_color", Color(0.5, 0.2, 0.2))  # 红色=冷却中
 		elif can_use:
 			sbtn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.75))
@@ -2895,6 +2929,7 @@ func _on_skill_selected(skill_name: String):
 	# 消耗MP
 	var mp_cost: Dictionary = {
 		"猛击": 10, "防御": 0, "冲锋": 20,
+		"血之狂暴": 15, "旋风斩": 25, "战吼": 15,
 		"火球": 15, "冰霜": 15, "闪电": 25,
 		"狙击": 10, "陷阱": 15, "毒箭": 20,
 		"背刺": 15, "暗影": 20, "消失": 25,
@@ -2920,7 +2955,7 @@ func _on_skill_selected(skill_name: String):
 	match skill_name:
 		# 战士
 		"猛击":
-			var dmg = int(player_data.attack_power() * 1.5 - current_enemy["def"] + randi() % 7 - 3)
+			var dmg = int(_get_effective_atk() * 1.5 - current_enemy["def"] + randi() % 7 - 3)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚔️ 猛击！造成 %d 伤害" % dmg)
@@ -2932,23 +2967,47 @@ func _on_skill_selected(skill_name: String):
 			player_data.mp = min(player_data.max_mp, player_data.mp + 5)
 			_battle_add_log("🛡️ 防御姿态！伤害减半，回复5MP")
 		"冲锋":
-			var dmg = int(player_data.attack_power() * 2.5 - current_enemy["def"] + randi() % 11 - 5)
+			var dmg = int(_get_effective_atk() * 2.5 - current_enemy["def"] + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			enemy_stun_turns = 1
 			_battle_add_log("🐎 冲锋！造成 %d 伤害，敌人眩晕！" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(0, -25))
+		# 战士 T2 (狂战士路线)
+		"血之狂暴":
+			berserk_turns = 3
+			berserk_atk_boost = int(_get_effective_atk() * 0.3)
+			_battle_add_log("💢 血之狂暴！ATK+30%，每回合自损10HP，持续3回合")
+			_spawn_player_damage("BERSERK!", "buff")
+		"旋风斩":
+			var hits = 2 + randi() % 3  # 2-4次攻击
+			var total_dmg = 0
+			for i in range(hits):
+				var hit_dmg = int(_get_effective_atk() * 1.2 - current_enemy["def"] + randi() % 7 - 3)
+				hit_dmg = max(1, hit_dmg)
+				current_enemy["hp"] -= hit_dmg
+				total_dmg += hit_dmg
+				await get_tree().create_timer(0.2).timeout
+			_battle_add_log("🌀 旋风斩！连续攻击%d次，造成 %d 伤害！" % [hits, total_dmg])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % total_dmg, "crit", Vector2(0, -35))
+		"战吼":
+			battle_cry_turns = 2
+			battle_cry_atk_boost = int(_get_effective_atk() * 0.4)
+			battle_cry_team_boost = int(_get_effective_atk() * 0.15)
+			_battle_add_log("📢 战吼！自身ATK+40%，持续2回合")
+			_spawn_player_damage("ATK+40%", "buff")
 		# 法师
 		"火球":
-			var dmg = int(player_data.attack_power() * 2.0 - current_enemy["def"] + randi() % 11 - 5)
+			var dmg = int(_get_effective_atk() * 2.0 - current_enemy["def"] + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("🔥 火球术！造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(randi()%20-10, -30))
 		"冰霜":
-			var dmg = int(player_data.attack_power() * 1.8 - current_enemy["def"] + randi() % 11 - 5)
+			var dmg = int(_get_effective_atk() * 1.8 - current_enemy["def"] + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			current_enemy["spd"] = max(1, current_enemy["spd"] - 2)
@@ -2956,7 +3015,7 @@ func _on_skill_selected(skill_name: String):
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(0, -20))
 		"闪电":
-			var dmg = int(player_data.attack_power() * 3.0 - current_enemy["def"] + randi() % 11 - 5)
+			var dmg = int(_get_effective_atk() * 3.0 - current_enemy["def"] + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚡ 闪电术！造成 %d 伤害" % dmg)
@@ -2964,14 +3023,14 @@ func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -35))
 		# 猎人
 		"狙击":
-			var dmg = int(player_data.attack_power() * 2.0 - current_enemy["def"] + randi() % 7 - 3)
+			var dmg = int(_get_effective_atk() * 2.0 - current_enemy["def"] + randi() % 7 - 3)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("🎯 狙击！必定命中，造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -30))
 		"毒箭":
-			var dmg = int(player_data.attack_power() * 1.5 - current_enemy["def"] + randi() % 7 - 3)
+			var dmg = int(_get_effective_atk() * 1.5 - current_enemy["def"] + randi() % 7 - 3)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			poison_stacks += 1
@@ -2983,14 +3042,14 @@ func _on_skill_selected(skill_name: String):
 		# 盗贼
 		"背刺":
 			var is_crit = randi() % 100 < player_data.luk * 3
-			var base_dmg = int(player_data.attack_power() * 2.2 - current_enemy["def"] + randi() % 7 - 3)
+			var base_dmg = int(_get_effective_atk() * 2.2 - current_enemy["def"] + randi() % 7 - 3)
 			var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("🗡️ 背刺！%s造成 %d 伤害" % ("暴击！" if is_crit else "", dmg))
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "crit" if is_crit else "damage", Vector2(randi()%15-7, -30 if is_crit else -20))
 		"暗影":
-			var dmg = int(player_data.attack_power() * 1.8)
+			var dmg = int(_get_effective_atk() * 1.8)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("💀 暗影攻击！无视防御，造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
@@ -3026,14 +3085,14 @@ func _on_skill_selected(skill_name: String):
 			_battle_add_log("⚔️ 格挡！伤害减少，护盾+%d" % player_shield)
 			_spawn_player_damage("+%d" % player_shield, "shield")
 		"斩击":
-			var dmg = int(player_data.attack_power() * 1.8 - current_enemy["def"] + randi() % 11 - 5)
+			var dmg = int(_get_effective_atk() * 1.8 - current_enemy["def"] + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚔️ 神圣斩击！造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg)
 		"神圣":
-			var dmg = int(player_data.attack_power() * 2.5 - current_enemy["def"] * 0.5 + randi() % 11 - 5)
+			var dmg = int(_get_effective_atk() * 2.5 - current_enemy["def"] * 0.5 + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			var heal = int(player_data.max_hp * 0.15)
@@ -3061,7 +3120,7 @@ func _on_skill_selected(skill_name: String):
 			_battle_add_log("🎵 沉默旋律！敌人无法使用技能2回合")
 		# 召唤师
 		"召唤":
-			var summon_dmg = int(player_data.attack_power() * 1.3 + player_data.luk * 2)
+			var summon_dmg = int(_get_effective_atk() * 1.3 + player_data.luk * 2)
 			current_enemy["hp"] -= summon_dmg
 			resonance_stacks += 1
 			_battle_add_log("🔥 召唤兽攻击！造成 %d 伤害（共鸣+%d层）" % [summon_dmg, resonance_stacks])
@@ -3070,7 +3129,7 @@ func _on_skill_selected(skill_name: String):
 		"契约":
 			contract_active = true
 			contract_turns = 3
-			var contract_dmg = int(player_data.attack_power() * 1.2)
+			var contract_dmg = int(_get_effective_atk() * 1.2)
 			current_enemy["hp"] -= contract_dmg
 			current_enemy["atk"] = max(1, int(current_enemy["atk"] * 0.7))
 			_battle_add_log("📜 契约诅咒！造成 %d 伤害，敌人ATK降至70%%，持续3回合" % contract_dmg)
@@ -3219,6 +3278,26 @@ func _process_battle(delta: float):
 		_update_enemy_hp_bar()
 		if _check_battle_end():
 			return
+	
+	# 血之狂暴debuff（每回合自损10HP）
+	if berserk_turns > 0:
+		player_data.hp -= 10
+		berserk_turns -= 1
+		_battle_add_log("💢 血之狂暴反噬！受到 10 伤害（剩余%d回合）" % berserk_turns)
+		_spawn_player_damage("-10", "debuff")
+		if player_data.hp <= 0:
+			player_data.hp = 1  # 不会倒下，但很危险
+			_battle_add_log("💢 血之狂暴！濒死状态！")
+		if _check_battle_end():
+			return
+	
+	# 战吼buff处理（回合开始时减少）
+	if battle_cry_turns > 0:
+		battle_cry_turns -= 1
+		if battle_cry_turns <= 0:
+			battle_cry_atk_boost = 0
+			battle_cry_team_boost = 0
+			_battle_add_log("📢 战吼效果结束")
 	
 	# 契约诅咒（生命吸取）
 	if contract_active:
@@ -3938,6 +4017,9 @@ func _update_battle_player_ui():
 			var parts = []
 			if player_defending: parts.append("🛡️防御")
 			if player_shield > 0: parts.append("护盾%d" % player_shield)
+			if vanish_turns > 0: parts.append("👤消失×%d" % vanish_turns)
+			if berserk_turns > 0: parts.append("💢狂暴×%d" % berserk_turns)
+			if battle_cry_turns > 0: parts.append("📢战吼×%d" % battle_cry_turns)
 			if poison_turns > 0: parts.append("☠️中毒×%d" % poison_stacks)
 			if contract_active: parts.append("📜契约×%d" % contract_turns)
 			if resonance_stacks > 0: parts.append("⚡共鸣×%d" % resonance_stacks)

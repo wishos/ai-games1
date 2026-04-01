@@ -39,7 +39,7 @@ func _init():
 func _setup_job_skills():
 	match job:
 		Job.WARRIOR:
-			skills = ["猛击", "防御", "冲锋"]
+			skills = ["猛击", "防御", "冲锋", "血之狂暴", "旋风斩", "战吼"]
 		Job.MAGE:
 			skills = ["火球", "冰霜", "闪电"]
 		Job.HUNTER:
