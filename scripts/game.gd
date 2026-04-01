@@ -1933,15 +1933,16 @@ func _create_item_button(item: Dictionary, pos: Vector2) -> Button:
 	btn.pressed.connect(_on_shop_item_clicked.bind(item))
 	return btn
 
+var _selected_shop_item: Dictionary = {}  # 当前选中的待购物品
+var _shop_compare_panel: Panel = null  # 比较面板
+
 func _on_shop_item_clicked(item: Dictionary):
-	if player_data.gold < item["price"]:
-		show_message("金钱不足！")
-		return
-	
-	player_data.gold -= item["price"]
-	
+	# 药水直接购买
 	if item.has("heal_hp"):
-		# 药水：加入背包
+		if player_data.gold < item["price"]:
+			show_message("金钱不足！")
+			return
+		player_data.gold -= item["price"]
 		var found = false
 		for inv in player_data.inventory:
 			if inv.get("type") == item["name"]:
@@ -1951,28 +1952,214 @@ func _on_shop_item_clicked(item: Dictionary):
 		if not found:
 			player_data.inventory.append({"type": item["name"], "count": 1, "heal_hp": item["heal_hp"], "heal_mp": item["heal_mp"]})
 		show_message("购买了 %s ×1" % item["name"])
-	else:
-		# 装备：直接穿上
-		match selected_shop_tab:
-			0: # 武器
-				player_data.weapon = item
-			1: # 防具
-				player_data.armor = item
-			2: # 饰品
-				player_data.accessory = item
-		show_message("购买了 %s 并装备！" % item["name"])
+		if audio_manager:
+			audio_manager.play_sfx("purchase")
+		# 更新商店UI
+		_update_shop_ui()
+		return
+	
+	# 装备：显示比较面板
+	if player_data.gold < item["price"]:
+		show_message("金钱不足！")
+		return
+	
+	_selected_shop_item = item
+	_show_equipment_compare_panel(item)
+
+func _show_equipment_compare_panel(item: Dictionary):
+	# 清除旧比较面板
+	if _shop_compare_panel and is_instance_valid(_shop_compare_panel):
+		_shop_compare_panel.queue_free()
+	
+	var shop_panel = shop_ui.get_node_or_null("ShopPanel")
+	if not shop_panel:
+		return
+	
+	_shop_compare_panel = Panel.new()
+	_shop_compare_panel.name = "ComparePanel"
+	_shop_compare_panel.position = Vector2(560, 130)
+	_shop_compare_panel.size = Vector2(210, 380)
+	_shop_compare_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
+	_shop_compare_panel.add_theme_stylebox_override("panel", _create_stylebox())
+	shop_panel.add_child(_shop_compare_panel)
+	
+	# 标题
+	var title = Label.new()
+	title.position = Vector2(15, 10)
+	title.text = "📊 属性对比"
+	title.add_theme_color_override("font_color", PALETTE.gold)
+	title.add_theme_font_size_override("font_size", 14)
+	_shop_compare_panel.add_child(title)
+	
+	# 当前装备
+	var current_item: Dictionary
+	match selected_shop_tab:
+		0: current_item = player_data.weapon
+		1: current_item = player_data.armor
+		2: current_item = player_data.accessory
+	
+	var current_name = "无" if current_item.size() == 0 else current_item.get("name", "???")
+	var new_name = item.get("name", "???")
+	
+	# 新装备名称
+	var new_lbl = Label.new()
+	new_lbl.position = Vector2(15, 38)
+	new_lbl.text = "▶ %s" % new_name
+	new_lbl.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+	new_lbl.add_theme_font_size_override("font_size", 12)
+	_shop_compare_panel.add_child(new_lbl)
+	
+	# 当前装备名称
+	var cur_lbl = Label.new()
+	cur_lbl.position = Vector2(15, 58)
+	cur_lbl.text = "  当前: %s" % current_name
+	cur_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	cur_lbl.add_theme_font_size_override("font_size", 11)
+	_shop_compare_panel.add_child(cur_lbl)
+	
+	# 属性对比
+	var y_pos = 90
+	var stats = [
+		{"key": "atk", "name": "ATK", "cur": player_data.atk, "wpn": current_item.get("atk", 0), "arm": 0, "acc": 0, "new": item.get("atk", 0)},
+		{"key": "def", "name": "DEF", "cur": player_data.def, "wpn": 0, "arm": current_item.get("def", 0), "acc": 0, "new": item.get("def", 0)},
+		{"key": "hp", "name": "HP", "cur": player_data.max_hp, "wpn": current_item.get("hp", 0), "arm": 0, "acc": current_item.get("hp", 0), "new": item.get("hp", 0)},
+		{"key": "spd", "name": "SPD", "cur": player_data.spd, "wpn": 0, "arm": 0, "acc": current_item.get("spd", 0), "new": item.get("spd", 0)},
+		{"key": "luk", "name": "LUK", "cur": player_data.luk, "wpn": 0, "arm": 0, "acc": current_item.get("luk", 0), "new": item.get("luk", 0)}
+	]
+	
+	# 计算当前总属性
+	var cur_atk_total = player_data.atk + current_item.get("atk", 0)
+	var cur_def_total = player_data.def + current_item.get("def", 0)
+	var cur_hp_total = player_data.max_hp + current_item.get("hp", 0)
+	var cur_spd_total = player_data.spd + current_item.get("spd", 0)
+	var cur_luk_total = player_data.luk + current_item.get("luk", 0)
+	
+	# 计算新装备后的总属性
+	var new_atk_total = player_data.atk + item.get("atk", 0)
+	var new_def_total = player_data.def + item.get("def", 0)
+	var new_hp_total = player_data.max_hp + item.get("hp", 0)
+	var new_spd_total = player_data.spd + item.get("spd", 0)
+	var new_luk_total = player_data.luk + item.get("luk", 0)
+	
+	var compare_stats = [
+		{"name": "ATK", "cur": cur_atk_total, "new": new_atk_total},
+		{"name": "DEF", "cur": cur_def_total, "new": new_def_total},
+		{"name": "HP", "cur": cur_hp_total, "new": new_hp_total},
+		{"name": "SPD", "cur": cur_spd_total, "new": new_spd_total},
+		{"name": "LUK", "cur": cur_luk_total, "new": new_luk_total}
+	]
+	
+	for stat in compare_stats:
+		var diff = stat["new"] - stat["cur"]
+		var stat_lbl = Label.new()
+		stat_lbl.position = Vector2(15, y_pos)
+		
+		var diff_str = ""
+		var diff_color = Color(0.7, 0.7, 0.6)
+		if diff > 0:
+			diff_str = " ↑+%d" % diff
+			diff_color = Color(0.3, 0.9, 0.3)
+		elif diff < 0:
+			diff_str = " ↓%d" % diff
+			diff_color = Color(0.9, 0.3, 0.3)
+		else:
+			diff_str = " ="
+			diff_color = Color(0.5, 0.5, 0.5)
+		
+		stat_lbl.text = "%s: %d%s" % [stat["name"], stat["cur"], diff_str]
+		stat_lbl.add_theme_color_override("font_color", diff_color)
+		stat_lbl.add_theme_font_size_override("font_size", 12)
+		_shop_compare_panel.add_child(stat_lbl)
+		y_pos += 24
+	
+	# 分割线
+	var sep = ColorRect.new()
+	sep.position = Vector2(15, y_pos + 5)
+	sep.size = Vector2(180, 1)
+	sep.color = PALETTE.gold * Color(0.3, 0.3, 0.3, 0.5)
+	_shop_compare_panel.add_child(sep)
+	y_pos += 20
+	
+	# 价格
+	var price_lbl = Label.new()
+	price_lbl.position = Vector2(15, y_pos)
+	price_lbl.text = "价格: %d 金币" % item["price"]
+	price_lbl.add_theme_color_override("font_color", PALETTE.gold if player_data.gold >= item["price"] else Color(0.9, 0.3, 0.3))
+	price_lbl.add_theme_font_size_override("font_size", 13)
+	_shop_compare_panel.add_child(price_lbl)
+	y_pos += 30
+	
+	# 确认购买按钮
+	var confirm_btn = Button.new()
+	confirm_btn.position = Vector2(15, y_pos)
+	confirm_btn.size = Vector2(180, 45)
+	confirm_btn.text = "✅ 确认购买"
+	var cstyle = StyleBoxFlat.new()
+	cstyle.bg_color = Color(0.1, 0.3, 0.1, 0.95)
+	cstyle.border_color = Color(0.3, 0.9, 0.3)
+	cstyle.border_width_left = 1; cstyle.border_width_top = 1
+	cstyle.border_width_right = 1; cstyle.border_width_bottom = 1
+	cstyle.corner_radius_top_left = 3; cstyle.corner_radius_top_right = 3
+	cstyle.corner_radius_bottom_right = 3; cstyle.corner_radius_bottom_left = 3
+	confirm_btn.add_theme_stylebox_override("normal", cstyle)
+	confirm_btn.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+	confirm_btn.add_theme_font_size_override("font_size", 14)
+	confirm_btn.pressed.connect(_confirm_equipment_purchase)
+	_shop_compare_panel.add_child(confirm_btn)
+	y_pos += 55
+	
+	# 取消按钮
+	var cancel_btn = Button.new()
+	cancel_btn.position = Vector2(15, y_pos)
+	cancel_btn.size = Vector2(180, 40)
+	cancel_btn.text = "❌ 取消"
+	var cstyle2 = StyleBoxFlat.new()
+	cstyle2.bg_color = Color(0.2, 0.08, 0.08, 0.95)
+	cstyle2.border_color = Color(0.7, 0.2, 0.2)
+	cstyle2.border_width_left = 1; cstyle2.border_width_top = 1
+	cstyle2.border_width_right = 1; cstyle2.border_width_bottom = 1
+	cstyle2.corner_radius_top_left = 3; cstyle2.corner_radius_top_right = 3
+	cstyle2.corner_radius_bottom_right = 3; cstyle2.corner_radius_bottom_left = 3
+	cancel_btn.add_theme_stylebox_override("normal", cstyle2)
+	cancel_btn.add_theme_color_override("font_color", Color(0.8, 0.4, 0.4))
+	cancel_btn.add_theme_font_size_override("font_size", 13)
+	cancel_btn.pressed.connect(_close_compare_panel)
+	_shop_compare_panel.add_child(cancel_btn)
+
+func _confirm_equipment_purchase():
+	if _selected_shop_item.size() == 0:
+		return
+	var item = _selected_shop_item
+	if player_data.gold < item["price"]:
+		show_message("金钱不足！")
+		_close_compare_panel()
+		return
+	
+	player_data.gold -= item["price"]
+	match selected_shop_tab:
+		0: player_data.weapon = item
+		1: player_data.armor = item
+		2: player_data.accessory = item
+	show_message("购买了 %s 并装备！" % item["name"])
 	if audio_manager:
 		audio_manager.play_sfx("purchase")
-	
-	# 更新商店UI金币显示
+	_close_compare_panel()
+	_update_shop_ui()
+	_update_ui()
+
+func _close_compare_panel():
+	_selected_shop_item = {}
+	if _shop_compare_panel and is_instance_valid(_shop_compare_panel):
+		_shop_compare_panel.queue_free()
+		_shop_compare_panel = null
+
+func _update_shop_ui():
 	var shop_panel = shop_ui.get_node_or_null("ShopPanel")
 	if shop_panel:
 		var gold_disp = shop_panel.get_node_or_null("ShopGold")
 		if gold_disp:
 			gold_disp.text = "💰 %d 金币" % player_data.gold
 		_draw_shop_items(shop_panel)
-	
-	_update_ui()
 
 # ==================== 战斗系统 ====================
 
