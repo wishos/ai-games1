@@ -1946,6 +1946,7 @@ func _start_battle():
 		var trap_dmg = int(player_data.attack_power() * 1.5)
 		current_enemy["hp"] -= trap_dmg
 		_battle_add_log("⚡ 陷阱触发！造成 %d 伤害" % trap_dmg)
+		_spawn_enemy_damage("%d" % trap_dmg, "damage", Vector2(0, -25))
 		_update_enemy_hp_bar()
 		_check_battle_end()
 
@@ -1986,6 +1987,7 @@ func _start_boss_battle():
 		var trap_dmg = int(player_data.attack_power() * 1.0)  # Boss战陷阱伤害降低
 		current_enemy["hp"] -= trap_dmg
 		_battle_add_log("⚡ 陷阱触发！对Boss造成 %d 伤害" % trap_dmg)
+		_spawn_enemy_damage("%d" % trap_dmg, "damage", Vector2(0, -25))
 		_update_enemy_hp_bar()
 		_check_battle_end()
 
@@ -2923,6 +2925,7 @@ func _on_skill_selected(skill_name: String):
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚔️ 猛击！造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % dmg)
 		"防御":
 			player_defending = true
 			player_shield = int(player_data.defense() * 0.5)
@@ -2935,6 +2938,7 @@ func _on_skill_selected(skill_name: String):
 			enemy_stun_turns = 1
 			_battle_add_log("🐎 冲锋！造成 %d 伤害，敌人眩晕！" % dmg)
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(0, -25))
 		# 法师
 		"火球":
 			var dmg = int(player_data.attack_power() * 2.0 - current_enemy["def"] + randi() % 11 - 5)
@@ -2942,6 +2946,7 @@ func _on_skill_selected(skill_name: String):
 			current_enemy["hp"] -= dmg
 			_battle_add_log("🔥 火球术！造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(randi()%20-10, -30))
 		"冰霜":
 			var dmg = int(player_data.attack_power() * 1.8 - current_enemy["def"] + randi() % 11 - 5)
 			dmg = max(1, dmg)
@@ -2949,12 +2954,14 @@ func _on_skill_selected(skill_name: String):
 			current_enemy["spd"] = max(1, current_enemy["spd"] - 2)
 			_battle_add_log("❄️ 冰霜术！造成 %d 伤害，敌人速度降低！" % dmg)
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(0, -20))
 		"闪电":
 			var dmg = int(player_data.attack_power() * 3.0 - current_enemy["def"] + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚡ 闪电术！造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -35))
 		# 猎人
 		"狙击":
 			var dmg = int(player_data.attack_power() * 2.0 - current_enemy["def"] + randi() % 7 - 3)
@@ -2962,6 +2969,7 @@ func _on_skill_selected(skill_name: String):
 			current_enemy["hp"] -= dmg
 			_battle_add_log("🎯 狙击！必定命中，造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -30))
 		"毒箭":
 			var dmg = int(player_data.attack_power() * 1.5 - current_enemy["def"] + randi() % 7 - 3)
 			dmg = max(1, dmg)
@@ -2971,6 +2979,7 @@ func _on_skill_selected(skill_name: String):
 			poison_turns = 3
 			_battle_add_log("🏹 毒箭！造成 %d 伤害+每回合5毒性伤害×3回合" % dmg)
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % dmg, "poison", Vector2(0, -25))
 		# 盗贼
 		"背刺":
 			var is_crit = randi() % 100 < player_data.luk * 3
@@ -2979,11 +2988,13 @@ func _on_skill_selected(skill_name: String):
 			current_enemy["hp"] -= dmg
 			_battle_add_log("🗡️ 背刺！%s造成 %d 伤害" % ("暴击！" if is_crit else "", dmg))
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % dmg, "crit" if is_crit else "damage", Vector2(randi()%15-7, -30 if is_crit else -20))
 		"暗影":
 			var dmg = int(player_data.attack_power() * 1.8)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("💀 暗影攻击！无视防御，造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(0, -25))
 		"消失":
 			# 下回合必定先手+闪避
 			vanish_turns = 1
@@ -2992,30 +3003,35 @@ func _on_skill_selected(skill_name: String):
 		"治疗":
 			var heal = int(player_data.max_hp * 0.4)
 			player_data.hp = min(player_data.max_hp, player_data.hp + heal)
-			_trigger_portrait_heal_glow()  # 治疗时肖像绿光
+			_trigger_portrait_heal_glow()
 			_battle_add_log("💚 治疗！恢复 %d HP" % heal)
+			_spawn_player_damage("+%d" % heal, "heal")
 		"护盾":
 			player_shield = int(player_data.defense() * 1.5)
 			_battle_add_log("🛡️ 神圣护盾！获得 %d 护盾值" % player_shield)
+			_spawn_player_damage("+%d" % player_shield, "shield")
 		"复活":
 			if player_data.hp <= 0:
 				player_data.hp = int(player_data.max_hp * 0.5)
-				_trigger_portrait_heal_glow()  # 复活时肖像绿光
+				_trigger_portrait_heal_glow()
 				_battle_add_log("✨ 复活！恢复50% HP")
+				_spawn_player_damage("REVIVE!", "heal")
 			else:
-				player_data.mp -= 10  # 不消耗额外MP已消耗
+				player_data.mp -= 10
 				_battle_add_log("💀 复活需要处于濒死状态！")
 		# 骑士
 		"格挡":
 			player_defending = true
 			player_shield = int(player_data.defense() * 1.2)
 			_battle_add_log("⚔️ 格挡！伤害减少，护盾+%d" % player_shield)
+			_spawn_player_damage("+%d" % player_shield, "shield")
 		"斩击":
 			var dmg = int(player_data.attack_power() * 1.8 - current_enemy["def"] + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚔️ 神圣斩击！造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % dmg)
 		"神圣":
 			var dmg = int(player_data.attack_power() * 2.5 - current_enemy["def"] * 0.5 + randi() % 11 - 5)
 			dmg = max(1, dmg)
@@ -3024,18 +3040,22 @@ func _on_skill_selected(skill_name: String):
 			player_data.hp = min(player_data.max_hp, player_data.hp + heal)
 			_battle_add_log("✨ 神圣制裁！造成 %d 伤害并恢复 %d HP" % [dmg, heal])
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % dmg, "buff", Vector2(0, -25))
+			_spawn_player_damage("+%d" % heal, "heal")
 		# 吟游诗人
 		"鼓舞":
 			var boost = 5
 			player_data.atk += boost
 			_battle_add_log("🎵 鼓舞！攻击力+%d 本场战斗" % boost)
+			_spawn_player_damage("ATK+%d" % boost, "buff")
 		"旋律":
 			var heal = int(player_data.max_hp * 0.2)
 			player_data.hp = min(player_data.max_hp, player_data.hp + heal)
 			var heal2 = int(player_data.max_mp * 0.2)
 			player_data.mp = min(player_data.max_mp, player_data.mp + heal2)
-			_trigger_portrait_heal_glow()  # 治疗时肖像绿光
+			_trigger_portrait_heal_glow()
 			_battle_add_log("🎶 治疗旋律！恢复 %d HP 和 %d MP" % [heal, heal2])
+			_spawn_player_damage("+%d HP" % heal, "heal")
 		"沉默":
 			enemy_stun_turns = 2
 			_battle_add_log("🎵 沉默旋律！敌人无法使用技能2回合")
@@ -3046,6 +3066,7 @@ func _on_skill_selected(skill_name: String):
 			resonance_stacks += 1
 			_battle_add_log("🔥 召唤兽攻击！造成 %d 伤害（共鸣+%d层）" % [summon_dmg, resonance_stacks])
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % summon_dmg, "buff", Vector2(0, -25))
 		"契约":
 			contract_active = true
 			contract_turns = 3
@@ -3054,6 +3075,7 @@ func _on_skill_selected(skill_name: String):
 			current_enemy["atk"] = max(1, int(current_enemy["atk"] * 0.7))
 			_battle_add_log("📜 契约诅咒！造成 %d 伤害，敌人ATK降至70%%，持续3回合" % contract_dmg)
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % contract_dmg, "debuff", Vector2(0, -25))
 		"共鸣":
 			if resonance_stacks < 1:
 				resonance_stacks = 1
@@ -3064,6 +3086,7 @@ func _on_skill_selected(skill_name: String):
 			_battle_add_log("⚡ 共鸣爆发！造成 %d 伤害（%d层），自身消耗 %d HP" % [reso_dmg, resonance_stacks, self_cost])
 			resonance_stacks = 0
 			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % reso_dmg, "crit", Vector2(0, -30))
 	
 	_update_enemy_hp_bar()
 	_update_battle_player_ui()
@@ -3080,6 +3103,73 @@ func _on_skill_selected(skill_name: String):
 
 func _enemy_hit_effect():
 	enemy_sprite_target = enemy_sprite.position + Vector2(15, 0)
+
+# ==================== 浮动伤害文字系统 ====================
+# 浮动伤害文字颜色配置
+const FLOAT_COLORS = {
+	"damage": Color(1.0, 0.9, 0.5),      # 橙黄 - 普通伤害
+	"crit": Color(1.0, 0.4, 0.1, 1.0),    # 橙色 - 暴击
+	"heal": Color(0.3, 1.0, 0.4, 1.0),    # 绿色 - 治疗
+	"poison": Color(0.5, 1.0, 0.2, 1.0),   # 黄绿 - 中毒
+	"shield": Color(0.4, 0.7, 1.0, 1.0),   # 蓝色 - 护盾
+	"miss": Color(0.6, 0.6, 0.6, 0.8),    # 灰色 - 闪避
+	"buff": Color(0.3, 0.8, 1.0, 1.0),    # 淡蓝 - 增益
+	"debuff": Color(0.9, 0.3, 0.3, 1.0),   # 红色 - 减益
+	"mp": Color(0.6, 0.4, 1.0, 1.0),       # 紫色 - MP
+}
+
+# 在敌人位置生成浮动伤害文字
+func _spawn_enemy_damage(text: String, type: String = "damage", offset: Vector2 = Vector2(0, -20)):
+	if not battle_ui or not enemy_sprite:
+		return
+	var enemy_panel = battle_ui.get_node_or_null("EnemyPanel")
+	if not enemy_panel:
+		return
+	var base_pos = enemy_panel.position + enemy_sprite.position + offset
+	_spawn_floating_text(battle_ui, base_pos, text, FLOAT_COLORS.get(type, FLOAT_COLORS["damage"]), 1.2)
+
+# 在玩家位置生成浮动文字（血条附近）
+func _spawn_player_damage(text: String, type: String = "damage"):
+	if not battle_ui:
+		return
+	var player_panel = battle_ui.get_node_or_null("PlayerPanel")
+	if not player_panel:
+		return
+	var base_pos = player_panel.position + Vector2(100, 60)
+	_spawn_floating_text(battle_ui, base_pos, text, FLOAT_COLORS.get(type, FLOAT_COLORS["damage"]), 1.2)
+
+func _spawn_floating_text(parent: Control, pos: Vector2, text: String, col: Color, duration: float = 1.0):
+	var lbl = Label.new()
+	lbl.text = text
+	lbl.position = pos
+	lbl.size = Vector2(200, 40)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 20)
+	lbl.add_theme_color_override("font_color", Color(col.r, col.g, col.b, 1.0))
+	lbl.z_index = 200
+	parent.add_child(lbl)
+
+	# 向上飘动动画
+	var tween = parent.create_tween()
+	tween.set_parallel(true)
+	var target_y = pos.y - 60
+	var target_x = pos.x + randf() * 20 - 10
+	tween.tween_property(lbl, "position", Vector2(target_x, target_y), duration)
+	# 透明度渐变
+	var start_a = 1.0
+	var mid_a = 0.7
+	var end_a = 0.0
+	tween.tween_method(func(v): lbl.add_theme_color_override("font_color", Color(col.r, col.g, col.b, v)), start_a, mid_a, duration * 0.35)
+	tween.tween_method(func(v): lbl.add_theme_color_override("font_color", Color(col.r, col.g, col.b, v)), mid_a, end_a, duration * 0.65)
+	# 字体放大效果（先大后正常）
+	var scale_tween = parent.create_tween()
+	scale_tween.tween_property(lbl, "scale", Vector2(1.5, 1.5), 0.1)
+	scale_tween.tween_property(lbl, "scale", Vector2(1.0, 1.0), 0.2)
+
+	await parent.create_timer(duration + 0.1).timeout
+	if lbl and is_instance_valid(lbl):
+		lbl.queue_free()
 
 func _end_player_turn():
 	is_player_turn = false
@@ -3124,6 +3214,7 @@ func _process_battle(delta: float):
 		var total_poison = poison_stacks * poison_damage
 		current_enemy["hp"] -= total_poison
 		_battle_add_log("毒素发作！受到 %d 伤害（%d层）" % [total_poison, poison_stacks])
+		_spawn_enemy_damage("%d" % total_poison, "poison", Vector2(20, -10))
 		poison_turns -= 1
 		_update_enemy_hp_bar()
 		if _check_battle_end():
@@ -3137,6 +3228,7 @@ func _process_battle(delta: float):
 		player_data.hp = min(player_data.max_hp, player_data.hp + heal_amt)
 		contract_turns -= 1
 		_battle_add_log("📜 契约吸取！对敌人造成 %d 伤害，回复 %d HP（剩余%d回合）" % [drain_dmg, heal_amt, contract_turns])
+		_spawn_enemy_damage("%d" % drain_dmg, "debuff", Vector2(30, -10))
 		if contract_turns <= 0:
 			contract_active = false
 			_battle_add_log("📜 契约诅咒结束")
@@ -3152,6 +3244,7 @@ func _process_battle(delta: float):
 		current_enemy["hp"] -= trap_dmg
 		trapped = false
 		_battle_add_log("🪤 陷阱触发！敌人被困住，受到 %d 伤害！" % trap_dmg)
+		_spawn_enemy_damage("%d" % trap_dmg, "damage", Vector2(0, -30))
 		_update_enemy_hp_bar()
 		if _check_battle_end():
 			return
@@ -3164,6 +3257,7 @@ func _process_battle(delta: float):
 		vanish_turns -= 1
 		if randf() < 0.5:
 			_battle_add_log("💨 消失！完美闪避了敌人攻击！")
+			_spawn_player_damage("MISS!", "miss")
 			_start_player_turn()
 			return
 		else:
@@ -3190,8 +3284,9 @@ func _process_battle(delta: float):
 		player_defending = false
 	e_dmg = max(1, e_dmg)
 	player_data.hp -= e_dmg
-	_trigger_portrait_damage_flash()  # 受伤时肖像闪红
+	_trigger_portrait_damage_flash()
 	_battle_add_log("👹 %s 攻击！造成 %d 伤害" % [current_enemy["name"], e_dmg])
+	_spawn_player_damage("-%d" % e_dmg, "damage")
 	if audio_manager:
 		audio_manager.play_sfx("hit")
 	_update_battle_player_ui()
@@ -3282,6 +3377,7 @@ func _boss_grak_action(hp_ratio: float):
 		var atk_dmg = int(current_enemy["atk"] * 1.5)
 		_apply_player_damage(atk_dmg)
 		_battle_add_log("🔥 狂暴化！自残%d HP，造成 %d 伤害！" % [self_dmg, atk_dmg])
+		_spawn_enemy_damage("-%d" % self_dmg, "poison", Vector2(0, -20))
 	_update_enemy_hp_bar()
 
 func _boss_lich_action(hp_ratio: float):
@@ -3420,6 +3516,7 @@ func _boss_dragon_action(hp_ratio: float):
 			_apply_player_damage(atk_dmg)
 			current_enemy["atk"] = int(current_enemy["atk"] * 1.1)
 			_battle_add_log("🔥 狂暴！自残%d HP，ATK永久+10%%！" % self_dmg)
+			_spawn_enemy_damage("-%d" % self_dmg, "poison", Vector2(0, -20))
 		else:
 			_boss_default_attack("湮灭")
 	_update_enemy_hp_bar()
@@ -3441,6 +3538,7 @@ func _boss_default_attack(skill_name: String = "攻击"):
 	e_dmg = max(1, e_dmg)
 	player_data.hp -= e_dmg
 	_battle_add_log("👹 %s 使用【%s】！造成 %d 伤害" % [current_enemy["name"], skill_name, e_dmg])
+	_spawn_player_damage("-%d" % e_dmg, "damage")
 	if audio_manager:
 		audio_manager.play_sfx("hit")
 	_update_battle_player_ui()
@@ -3466,10 +3564,11 @@ func _apply_player_damage(dmg: int):
 		player_defending = false
 	dmg = max(1, dmg)
 	player_data.hp -= dmg
-	_trigger_portrait_damage_flash()  # 受伤时肖像闪红
+	_trigger_portrait_damage_flash()
 	if audio_manager:
 		audio_manager.play_sfx("hit")
 	_update_battle_player_ui()
+	_spawn_player_damage("-%d" % dmg, "damage")
 	if player_data.hp <= 0:
 		_battle_add_log("💀 你倒下了...")
 		_game_over()
@@ -3515,6 +3614,7 @@ func _on_attack():
 	var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 	current_enemy["hp"] -= dmg
 	_battle_add_log("⚔️ 攻击！%s造成 %d 伤害" % ("暴击！" if is_crit else "", dmg))
+	_spawn_enemy_damage("%d" % dmg, "crit" if is_crit else "damage", Vector2(randi()%15-7, -25 if is_crit else -18))
 	if audio_manager:
 		if is_crit:
 			audio_manager.play_sfx("crit")
@@ -3533,9 +3633,11 @@ func _on_defend():
 		return
 	is_player_turn = false
 	player_defending = true
-	player_shield += int(player_data.defense() * 0.3)
+	var shield_gain = int(player_data.defense() * 0.3)
+	player_shield += shield_gain
 	player_data.mp = min(player_data.max_mp, player_data.mp + 3)
 	_battle_add_log("🛡️ 防御！受伤-50%%，获得护盾，回复3MP")
+	_spawn_player_damage("+%d" % shield_gain, "shield")
 	_update_battle_player_ui()
 	await get_tree().create_timer(0.4).timeout
 	_process_battle(0)
