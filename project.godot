@@ -20,9 +20,11 @@ config/description="武侠ARPG - 八方旅人HD-2D风格"
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-window/stretch/mode="integer"
+window/stretch/mode="viewport"
 window/stretch/aspect="expand"
-window/stretch/scale_mode="frac"
+window/content_scale_width=640
+window/content_scale_height=360
+window/content_scale_mode="fractional"
 
 [rendering]
 
