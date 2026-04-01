@@ -15,6 +15,7 @@ var battle_in_progress: bool = false
 # 玩家数据引用
 var player: CharacterBody2D
 var player_sprite: Sprite2D
+var player_shadow: Sprite2D
 var player_direction: Vector2 = Vector2.DOWN
 var is_moving: bool = false
 var move_speed: float = 150.0
@@ -590,37 +591,54 @@ func _add_god_rays():
 	for child in god_ray_container.get_children():
 		child.queue_free()
 	
-	# 从顶部射入的光线
-	var ray_count = 5
-	for i in range(ray_count):
-		var start_x = 200 + i * 220
-		var ray = _create_god_ray(
-			Vector2(start_x, -50),
-			Vector2(0.3 + randf() * 0.2, 1.0),
-			40 + randi() % 30
-		)
-		god_ray_container.add_child(ray)
-
-func _create_god_ray(pos: Vector2, scale: Vector2, width: int) -> Node2D:
-	var ray = Node2D.new()
-	ray.position = pos
+	# 使用shader的全屏God Rays效果
+	var ray_fullscreen = ColorRect.new()
+	ray_fullscreen.name = "GodRayFullscreen"
+	# 让它覆盖整个可见区域（跟随相机）
+	ray_fullscreen.size = Vector2(1280, 720)
+	ray_fullscreen.position = Vector2(-640, -360)  # 相对位置
 	
-	var rays = [
-		{"offset": 0, "alpha": 0.15},
-		{"offset": 8, "alpha": 0.1},
-		{"offset": -8, "alpha": 0.08}
-	]
+	# 创建shader材质
+	var shader_mat = ShaderMaterial.new()
+	var shader = load("res://shaders/god_ray.gdshader")
+	if shader:
+		shader_mat.shader = shader
+		# 设置光源位置（顶部中央，多个光源）
+		shader_mat.set_shader_parameter("source_uv", Vector2(0.5, 0.0))
+		shader_mat.set_shader_parameter("exposure", 0.4)
+		shader_mat.set_shader_parameter("decay", 0.93)
+		shader_mat.set_shader_parameter("density", 0.65)
+		shader_mat.set_shader_parameter("weight", 0.45)
+		shader_mat.set_shader_parameter("num_samples", 80)
+		shader_mat.set_shader_parameter("ray_width", 0.15)
+		shader_mat.set_shader_parameter("noise_speed", 0.3)
+		shader_mat.set_shader_parameter("noise_strength", 0.35)
+	ray_fullscreen.material = shader_mat
 	
-	for r in rays:
-		var ray_rect = ColorRect.new()
-		ray_rect.size = Vector2(width, 800)
-		ray_rect.position = Vector2(r["offset"], 0)
-		var col = PALETTE.gold
-		col.a = r["alpha"]
-		ray_rect.color = col
-		ray.add_child(ray_rect)
+	# 让God Rays跟随相机
+	ray_fullscreen.set_meta("follow_camera", true)
+	god_ray_container.add_child(ray_fullscreen)
 	
-	return ray
+	# 添加额外的侧向光线（第二光源）
+	var ray2 = ColorRect.new()
+	ray2.name = "GodRaySide"
+	ray2.size = Vector2(1280, 720)
+	ray2.position = Vector2(-640, -360)
+	var shader_mat2 = ShaderMaterial.new()
+	if shader:
+		shader_mat2.shader = shader
+		shader_mat2.set_shader_parameter("source_uv", Vector2(0.3, 0.0))
+		shader_mat2.set_shader_parameter("exposure", 0.25)
+		shader_mat2.set_shader_parameter("decay", 0.9)
+		shader_mat2.set_shader_parameter("density", 0.5)
+		shader_mat2.set_shader_parameter("weight", 0.3)
+		shader_mat2.set_shader_parameter("num_samples", 60)
+		shader_mat2.set_shader_parameter("ray_width", 0.1)
+		shader_mat2.set_shader_parameter("noise_speed", 0.5)
+		shader_mat2.set_shader_parameter("noise_strength", 0.3)
+	ray2.material = shader_mat2
+	ray2.set_meta("follow_camera", true)
+	god_ray_container.add_child(ray2)
 
 func _add_light_sources():
 	for child in light_layer.get_children():
@@ -666,6 +684,13 @@ func _create_player():
 	player.name = "Player"
 	var start_pos = GlobalData.player_data.get("position", Vector2(640, 400))
 	player.position = start_pos
+	
+	# 玩家阴影（脚下的椭圆阴影）
+	player_shadow = Sprite2D.new()
+	player_shadow.name = "PlayerShadow"
+	player_shadow.texture = _create_shadow_texture()
+	player_shadow.position = Vector2(0, 10)  # 在角色脚下
+	player.add_child(player_shadow)
 	
 	# 玩家精灵
 	player_sprite = Sprite2D.new()
@@ -736,6 +761,30 @@ func _set_pixel_line(img: Image, x1: int, y1: int, x2: int, y2: int, col: Color)
 	for x in range(min(x1, x2), max(x1, x2) + 1):
 		for y in range(min(y1, y2), max(y1, y2) + 1):
 			img.set_pixel(x, y, col)
+
+func _create_shadow_texture() -> ImageTexture:
+	# 创建一个椭圆形的阴影
+	var img = Image.create(32, 16, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	
+	var cx = 16  # center x
+	var cy = 8   # center y
+	var rx = 14  # x radius
+	var ry = 5   # y radius
+	
+	for x in range(32):
+		for y in range(16):
+			# Ellipse equation: (x-cx)^2/rx^2 + (y-cy)^2/ry^2 <= 1
+			var dx = float(x - cx) / rx
+			var dy = float(y - cy) / ry
+			var dist_sq = dx * dx + dy * dy
+			if dist_sq <= 1.0:
+				# Soft edge
+				var alpha = max(0.0, 1.0 - dist_sq) * 0.35
+				img.set_pixel(x, y, Color(0.0, 0.0, 0.0, alpha))
+	
+	var tex = ImageTexture.create_from_image(img)
+	return tex
 
 func _create_npcs():
 	npcs.clear()
@@ -1253,6 +1302,12 @@ func _update_camera(delta: float):
 	
 	var target_pos = player.position
 	main_camera.position = main_camera.position.lerp(target_pos, camera_smoothing)
+	
+	# 更新God Rays位置跟随相机
+	if god_ray_container:
+		for child in god_ray_container.get_children():
+			if child.has_meta("follow_camera"):
+				child.position = target_pos + Vector2(-640, -360)
 
 func _update_explore_ui():
 	if not GlobalData.player_data:
