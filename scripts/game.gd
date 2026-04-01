@@ -2645,6 +2645,299 @@ func _process_battle(delta: float):
 	
 	_start_player_turn()
 
+# ==================== Boss战特殊处理 ====================
+var boss_action_counter: int = 0  # Boss连续行动计数
+
+func _process_boss_turn():
+	# 检查Boss阶段转换
+	var hp_ratio = float(current_enemy["hp"]) / float(current_enemy["max_hp"])
+	var boss_key = _get_boss_floor_key()
+	
+	# 第8层远古巨龙多阶段处理
+	if boss_key == 8:
+		if boss_phase == 1 and hp_ratio <= 0.6:
+			boss_phase = 2
+			_show_boss_phase_announcement("第二阶段: 龙魂觉醒！ATK+30%！")
+			current_enemy["atk"] = int(current_enemy["atk"] * 1.3)
+			_battle_add_log("🐉 【阶段2】龙魂觉醒！Boss攻击力大幅提升！")
+			_update_enemy_hp_bar()
+			await get_tree().create_timer(1.0).timeout
+		elif boss_phase == 2 and hp_ratio <= 0.3:
+			boss_phase = 3
+			_show_boss_phase_announcement("最终阶段: 湮灭！")
+			_battle_add_log("🔥 【最终阶段】Boss进入最终形态！")
+			_update_enemy_hp_bar()
+			await get_tree().create_timer(1.0).timeout
+	
+	# Boss狂暴检测 (30%血量)
+	var phase_hp = current_enemy.get("phase_hp", 0.0)
+	if phase_hp > 0 and not boss_enraged and hp_ratio <= phase_hp:
+		boss_enraged = true
+		var boss_name = current_enemy["name"]
+		if boss_key == 1:  # 哥布林王狂暴
+			current_enemy["atk"] = int(current_enemy["atk"] * 1.5)
+			current_enemy["spd"] += 3
+			_show_boss_phase_announcement("狂暴化！ATK+50%！SPD+3！")
+			_battle_add_log("👹 %s 狂暴化！ATK+50%%，速度提升！但每回合自残10HP！")
+		elif boss_key == 3:  # 巫妖复活
+			boss_revived = true
+			current_enemy["hp"] = int(current_enemy["max_hp"] * 0.5)
+			_show_boss_phase_announcement("不死之身！复活！")
+			_battle_add_log("💀 %s 触发【不死之身】！回复50%% HP！")
+		else:
+			_show_boss_phase_announcement("Boss狂暴！")
+			_battle_add_log("👹 %s 进入狂暴状态！")
+		_update_enemy_hp_bar()
+		await get_tree().create_timer(1.0).timeout
+	
+	boss_action_counter += 1
+	
+	# 根据Boss类型执行特殊技能
+	match boss_key:
+		1: _boss_grak_action(hp_ratio)
+		3: _boss_lich_action(hp_ratio)
+		5: _boss_magmato_action(hp_ratio)
+		7: _boss_seraphiel_action(hp_ratio)
+		8: _boss_dragon_action(hp_ratio)
+		_: _boss_default_attack()
+
+func _boss_grak_action(hp_ratio: float):
+	# 哥布林王: 普通攻击/怒吼/召唤/狂暴
+	var roll = randi() % 100
+	if roll < 30:
+		_boss_default_attack("战棍敲击")
+	elif roll < 55:
+		# 怒吼：全体攻击
+		var dmg = int(current_enemy["atk"] * 0.8)
+		_apply_player_damage(dmg)
+		_battle_add_log("⚡ 怒吼！全体受到 %d 伤害，恐惧2回合！" % dmg)
+		# 恐惧效果：降低逃跑成功率（本游戏暂不实现）
+	elif roll < 80 and boss_action_counter > 2:
+		# 召唤哥布林
+		var summon_dmg = int(player_data.attack_power() * 0.5)
+		_apply_player_damage(summon_dmg)
+		_battle_add_log("👺 召唤哥布林！两只哥布林战士参战，造成 %d 伤害！" % summon_dmg)
+	else:
+		# 狂暴自残+攻击
+		var self_dmg = 10
+		current_enemy["hp"] -= self_dmg
+		var atk_dmg = int(current_enemy["atk"] * 1.5)
+		_apply_player_damage(atk_dmg)
+		_battle_add_log("🔥 狂暴化！自残%d HP，造成 %d 伤害！" % [self_dmg, atk_dmg])
+	_update_enemy_hp_bar()
+
+func _boss_lich_action(hp_ratio: float):
+	# 巫妖王: 暗影冲击/亡灵大军/生命虹吸/灵魂收割/不死之身
+	var roll = randi() % 100
+	if roll < 25:
+		# 暗影冲击+诅咒
+		var dmg = int(current_enemy["atk"] * 1.3)
+		_apply_player_damage(dmg)
+		_battle_add_log("💀 暗影冲击！造成 %d 伤害，附带诅咒！" % dmg)
+	elif roll < 45 and boss_action_counter > 3:
+		# 亡灵大军
+		var drain = int(current_enemy["atk"] * 2.0)
+		_apply_player_damage(int(drain * 0.5))
+		var heal = int(drain * 0.5)
+		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
+		_battle_add_log("💀 亡灵大军！造成 %d 伤害，回复 %d HP！" % [int(drain*0.5), heal])
+	elif roll < 65:
+		# 生命虹吸
+		var dmg = int(current_enemy["atk"] * 2.0)
+		_apply_player_damage(dmg)
+		var heal = int(dmg * 0.5)
+		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
+		_battle_add_log("🩸 生命虹吸！造成 %d 伤害，回复 %d HP！" % [dmg, heal])
+	elif roll < 80 and hp_ratio < 0.3:
+		# 灵魂收割（斩杀）
+		var dmg = int(current_enemy["atk"] * 1.5)
+		_apply_player_damage(dmg)
+		_battle_add_log("💀 灵魂收割！全体 %d 伤害！" % dmg)
+	else:
+		_boss_default_attack("暗影攻击")
+
+func _boss_magmato_action(hp_ratio: float):
+	# 熔岩巨魔: 岩浆之拳/熔岩喷射/碎地重击/熔岩护甲
+	var roll = randi() % 100
+	if roll < 30:
+		# 岩浆之拳+燃烧
+		var dmg = int(current_enemy["atk"] * 1.4)
+		_apply_player_damage(dmg)
+		_battle_add_log("🌋 岩浆之拳！造成 %d 伤害，附带灼烧！" % dmg)
+	elif roll < 55:
+		# 熔岩喷射（全体）
+		var dmg = int(current_enemy["atk"] * 1.2)
+		_apply_player_damage(dmg)
+		_battle_add_log("🌋 熔岩喷射！全体受到 %d 伤害！" % dmg)
+	elif roll < 75:
+		# 碎地重击（高伤害+眩晕）
+		var dmg = int(current_enemy["atk"] * 2.5)
+		_apply_player_damage(dmg)
+		enemy_stun_turns = 1
+		_battle_add_log("💥 碎地重击！造成 %d 伤害，眩晕1回合！" % dmg)
+	elif roll < 90:
+		# 熔岩护甲
+		var shield_gain = 50
+		player_shield += shield_gain
+		_battle_add_log("🛡️ 熔岩护甲！获得 %d 临时HP！" % shield_gain)
+	else:
+		_boss_default_attack("岩浆之拳")
+
+func _boss_seraphiel_action(hp_ratio: float):
+	# 堕落天使: 天罚之剑/神圣裁决/堕落之光/命运之手/羽翼护盾
+	var roll = randi() % 100
+	if roll < 20:
+		# 天罚之剑（必定命中+沉默）
+		var dmg = int(current_enemy["atk"] * 1.5)
+		_apply_player_damage(dmg)
+		enemy_stun_turns = max(enemy_stun_turns, 1)
+		_battle_add_log("⚔️ 天罚之剑！造成 %d 伤害，20%%沉默！" % dmg)
+	elif roll < 40:
+		# 神圣裁决（全体+圣光）
+		var dmg = int(current_enemy["atk"] * 1.8)
+		_apply_player_damage(dmg)
+		_battle_add_log("✨ 神圣裁决！全体受到 %d 圣光伤害！" % dmg)
+	elif roll < 60 and hp_ratio > 0.5:
+		# 堕落之光（治疗）
+		var heal = int(current_enemy["max_hp"] * 0.3)
+		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
+		_battle_add_log("💚 堕落之光！回复 %d HP！" % heal)
+	elif roll < 75:
+		# 命运之手（HP降至1）
+		_apply_player_damage(player_data.hp - 1)
+		_battle_add_log("🖐️ 命运之手！将一名敌人HP降至1！")
+	else:
+		# 羽翼护盾
+		boss_shield_stacks = 3
+		_battle_add_log("🛡️ 羽翼护盾！获得3层护盾！")
+
+func _boss_dragon_action(hp_ratio: float):
+	# 远古巨龙: 三阶段Boss
+	if boss_phase == 1:
+		# 空中优势
+		var roll = randi() % 100
+		if roll < 30:
+			var dmg = int(current_enemy["atk"] * 1.6)
+			_apply_player_damage(dmg)
+			_battle_add_log("🐉 龙息！造成 %d 伤害，附带风压减速！" % dmg)
+		elif roll < 55:
+			var dmg = int(current_enemy["atk"] * 1.3)
+			_apply_player_damage(dmg)
+			_battle_add_log("🌀 飓风降临！全体 %d 伤害！" % dmg)
+		elif roll < 80:
+			var dmg = int(current_enemy["atk"] * 1.2)
+			_apply_player_damage(dmg)
+			_battle_add_log("⚡ 召唤雷云！落雷造成 %d 不可躲避伤害！" % dmg)
+		else:
+			_boss_default_attack("龙息")
+	elif boss_phase == 2:
+		# 地面搏斗
+		var roll = randi() % 100
+		if roll < 30:
+			var dmg = int(current_enemy["atk"] * 3.0)
+			_apply_player_damage(dmg)
+			_battle_add_log("💥 毁天灭地！造成 %d 全体伤害！" % dmg)
+		elif roll < 55:
+			var def_boost = int(current_enemy["def"] * 1.4)
+			current_enemy["def"] += def_boost
+			_battle_add_log("🐉 龙鳞护体！DEF+%d，持续5回合！" % def_boost)
+		elif roll < 80:
+			var dmg = int(current_enemy["atk"] * 1.0)
+			_apply_player_damage(dmg * 3)
+			_battle_add_log("🌀 暴风领域！三次空气刃，共 %d 伤害！" % (dmg*3))
+		else:
+			_boss_default_attack("毁天灭地")
+	else:
+		# 最终形态
+		var roll = randi() % 100
+		if roll < 40:
+			var dmg = int(current_enemy["atk"] * 5.0)
+			_apply_player_damage(dmg)
+			_battle_add_log("💀 湮灭！造成 %d 真实伤害！" % dmg)
+		elif roll < 80:
+			# 狂暴自残+攻击
+			var self_dmg = int(current_enemy["max_hp"] * 0.05)
+			current_enemy["hp"] -= self_dmg
+			var atk_dmg = int(current_enemy["atk"] * 1.5)
+			_apply_player_damage(atk_dmg)
+			current_enemy["atk"] = int(current_enemy["atk"] * 1.1)
+			_battle_add_log("🔥 狂暴！自残%d HP，ATK永久+10%%！" % self_dmg)
+		else:
+			_boss_default_attack("湮灭")
+	_update_enemy_hp_bar()
+
+func _boss_default_attack(skill_name: String = "攻击"):
+	var e_dmg = current_enemy["atk"] + randi() % 5 - 2
+	if player_defending or player_shield > 0:
+		e_dmg = int(e_dmg * 0.5)
+	if player_shield > 0:
+		if player_shield >= e_dmg:
+			player_shield -= e_dmg
+			e_dmg = 0
+			_battle_add_log("🛡️ 护盾吸收了伤害！")
+		else:
+			e_dmg -= player_shield
+			player_shield = 0
+	if player_defending:
+		player_defending = false
+	e_dmg = max(1, e_dmg)
+	player_data.hp -= e_dmg
+	_battle_add_log("👹 %s 使用【%s】！造成 %d 伤害" % [current_enemy["name"], skill_name, e_dmg])
+	if audio_manager:
+		audio_manager.play_sfx("hit")
+	_update_battle_player_ui()
+	if player_data.hp <= 0:
+		_battle_add_log("💀 你倒下了...")
+		_game_over()
+		return
+	_start_player_turn()
+
+func _apply_player_damage(dmg: int):
+	# 应用护盾和防御
+	if player_defending or player_shield > 0:
+		dmg = int(dmg * 0.5)
+	if player_shield > 0:
+		if player_shield >= dmg:
+			player_shield -= dmg
+			dmg = 0
+			_battle_add_log("🛡️ 护盾吸收了伤害！")
+		else:
+			dmg -= player_shield
+			player_shield = 0
+	if player_defending:
+		player_defending = false
+	dmg = max(1, dmg)
+	player_data.hp -= dmg
+	if audio_manager:
+		audio_manager.play_sfx("hit")
+	_update_battle_player_ui()
+	if player_data.hp <= 0:
+		_battle_add_log("💀 你倒下了...")
+		_game_over()
+
+func _show_boss_phase_announcement(text: String):
+	# 创建Boss阶段公告
+	var announce = Label.new()
+	announce.name = "BossPhaseAnnounce"
+	announce.text = text
+	announce.position = Vector2(0, 280)
+	announce.size = Vector2(1280, 60)
+	announce.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	announce.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2))
+	announce.add_theme_font_size_override("font_size", 36)
+	announce.modulate = Color(1, 1, 1, 0)
+	add_child(announce)
+	
+	var tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(announce, "modulate:a", 1.0, 0.3)
+	await get_tree().create_timer(1.5).timeout
+	tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(announce, "modulate:a", 0.0, 0.4)
+	await tween.finished
+	announce.queue_free()
+
 func _start_player_turn():
 	is_player_turn = true
 	_update_battle_player_ui()
@@ -2746,7 +3039,14 @@ func _check_battle_end() -> bool:
 		var gold_gain = current_enemy["gold"]
 		player_data.exp += exp_gain
 		player_data.gold += gold_gain
-		_battle_add_log("🏆 胜利！+%d EXP，+%d 金币" % [exp_gain, gold_gain])
+		
+		# Boss击败特殊提示
+		if current_enemy.get("is_boss", false):
+			_battle_add_log("🏆⭐ BOSS击破！⭐+%d EXP，+%d 金币！" % [exp_gain, gold_gain])
+			_show_boss_victory_screen()
+		else:
+			_battle_add_log("🏆 胜利！+%d EXP，+%d 金币" % [exp_gain, gold_gain])
+		
 		_exp_check()
 		_close_battle_ui()
 		game_state = State.EXPLORE
@@ -2756,13 +3056,95 @@ func _check_battle_end() -> bool:
 			audio_manager.play_bgm("victory")
 			await get_tree().create_timer(4.0).timeout
 			audio_manager.play_bgm("explore")
-		show_message("击败了 %s！获得 %d EXP" % [current_enemy["name"], exp_gain])
+		
+		if current_enemy.get("is_boss", false):
+			show_message("⭐ BOSS击破: %s！+%d EXP" % [current_enemy["name"], exp_gain])
+		else:
+			show_message("击败了 %s！获得 %d EXP" % [current_enemy["name"], exp_gain])
 		return true
 	if player_data.hp <= 0:
 		_battle_add_log("💀 你倒下了...")
 		_game_over()
 		return true
 	return false
+
+func _show_boss_victory_screen():
+	# Boss击败特别画面
+	var overlay = ColorRect.new()
+	overlay.name = "BossVictoryOverlay"
+	overlay.size = Vector2(1280, 720)
+	overlay.color = Color(0, 0, 0, 0.9)
+	overlay.position = Vector2(0, 0)
+	overlay.modulate = Color(1, 1, 1, 0)
+	add_child(overlay)
+	
+	var panel = Panel.new()
+	panel.name = "BossVictoryPanel"
+	panel.position = Vector2(340, 220)
+	panel.size = Vector2(600, 280)
+	panel.self_modulate = Color(0.03, 0.03, 0.06, 0.98)
+	panel.add_theme_stylebox_override("panel", _create_stylebox())
+	panel.modulate = Color(1, 1, 1, 0)
+	add_child(panel)
+	
+	var title = Label.new()
+	title.position = Vector2(0, 20)
+	title.size = Vector2(600, 50)
+	title.text = "⭐ BOSS 击 破 ⭐"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", PALETTE.gold)
+	title.add_theme_font_size_override("font_size", 36)
+	panel.add_child(title)
+	
+	var boss_name = Label.new()
+	boss_name.position = Vector2(0, 80)
+	boss_name.size = Vector2(600, 40)
+	boss_name.text = current_enemy["name"]
+	boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_name.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2))
+	boss_name.add_theme_font_size_override("font_size", 28)
+	panel.add_child(boss_name)
+	
+	var sep = ColorRect.new()
+	sep.position = Vector2(100, 130)
+	sep.size = Vector2(400, 2)
+	sep.color = PALETTE.gold * Color(0.5, 0.5, 0.5, 0.5)
+	panel.add_child(sep)
+	
+	var rewards = Label.new()
+	rewards.position = Vector2(0, 150)
+	rewards.size = Vector2(600, 60)
+	rewards.text = "+%d 经验值\n+%d 金币" % [current_enemy["exp"], current_enemy["gold"]]
+	rewards.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rewards.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9))
+	rewards.add_theme_font_size_override("font_size", 22)
+	panel.add_child(rewards)
+	
+	var continue_lbl = Label.new()
+	continue_lbl.position = Vector2(0, 230)
+	continue_lbl.size = Vector2(600, 30)
+	continue_lbl.text = ">>> 继续探索 <<<"
+	continue_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	continue_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	continue_lbl.add_theme_font_size_override("font_size", 16)
+	panel.add_child(continue_lbl)
+	
+	var tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(overlay, "modulate:a", 1.0, 0.4)
+	await get_tree().create_timer(0.3).timeout
+	tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(panel, "modulate:a", 1.0, 0.5)
+	tween.tween_property(panel, "scale", Vector2(1.05, 1.05), 0.5)
+	await get_tree().create_timer(2.0).timeout
+	tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(overlay, "modulate:a", 0.0, 0.5)
+	tween.tween_property(panel, "modulate:a", 0.0, 0.5)
+	await tween.finished
+	overlay.queue_free()
+	panel.queue_free()
 
 func _exp_check():
 	while player_data.exp >= player_data.level_up_requirement() and player_data.exp > 0:
