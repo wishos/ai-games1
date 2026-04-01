@@ -43,17 +43,17 @@ func _setup_job_skills():
 		Job.MAGE:
 			skills = ["火球", "冰霜", "闪电", "流星火雨", "霜冻领域", "连锁闪电", "魔法盾", "法术穿透", "魔力回旋"]
 		Job.HUNTER:
-			skills = ["狙击", "陷阱", "毒箭"]
+			skills = ["狙击", "陷阱", "毒箭", "致命陷阱", "猎豹加速", "穿甲箭"]
 		Job.THIEF:
-			skills = ["背刺", "暗影", "消失"]
+			skills = ["背刺", "暗影", "消失", "影遁", "淬毒利刃", "锁喉"]
 		Job.PRIEST:
-			skills = ["治疗", "护盾", "复活"]
+			skills = ["治疗", "护盾", "复活", "群体治疗", "驱散", "神圣仲裁"]
 		Job.KNIGHT:
-			skills = ["格挡", "斩击", "神圣"]
+			skills = ["格挡", "斩击", "神圣", "盾击", "圣光审判", "钢铁壁垒"]
 		Job.BARD:
-			skills = ["鼓舞", "旋律", "沉默"]
+			skills = ["鼓舞", "旋律", "沉默", "战斗乐章", "疯狂节拍", "天籁之音"]
 		Job.SUMMONER:
-			skills = ["召唤", "契约", "共鸣"]
+			skills = ["召唤", "契约", "共鸣", "契约强化", "灵魂连接", "召唤兽强化"]
 
 func get_job_name() -> String:
 	return job_name[job]

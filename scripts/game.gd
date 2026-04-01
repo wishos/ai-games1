@@ -48,6 +48,42 @@ var spell_pierce_turns: int = 0     # 法术穿透回合（无视DEF）
 var mana_drain_turns: int = 0       # 魔力回旋回合
 var mana_drain_amount: int = 0      # 魔力回旋每次吸取量
 
+# 猎人T2状态
+var hunter_evasion_turns: int = 0    # 猎豹加速闪避回合
+var hunter_speed_boost_turns: int = 0  # 猎豹加速速度加成回合
+var hunter_armor_pierce_turns: int = 0  # 穿甲箭穿透回合
+var hunter_trap_dot_dmg: int = 0     # 致命陷阱每回合伤害
+var hunter_trap_turns: int = 0        # 致命陷阱持续回合
+var hunter_trap_slow: int = 0         # 致命陷阱减速量
+# 盗贼T2状态
+var thief_poison_turns: int = 0      # 淬毒利刃回合
+var thief_poison_dmg: int = 0         # 淬毒利刃伤害
+var thief_choke_turns: int = 0        # 锁喉眩晕回合
+var thief_combo_count: int = 0         # 致命连击连击计数
+var thief_combo_dmg: int = 0           # 致命连击累计伤害
+# 牧师T2状态
+var priest_mass_heal_mp: int = 0      # 群体治疗MP量（用于分摊护盾）
+var priest_dispel_done: bool = false  # 驱散本回合已用
+var priest_smite_turns: int = 0        # 神圣仲裁atk降低回合
+var priest_smite_defdebuff: int = 0    # 神圣仲裁降低def量
+# 骑士T2状态
+var knight_shield_bang_dmg: int = 0   # 盾击伤害量（溢出为盾）
+var knight_judgment_turns: int = 0     # 圣光审判降低防御回合
+var knight_judgment_defdebuff: int = 0 # 圣光审判降低防御量
+var knight_iron_wall_turns: int = 0    # 钢铁壁垒持续回合
+var knight_iron_wall_defboost: int = 0 # 钢铁壁垒防御加成
+# 吟游诗人T2状态
+var bard_song_atk_turns: int = 0       # 战斗乐章atk提升回合
+var bard_song_atk_boost: int = 0        # 战斗乐章提升量
+var bard_rhythm_turns: int = 0          # 疯狂节拍减速回合
+var bard_healing_melody_mp: int = 0     # 天籁之音治疗量
+# 召唤师T2状态
+var summoner_contract_boost_turns: int = 0  # 契约强化回合
+var summoner_contract_boost_dmg: int = 0    # 契约强化伤害加成
+var summoner_soul_link_turns: int = 0        # 灵魂连接回合
+var summoner_soul_link_dmg: int = 0          # 灵魂连接每回合伤害
+var summoner_beast_boost_turns: int = 0       # 召唤兽强化回合
+
 # 技能冷却系统
 var skill_cooldowns: Dictionary = {}  # {skill_name: remaining_turns}
 var battle_started: bool = false     # 战斗是否已开始（用于陷阱被动）
@@ -1928,6 +1964,41 @@ func _start_battle():
 	spell_pierce_turns = 0
 	mana_drain_turns = 0
 	mana_drain_amount = 0
+	# 猎人T2状态重置
+	hunter_evasion_turns = 0
+	hunter_speed_boost_turns = 0
+	hunter_armor_pierce_turns = 0
+	hunter_trap_dot_dmg = 0
+	hunter_trap_turns = 0
+	hunter_trap_slow = 0
+	# 盗贼T2状态重置
+	thief_poison_turns = 0
+	thief_poison_dmg = 0
+	thief_choke_turns = 0
+	thief_combo_count = 0
+	thief_combo_dmg = 0
+	# 牧师T2状态重置
+	priest_mass_heal_mp = 0
+	priest_dispel_done = false
+	priest_smite_turns = 0
+	priest_smite_defdebuff = 0
+	# 骑士T2状态重置
+	knight_shield_bang_dmg = 0
+	knight_judgment_turns = 0
+	knight_judgment_defdebuff = 0
+	knight_iron_wall_turns = 0
+	knight_iron_wall_defboost = 0
+	# 吟游诗人T2状态重置
+	bard_song_atk_turns = 0
+	bard_song_atk_boost = 0
+	bard_rhythm_turns = 0
+	bard_healing_melody_mp = 0
+	# 召唤师T2状态重置
+	summoner_contract_boost_turns = 0
+	summoner_contract_boost_dmg = 0
+	summoner_soul_link_turns = 0
+	summoner_soul_link_dmg = 0
+	summoner_beast_boost_turns = 0
 	
 	# 生成敌人（根据层数选择敌人类型）
 	var enemy_pool = EnemyData.get_floor_enemies(current_floor)
@@ -2000,6 +2071,41 @@ func _start_boss_battle():
 	spell_pierce_turns = 0
 	mana_drain_turns = 0
 	mana_drain_amount = 0
+	# 猎人T2状态重置
+	hunter_evasion_turns = 0
+	hunter_speed_boost_turns = 0
+	hunter_armor_pierce_turns = 0
+	hunter_trap_dot_dmg = 0
+	hunter_trap_turns = 0
+	hunter_trap_slow = 0
+	# 盗贼T2状态重置
+	thief_poison_turns = 0
+	thief_poison_dmg = 0
+	thief_choke_turns = 0
+	thief_combo_count = 0
+	thief_combo_dmg = 0
+	# 牧师T2状态重置
+	priest_mass_heal_mp = 0
+	priest_dispel_done = false
+	priest_smite_turns = 0
+	priest_smite_defdebuff = 0
+	# 骑士T2状态重置
+	knight_shield_bang_dmg = 0
+	knight_judgment_turns = 0
+	knight_judgment_defdebuff = 0
+	knight_iron_wall_turns = 0
+	knight_iron_wall_defboost = 0
+	# 吟游诗人T2状态重置
+	bard_song_atk_turns = 0
+	bard_song_atk_boost = 0
+	bard_rhythm_turns = 0
+	bard_healing_melody_mp = 0
+	# 召唤师T2状态重置
+	summoner_contract_boost_turns = 0
+	summoner_contract_boost_dmg = 0
+	summoner_soul_link_turns = 0
+	summoner_soul_link_dmg = 0
+	summoner_beast_boost_turns = 0
 	boss_phase = 1
 	boss_enraged = false
 	boss_shield_stacks = 0
@@ -2938,7 +3044,19 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	# 吟游诗人 T1
 	"鼓舞": 3, "旋律": 3, "沉默": 3,
 	# 召唤师 T1
-	"召唤": 3, "契约": 4, "共鸣": 2
+	"召唤": 3, "契约": 4, "共鸣": 2,
+	# 猎人 T2
+	"致命陷阱": 4, "猎豹加速": 3, "穿甲箭": 3,
+	# 盗贼 T2
+	"影遁": 4, "淬毒利刃": 3, "锁喉": 4,
+	# 牧师 T2
+	"群体治疗": 5, "驱散": 3, "神圣仲裁": 4,
+	# 骑士 T2
+	"盾击": 3, "圣光审判": 4, "钢铁壁垒": 5,
+	# 吟游诗人 T2
+	"战斗乐章": 3, "疯狂节拍": 4, "天籁之音": 5,
+	# 召唤师 T2
+	"契约强化": 4, "灵魂连接": 3, "召唤兽强化": 4
 }
 
 # 计算战斗中有效的攻击力（含buff加成）
@@ -2946,10 +3064,15 @@ func _get_effective_atk() -> int:
 	var atk = player_data.attack_power()
 	atk += battle_cry_atk_boost  # 战吼ATK加成
 	atk += berserk_atk_boost     # 狂暴ATK加成
+	atk += bard_song_atk_boost    # 战斗乐章ATK加成
 	return atk
 
 # 法术穿透：无视敌人防御，消耗1层
 func _consume_spell_pierce() -> int:
+	# 穿甲箭：无视防御
+	if hunter_armor_pierce_turns > 0:
+		return 0
+	# 法术穿透：无视防御
 	if spell_pierce_turns > 0:
 		spell_pierce_turns -= 1
 		if spell_pierce_turns <= 0:
@@ -2994,7 +3117,13 @@ func _on_skill_menu():
 		"治疗": 15, "护盾": 10, "复活": 50,
 		"格挡": 0, "斩击": 15, "神圣": 25,
 		"鼓舞": 10, "旋律": 15, "沉默": 20,
-		"召唤": 20, "契约": 20, "共鸣": 25
+		"召唤": 20, "契约": 20, "共鸣": 25,
+		"致命陷阱": 25, "猎豹加速": 20, "穿甲箭": 30,
+		"影遁": 25, "淬毒利刃": 25, "锁喉": 30,
+		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
+		"盾击": 15, "圣光审判": 30, "钢铁壁垒": 25,
+		"战斗乐章": 20, "疯狂节拍": 35, "天籁之音": 40,
+		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25
 	}
 	
 	var skill_idx = 0
@@ -3003,7 +3132,16 @@ func _on_skill_menu():
 		var cd_remaining = skill_cooldowns.get(skill, 0)
 		var cd_total = _get_skill_cooldown(skill)
 		# T2技能需要Lv10
-		var t2_skills = ["血之狂暴", "旋风斩", "战吼", "流星火雨", "霜冻领域", "连锁闪电", "魔法盾", "法术穿透", "魔力回旋"]
+		var t2_skills = [
+			"血之狂暴", "旋风斩", "战吼",
+			"流星火雨", "霜冻领域", "连锁闪电", "魔法盾", "法术穿透", "魔力回旋",
+			"致命陷阱", "猎豹加速", "穿甲箭",
+			"影遁", "淬毒利刃", "锁喉",
+			"群体治疗", "驱散", "神圣仲裁",
+			"盾击", "圣光审判", "钢铁壁垒",
+			"战斗乐章", "疯狂节拍", "天籁之音",
+			"契约强化", "灵魂连接", "召唤兽强化"
+		]
 		var is_t2 = t2_skills.has(skill)
 		var level_locked = is_t2 and player_data.level < 10
 		var can_use = player_data.mp >= cost and cd_remaining <= 0 and not level_locked
@@ -3077,7 +3215,13 @@ func _on_skill_selected(skill_name: String):
 		"治疗": 15, "护盾": 10, "复活": 50,
 		"格挡": 0, "斩击": 15, "神圣": 25,
 		"鼓舞": 10, "旋律": 15, "沉默": 20,
-		"召唤": 20, "契约": 20, "共鸣": 25
+		"召唤": 20, "契约": 20, "共鸣": 25,
+		"致命陷阱": 25, "猎豹加速": 20, "穿甲箭": 30,
+		"影遁": 25, "淬毒利刃": 25, "锁喉": 30,
+		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
+		"盾击": 15, "圣光审判": 30, "钢铁壁垒": 25,
+		"战斗乐章": 20, "疯狂节拍": 35, "天籁之音": 40,
+		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25
 	}
 	var cost = mp_cost.get(skill_name, 0)
 	if player_data.mp < cost:
@@ -3347,6 +3491,148 @@ func _on_skill_selected(skill_name: String):
 			resonance_stacks = 0
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % reso_dmg, "crit", Vector2(0, -30))
+		# 猎人 T2
+		"致命陷阱":
+			var trap_dmg = int(_get_effective_atk() * 1.0)
+			current_enemy["hp"] -= trap_dmg
+			hunter_trap_dot_dmg = int(_get_effective_atk() * 0.4)
+			hunter_trap_turns = 3
+			hunter_trap_slow = 3
+			current_enemy["spd"] = max(1, current_enemy["spd"] - hunter_trap_slow)
+			_battle_add_log("🪤 致命陷阱！造成 %d 伤害，敌人速度-%d持续3回合，此后每回合受到 %d 灼烧伤害" % [trap_dmg, hunter_trap_slow, hunter_trap_dot_dmg])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % trap_dmg, "crit", Vector2(0, -35))
+		"猎豹加速":
+			hunter_evasion_turns = 2
+			hunter_speed_boost_turns = 2
+			_battle_add_log("🦌 猎豹加速！闪避率+50%%持续2回合，移速提升")
+			_spawn_player_damage("EVASION+50%", "buff")
+		"穿甲箭":
+			hunter_armor_pierce_turns = 2
+			var pierce_dmg = int(_get_effective_atk() * 2.5)
+			current_enemy["hp"] -= pierce_dmg
+			_battle_add_log("🏹 穿甲箭！无视防御，造成 %d 伤害，持续2回合穿透" % pierce_dmg)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % pierce_dmg, "crit", Vector2(0, -35))
+		# 盗贼 T2
+		"影遁":
+			var vanish_dmg = int(_get_effective_atk() * 3.0)
+			current_enemy["hp"] -= vanish_dmg
+			vanish_turns = 2
+			_battle_add_log("💨 影遁！造成 %d 伤害，2回合内50%%闪避" % vanish_dmg)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % vanish_dmg, "crit", Vector2(0, -40))
+		"淬毒利刃":
+			var poison_dmg = int(_get_effective_atk() * 1.5)
+			current_enemy["hp"] -= poison_dmg
+			thief_poison_turns = 4
+			thief_poison_dmg = int(_get_effective_atk() * 0.3)
+			_battle_add_log("🗡️ 淬毒利刃！造成 %d 伤害，4回合内每回合受到 %d 中毒伤害" % [poison_dmg, thief_poison_dmg])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % poison_dmg, "poison", Vector2(0, -30))
+		"锁喉":
+			var choke_dmg = int(_get_effective_atk() * 2.2)
+			current_enemy["hp"] -= choke_dmg
+			thief_choke_turns = 2
+			_battle_add_log("🗡️ 锁喉！造成 %d 伤害，敌人眩晕2回合" % choke_dmg)
+			_enemy_hit_effect()
+			enemy_stun_turns = max(enemy_stun_turns, 2)
+			_spawn_enemy_damage("%d" % choke_dmg, "debuff", Vector2(0, -35))
+		# 牧师 T2
+		"群体治疗":
+			var heal_amt = int(player_data.max_hp * 0.5)
+			player_data.hp = min(player_data.max_hp, player_data.hp + heal_amt)
+			priest_mass_heal_mp = heal_amt
+			player_shield += int(heal_amt * 0.3)
+			_trigger_portrait_heal_glow()
+			_battle_add_log("💚 群体治疗！恢复 %d HP，护盾+%d" % [heal_amt, int(heal_amt * 0.3)])
+			_spawn_player_damage("+%d" % heal_amt, "heal")
+		"驱散":
+			priest_dispel_done = true
+			var def_debuff = int(current_enemy["def"] * 0.3)
+			current_enemy["def"] = max(1, current_enemy["def"] - def_debuff)
+			# 驱散敌人增益
+			_battle_add_log("✨ 驱散！敌人防御-%d" % def_debuff)
+			_spawn_enemy_damage("DEF-%d" % def_debuff, "debuff")
+		"神圣仲裁":
+			var smite_dmg = int(_get_effective_atk() * 2.8)
+			current_enemy["hp"] -= smite_dmg
+			priest_smite_turns = 2
+			priest_smite_defdebuff = int(current_enemy["def"] * 0.25)
+			current_enemy["def"] = max(1, current_enemy["def"] - priest_smite_defdebuff)
+			var smite_heal = int(player_data.max_hp * 0.1)
+			player_data.hp = min(player_data.max_hp, player_data.hp + smite_heal)
+			_battle_add_log("⚖️ 神圣仲裁！造成 %d 伤害，敌人DEF-%d持续2回合，恢复 %d HP" % [smite_dmg, priest_smite_defdebuff, smite_heal])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % smite_dmg, "crit", Vector2(0, -40))
+			_spawn_player_damage("+%d" % smite_heal, "heal")
+		# 骑士 T2
+		"盾击":
+			var shield_bang = int(player_data.defense() * 1.8)
+			current_enemy["hp"] -= shield_bang
+			knight_shield_bang_dmg = shield_bang
+			enemy_stun_turns = 1
+			_battle_add_log("🛡️ 盾击！造成 %d 伤害，敌人眩晕1回合" % shield_bang)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % shield_bang, "damage", Vector2(0, -25))
+		"圣光审判":
+			var judgment_dmg = int(_get_effective_atk() * 2.5)
+			current_enemy["hp"] -= judgment_dmg
+			knight_judgment_turns = 2
+			knight_judgment_defdebuff = int(current_enemy["def"] * 0.3)
+			current_enemy["def"] = max(1, current_enemy["def"] - knight_judgment_defdebuff)
+			_battle_add_log("⚔️ 圣光审判！造成 %d 伤害，敌人DEF-%d持续2回合" % [judgment_dmg, knight_judgment_defdebuff])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % judgment_dmg, "crit", Vector2(0, -40))
+		"钢铁壁垒":
+			knight_iron_wall_turns = 3
+			knight_iron_wall_defboost = int(player_data.defense() * 1.0)
+			player_shield += int(player_data.defense() * 2.0)
+			_battle_add_log("🏰 钢铁壁垒！自身DEF+%d持续3回合，护盾+%d" % [knight_iron_wall_defboost, int(player_data.defense() * 2.0)])
+			_spawn_player_damage("+%d" % int(player_data.defense() * 2.0), "shield")
+		# 吟游诗人 T2
+		"战斗乐章":
+			bard_song_atk_turns = 3
+			bard_song_atk_boost = int(_get_effective_atk() * 0.25)
+			_battle_add_log("🎵 战斗乐章！攻击力+%d持续3回合" % bard_song_atk_boost)
+			_spawn_player_damage("ATK+%d" % bard_song_atk_boost, "buff")
+		"疯狂节拍":
+			var rhythm_dmg = int(_get_effective_atk() * 1.8)
+			current_enemy["hp"] -= rhythm_dmg
+			bard_rhythm_turns = 2
+			_battle_add_log("🥁 疯狂节拍！造成 %d 伤害，敌人速度-40%%持续2回合" % rhythm_dmg)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % rhythm_dmg, "crit", Vector2(0, -35))
+		"天籁之音":
+			var hm_heal = int(player_data.max_hp * 0.35)
+			player_data.hp = min(player_data.max_hp, player_data.hp + hm_heal)
+			var hm_mp = int(player_data.max_mp * 0.2)
+			player_data.mp = min(player_data.max_mp, player_data.mp + hm_mp)
+			bard_healing_melody_mp = hm_mp
+			_trigger_portrait_heal_glow()
+			_battle_add_log("🎶 天籁之音！恢复 %d HP 和 %d MP" % [hm_heal, hm_mp])
+			_spawn_player_damage("+%d HP" % hm_heal, "heal")
+		# 召唤师 T2
+		"契约强化":
+			summoner_contract_boost_turns = 3
+			summoner_contract_boost_dmg = int(_get_effective_atk() * 0.5)
+			var contract_boost_dmg = int(_get_effective_atk() * 1.8)
+			current_enemy["hp"] -= contract_boost_dmg
+			_battle_add_log("📜 契约强化！造成 %d 伤害，召唤兽伤害+%d/次持续3回合" % [contract_boost_dmg, summoner_contract_boost_dmg])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % contract_boost_dmg, "buff", Vector2(0, -30))
+		"灵魂连接":
+			summoner_soul_link_turns = 4
+			summoner_soul_link_dmg = int(player_data.max_hp * 0.08)
+			_battle_add_log("🔗 灵魂连接！每回合对敌人造成 %d 伤害，持续4回合" % summoner_soul_link_dmg)
+			_spawn_player_damage("LINK x4", "buff")
+		"召唤兽强化":
+			summoner_beast_boost_turns = 3
+			var beast_dmg = int(_get_effective_atk() * 1.5 + player_data.luk * 3)
+			current_enemy["hp"] -= beast_dmg
+			_battle_add_log("🐉 召唤兽强化！召唤兽攻击力+%d，额外造成 %d 伤害" % [_get_effective_atk() / 3, beast_dmg])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % beast_dmg, "crit", Vector2(0, -35))
 	
 	_update_enemy_hp_bar()
 	_update_battle_player_ui()
@@ -3533,6 +3819,52 @@ func _process_battle(delta: float):
 			battle_cry_team_boost = 0
 			_battle_add_log("📢 战吼效果结束")
 	
+	# 吟游诗人T2: 战斗乐章ATK提升
+	if bard_song_atk_turns > 0:
+		bard_song_atk_turns -= 1
+		if bard_song_atk_turns <= 0:
+			_battle_add_log("🎵 战斗乐章效果结束")
+	
+	# 骑士T2: 钢铁壁垒DEF提升
+	if knight_iron_wall_turns > 0:
+		knight_iron_wall_turns -= 1
+		if knight_iron_wall_turns <= 0:
+			knight_iron_wall_defboost = 0
+			_battle_add_log("🏰 钢铁壁垒效果结束")
+	
+	# 骑士T2: 圣光审判DEF debuff
+	if knight_judgment_turns > 0:
+		knight_judgment_turns -= 1
+		if knight_judgment_turns <= 0:
+			knight_judgment_defdebuff = 0
+			_battle_add_log("⚔️ 圣光审判效果结束")
+	
+	# 牧师T2: 神圣仲裁DEF debuff
+	if priest_smite_turns > 0:
+		priest_smite_turns -= 1
+		if priest_smite_turns <= 0:
+			priest_smite_defdebuff = 0
+			_battle_add_log("⚖️ 神圣仲裁效果结束")
+	
+	# 召唤师T2: 契约强化
+	if summoner_contract_boost_turns > 0:
+		summoner_contract_boost_turns -= 1
+		if summoner_contract_boost_turns <= 0:
+			summoner_contract_boost_dmg = 0
+			_battle_add_log("📜 契约强化效果结束")
+	
+	# 召唤师T2: 召唤兽强化
+	if summoner_beast_boost_turns > 0:
+		summoner_beast_boost_turns -= 1
+		if summoner_beast_boost_turns <= 0:
+			_battle_add_log("🐉 召唤兽强化效果结束")
+	
+	# 猎人T2: 穿甲箭（穿透效果已在内置，穿透减少在_on_skill_selected里处理）
+	if hunter_armor_pierce_turns > 0:
+		hunter_armor_pierce_turns -= 1
+		if hunter_armor_pierce_turns <= 0:
+			_battle_add_log("🏹 穿甲箭效果结束")
+	
 	# 契约诅咒（生命吸取）
 	if contract_active:
 		var drain_dmg = int(player_data.attack_power() * 0.4)
@@ -3545,6 +3877,36 @@ func _process_battle(delta: float):
 		if contract_turns <= 0:
 			contract_active = false
 			_battle_add_log("📜 契约诅咒结束")
+		_update_enemy_hp_bar()
+		if _check_battle_end():
+			return
+	
+	# 猎人T2: 致命陷阱DOT
+	if hunter_trap_turns > 0:
+		current_enemy["hp"] -= hunter_trap_dot_dmg
+		_battle_add_log("🪤 陷阱灼烧！受到 %d 伤害（剩余%d回合）" % [hunter_trap_dot_dmg, hunter_trap_turns])
+		_spawn_enemy_damage("%d" % hunter_trap_dot_dmg, "poison", Vector2(-10, -10))
+		hunter_trap_turns -= 1
+		_update_enemy_hp_bar()
+		if _check_battle_end():
+			return
+	
+	# 盗贼T2: 淬毒利刃DOT
+	if thief_poison_turns > 0:
+		current_enemy["hp"] -= thief_poison_dmg
+		_battle_add_log("🗡️ 中毒！淬毒利刃造成 %d 伤害（剩余%d回合）" % [thief_poison_dmg, thief_poison_turns])
+		_spawn_enemy_damage("%d" % thief_poison_dmg, "poison", Vector2(10, -10))
+		thief_poison_turns -= 1
+		_update_enemy_hp_bar()
+		if _check_battle_end():
+			return
+	
+	# 召唤师T2: 灵魂连接DOT
+	if summoner_soul_link_turns > 0:
+		current_enemy["hp"] -= summoner_soul_link_dmg
+		_battle_add_log("🔗 灵魂连接！受到 %d 伤害（剩余%d回合）" % [summoner_soul_link_dmg, summoner_soul_link_turns])
+		_spawn_enemy_damage("%d" % summoner_soul_link_dmg, "debuff", Vector2(20, -10))
+		summoner_soul_link_turns -= 1
 		_update_enemy_hp_bar()
 		if _check_battle_end():
 			return
@@ -3565,16 +3927,20 @@ func _process_battle(delta: float):
 		_start_player_turn()
 		return
 	
-	# 消失闪避检测
-	if vanish_turns > 0:
-		vanish_turns -= 1
+	# 消失/猎豹加速闪避检测
+	if vanish_turns > 0 or hunter_evasion_turns > 0:
+		if vanish_turns > 0:
+			vanish_turns -= 1
+		if hunter_evasion_turns > 0:
+			hunter_evasion_turns -= 1
 		if randf() < 0.5:
-			_battle_add_log("💨 消失！完美闪避了敌人攻击！")
+			var evade_name = "消失" if vanish_turns >= 0 else "猎豹加速"
+			_battle_add_log("💨 %s！完美闪避了敌人攻击！" % evade_name)
 			_spawn_player_damage("MISS!", "miss")
 			_start_player_turn()
 			return
 		else:
-			_battle_add_log("💨 消失！闪避失败...")
+			_battle_add_log("💨 闪避失败...")
 	
 	# Boss特殊能力处理
 	if current_enemy.get("is_boss", false):
