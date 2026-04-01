@@ -171,58 +171,58 @@ const PALETTE = {
 	"gold": Color("#c9a227")
 }
 
-# Boss数据 (第1/3/5/7/8层)
+# Boss数据 (第1/3/5/7/8层) - 武侠江湖主题
 const BOSS_DATA = {
 	1: {
-		"name": "哥布林王 Grak",
+		"name": "山贼王·韩霸天",
 		"title": "第1层Boss",
 		"hp": 350, "atk": 25, "def": 12, "spd": 5, "luk": 5,
 		"exp": 500, "gold": 300,
-		"color": Color(0.3, 0.7, 0.2),
+		"color": Color(0.55, 0.25, 0.1),
 		"phase_hp": 0.3,  # 30%血量触发狂暴
-		"skills": ["普通攻击", "怒吼", "召唤哥布林", "狂暴化"],
-		"description": "盘踞在地牢入口的哥布林首领，贪婪而狡猾，手下众多。"
+		"skills": ["普通攻击", "战吼", "召集喽啰", "狂暴化"],
+		"description": "盘踞在黑风寨的山贼首领，刀法霸道，据说曾是某个门派的弃徒。"
 	},
 	3: {
-		"name": "巫妖领主 Lich Lord",
+		"name": "血刀门护法·血手赫连铁树",
 		"title": "第3层Boss",
 		"hp": 600, "atk": 45, "def": 15, "spd": 6, "luk": 8,
 		"exp": 1200, "gold": 800,
-		"color": Color(0.4, 0.4, 0.8),
-		"phase_hp": 0.2,  # 20%血量触发不死之身
-		"skills": ["暗影冲击", "亡灵大军", "生命虹吸", "灵魂收割", "不死之身"],
-		"description": "曾是大陆上最伟大的亡灵法师，因追求永生而堕落为巫妖。"
+		"color": Color(0.65, 0.1, 0.1),
+		"phase_hp": 0.2,  # 20%血量触发血战到底
+		"skills": ["一线斩", "血雾", "血刀斩", "嗜血狂刀", "血战到底"],
+		"description": "血刀门四大护法之一，双手染满江湖人士的鲜血，绝学「血战到底」一旦施展必死无疑。"
 	},
 	5: {
-		"name": "熔岩巨魔 Magmato",
+		"name": "门派叛徒·司马青云",
 		"title": "第5层Boss",
 		"hp": 1200, "atk": 55, "def": 35, "spd": 3, "luk": 2,
 		"exp": 2500, "gold": 1500,
-		"color": Color(0.9, 0.3, 0.1),
+		"color": Color(0.25, 0.2, 0.5),
 		"phase_hp": 0.0,
-		"skills": ["岩浆之拳", "熔岩喷射", "碎地重击", "熔岩护甲"],
-		"description": "沉睡于火山深处的远古巨魔，体内流淌着岩浆。"
+		"skills": ["御剑术", "剑气纵横", "夺命十三剑", "金蝉脱壳"],
+		"description": "原为某正派长老，盗取门派秘籍叛逃江湖，所学武功已入化境。"
 	},
 	7: {
-		"name": "堕落天使 Seraphiel",
+		"name": "华山掌门·岳不群",
 		"title": "第7层Boss",
 		"hp": 2000, "atk": 70, "def": 30, "spd": 8, "luk": 12,
 		"exp": 5000, "gold": 3000,
-		"color": Color(0.8, 0.8, 1.0),
+		"color": Color(0.85, 0.7, 0.3),
 		"phase_hp": 0.0,
-		"skills": ["天罚之剑", "神圣裁决", "堕落之光", "命运之手", "羽翼护盾"],
-		"description": "曾是天界最强大的守护天使，因质疑神谕而被逐出天堂。"
+		"skills": ["紫霞神功", "独孤九剑", "吸星大法", "辟邪剑法", "伪君子真面目"],
+		"description": "华山派掌门，外号「君子剑」，实则城府极深，为夺葵花宝典不择手段。"
 	},
 	8: {
-		"name": "远古巨龙 Zephyranthes",
+		"name": "武当真人·张三丰",
 		"title": "最终Boss",
 		"hp": 5000, "atk": 100, "def": 50, "spd": 10, "luk": 15,
 		"exp": 15000, "gold": 10000,
-		"color": Color(0.2, 0.05, 0.4),
+		"color": Color(0.7, 0.85, 1.0),
 		"phase_hp": 0.6,  # 60%进入第二阶段
 		"phase2_hp": 0.3,  # 30%进入第三阶段
-		"skills": ["龙息", "飓风降临", "召唤雷云", "毁天灭地", "龙鳞护体", "湮灭"],
-		"description": "传说中太古时代便存在的巨龙，掌管着天空与风暴的力量。"
+		"skills": ["太极拳", "太极剑", "梯云纵", "纯阳无极功", "武当九阳功", "一代宗师"],
+		"description": "武当派开山祖师，百年修为已臻化境，一套太极拳法无敌于天下。今日亲临，是考验也是收徒。"
 	}
 }
 
@@ -232,7 +232,7 @@ var transition_overlay: ColorRect
 var current_boss_data: Dictionary = {}
 var boss_phase: int = 1  # Boss战阶段
 var boss_enraged: bool = false  # Boss狂暴标记
-var boss_shield_stacks: int = 0  # 堕落天使护盾层数
+var boss_shield_stacks: int = 0  # Boss护盾层数
 var boss_revived: bool = false  # 巫妖复活标记
 
 # 墙壁碰撞区 (简化)
@@ -1071,6 +1071,7 @@ func _start_boss_encounter():
 		"exp": boss_def["exp"],
 		"gold": boss_def["gold"],
 		"color": boss_def["color"],
+		"faction": "Boss",
 		"phase_hp": boss_def.get("phase_hp", 0.0),
 		"phase2_hp": boss_def.get("phase2_hp", 0.0),
 		"description": boss_def["description"]
@@ -2014,6 +2015,7 @@ func _start_battle():
 		"exp": edata.exp_reward,
 		"gold": edata.gold_reward,
 		"color": edata.color,
+		"faction": edata.faction,
 		"is_boss": false
 	}
 	
@@ -2024,7 +2026,7 @@ func _start_battle():
 	battle_started = true
 	# 切换到战斗BGM
 	if audio_manager:
-		if current_floor >= 7 or current_enemy["name"] == "远古巨龙":
+		if current_floor >= 7 or current_enemy["name"] == "武当真人·张三丰":
 			audio_manager.play_bgm("boss")
 		else:
 			audio_manager.play_bgm("battle")
@@ -2854,167 +2856,275 @@ func _create_enemy_texture(col: Color) -> ImageTexture:
 	img.fill(Color(0, 0, 0, 0))
 	
 	match current_enemy["name"]:
-		# ===== 1-2层：新手区 =====
-		"史莱姆":
-			# 史莱姆形状
-			for x in range(8, 24):
-				img.set_pixel(x, 20, col)
-				img.set_pixel(x, 22, col)
-				img.set_pixel(x, 24, col)
-			for x in range(10, 22):
-				img.set_pixel(x, 18, col)
-				img.set_pixel(x, 16, col)
-			for x in range(12, 20):
-				img.set_pixel(x, 14, col)
-			img.set_pixel(14, 18, Color.WHITE)
-			img.set_pixel(18, 18, Color.WHITE)
-			img.set_pixel(15, 19, Color.BLACK)
-			img.set_pixel(19, 19, Color.BLACK)
-		"洞穴蝙蝠":
-			# 蝙蝠（翅膀展开）
-			img.set_pixel(14, 8, col)   # 头
-			img.set_pixel(18, 8, col)
-			img.set_pixel(14, 10, Color.RED)  # 眼睛
-			img.set_pixel(18, 10, Color.RED)
-			_set_pixel_line(img, 2, 14, 14, 14, col)  # 左翼
-			_set_pixel_line(img, 18, 14, 30, 14, col)  # 右翼
-			_set_pixel_line(img, 4, 18, 12, 18, col)  # 左翼下
-			_set_pixel_line(img, 20, 18, 28, 18, col)  # 右翼下
-			img.set_pixel(15, 12, col)  # 身体
-			img.set_pixel(17, 12, col)
-			img.set_pixel(16, 14, col)
-		"野猪":
-			# 野猪
-			_set_pixel_line(img, 8, 14, 22, 14, col)  # 头顶
-			img.set_pixel(10, 12, col)   # 獠牙上
-			img.set_pixel(24, 14, col)  # 獠牙下
-			img.set_pixel(12, 14, Color.RED)  # 眼睛
-			img.set_pixel(18, 14, Color.RED)  # 眼睛
-			_set_pixel_line(img, 8, 18, 22, 18, col)  # 身
-			_set_pixel_line(img, 6, 22, 10, 22, col)  # 腿前
-			_set_pixel_line(img, 18, 22, 22, 22, col)  # 腿后
-			img.set_pixel(6, 26, col)   # 蹄
-			img.set_pixel(22, 26, col)  # 蹄
-		# ===== 3-4层：中级区 =====
-		"骷髅战士":
-			# 骷髅
-			_set_pixel_line(img, 14, 6, 18, 6, col)  # 头顶
-			_set_pixel_line(img, 12, 10, 20, 10, col)  # 眼窝
-			img.set_pixel(14, 10, Color.RED)
-			img.set_pixel(18, 10, Color.RED)
-			_set_pixel_line(img, 12, 14, 20, 14, col)  # 下巴
-			_set_pixel_line(img, 12, 16, 20, 16, col)  # 颈
-			_set_pixel_line(img, 10, 20, 22, 20, col)  # 身体
-			_set_pixel_line(img, 8, 24, 24, 24, col)   # 骨盆
-			_set_pixel_line(img, 8, 28, 10, 28, col)  # 腿左
-			_set_pixel_line(img, 22, 28, 24, 28, col)  # 腿右
-		"哥布林":
-			# 哥布林（小绿怪）
-			img.set_pixel(12, 6, col)   # 左耳
-			img.set_pixel(20, 6, col)  # 右耳
+		# ===== 1-2层：草寇势力 =====
+		"劫道山贼":
+			# 劫道山贼（粗犷黑衣人）
+			_set_pixel_line(img, 10, 4, 22, 4, col)  # 头巾
+			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
+			img.set_pixel(14, 10, Color.BLACK)  # 眉毛（凶）
+			img.set_pixel(18, 10, Color.BLACK)
+			img.set_pixel(14, 12, Color.YELLOW)  # 眼睛
+			img.set_pixel(18, 12, Color.YELLOW)
+			_set_pixel_line(img, 12, 16, 20, 16, col)  # 络腮胡
+			_set_pixel_line(img, 8, 20, 24, 20, col)  # 身（短打）
+			_set_pixel_line(img, 6, 28, 12, 28, col)  # 腿
+			_set_pixel_line(img, 20, 28, 26, 28, col)
+			img.set_pixel(2, 22, col)  # 朴刀
+			img.set_pixel(4, 20, col)
+			img.set_pixel(4, 24, col)
+		"荒野土匪":
+			# 荒野土匪（体毛旺盛的大汉）
+			_set_pixel_line(img, 8, 4, 24, 4, col)  # 乱发
 			_set_pixel_line(img, 10, 8, 22, 8, col)  # 头顶
-			img.set_pixel(13, 11, Color.YELLOW)  # 眼睛
-			img.set_pixel(19, 11, Color.YELLOW)
+			img.set_pixel(13, 10, Color.RED)  # 凶狠眼
+			img.set_pixel(19, 10, Color.RED)
+			_set_pixel_line(img, 8, 14, 24, 14, col)  # 络腮胡
+			_set_pixel_line(img, 6, 18, 26, 18, col)  # 宽肩
+			_set_pixel_line(img, 4, 28, 12, 28, col)  # 粗腿
+			_set_pixel_line(img, 20, 28, 28, 28, col)
+			img.set_pixel(0, 16, col)  # 双刀
+			img.set_pixel(2, 14, col)
+			img.set_pixel(2, 18, col)
+			img.set_pixel(30, 16, col)
+			img.set_pixel(28, 14, col)
+			img.set_pixel(28, 18, col)
+		"逃兵":
+			# 逃兵（破损铠甲的士兵）
+			_set_pixel_line(img, 12, 4, 20, 4, col)  # 头盔（歪）
+			img.set_pixel(10, 6, col)
+			_set_pixel_line(img, 10, 10, 22, 10, col)  # 脸
+			img.set_pixel(13, 12, Color.GRAY)  # 惊恐眼神
+			img.set_pixel(19, 12, Color.GRAY)
+			_set_pixel_line(img, 8, 16, 24, 16, col)  # 破甲
+			_set_pixel_line(img, 8, 20, 24, 20, col)  # 身
+			_set_pixel_line(img, 6, 24, 12, 24, col)  # 断腿甲
+			_set_pixel_line(img, 20, 24, 26, 24, col)
+			img.set_pixel(14, 28, col)  # 跛脚
+			img.set_pixel(16, 28, col)
+		# ===== 3-4层：邪派势力 =====
+		"血刀门弟子":
+			# 血刀门弟子（血红披风）
+			_set_pixel_line(img, 14, 4, 18, 4, col)  # 发髻
+			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
+			img.set_pixel(14, 11, Color.BLACK)  # 眼
+			img.set_pixel(18, 11, Color.BLACK)
+			img.set_pixel(14, 12, Color.ORANGE)  # 杀气
+			img.set_pixel(18, 12, Color.ORANGE)
+			_set_pixel_line(img, 12, 16, 20, 16, col)  # 脸
+			_set_pixel_line(img, 8, 18, 12, 18, Color.DARK_RED)  # 血红围巾
+			_set_pixel_line(img, 20, 18, 24, 18, Color.DARK_RED)
+			_set_pixel_line(img, 8, 20, 24, 20, col)  # 身
+			_set_pixel_line(img, 6, 28, 12, 28, col)  # 腿
+			_set_pixel_line(img, 20, 28, 26, 28, col)
+			img.set_pixel(2, 18, Color.SILVER)  # 血刀
+			img.set_pixel(4, 16, Color.SILVER)
+			img.set_pixel(4, 20, Color.SILVER)
+		"日月神教教徒":
+			# 日月神教教徒（金黑袍）
+			_set_pixel_line(img, 14, 4, 18, 4, Color.GOLD)  # 金冠
+			img.set_pixel(14, 4, Color.GOLD)
+			img.set_pixel(18, 4, Color.GOLD)
+			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
+			img.set_pixel(14, 11, Color.YELLOW)  # 眼睛
+			img.set_pixel(18, 11, Color.YELLOW)
+			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸
+			_set_pixel_line(img, 10, 18, 22, 18, Color.GOLD)  # 金腰带
+			_set_pixel_line(img, 8, 20, 24, 20, col)  # 袍子
+			_set_pixel_line(img, 6, 26, 26, 26, col)  # 袍下
+			img.set_pixel(16, 8, Color.GOLD)  # 太阳纹
+		"五毒教教徒":
+			# 五毒教教徒（青绿毒师）
+			_set_pixel_line(img, 12, 4, 20, 4, col)  # 蛇形头饰
+			img.set_pixel(10, 4, col)
+			img.set_pixel(22, 4, col)
+			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
+			img.set_pixel(14, 11, Color.LIME_GREEN)  # 毒眼
+			img.set_pixel(18, 11, Color.LIME_GREEN)
 			img.set_pixel(14, 12, Color.BLACK)
 			img.set_pixel(18, 12, Color.BLACK)
-			_set_pixel_line(img, 12, 16, 20, 16, col)  # 嘴（狞笑）
-			img.set_pixel(13, 16, Color.BLACK)
-			img.set_pixel(19, 16, Color.BLACK)
-			_set_pixel_line(img, 10, 18, 22, 18, col)  # 身
-			_set_pixel_line(img, 8, 24, 24, 24, col)  # 腿
-		"幽灵":
-			# 幽灵（半透明效果用淡色）
-			var ghost_col = Color(col.r, col.g, col.b, 0.7)
-			_set_pixel_line(img, 12, 6, 20, 6, ghost_col)  # 头顶
-			img.set_pixel(14, 10, Color.BLACK)  # 眼
-			img.set_pixel(18, 10, Color.BLACK)
-			_set_pixel_line(img, 10, 12, 22, 12, ghost_col)  # 脸
-			_set_pixel_line(img, 8, 16, 24, 16, ghost_col)  # 身
-			_set_pixel_line(img, 8, 20, 24, 20, ghost_col)  # 下摆（波浪）
-			img.set_pixel(10, 22, ghost_col)
-			img.set_pixel(16, 24, ghost_col)
-			img.set_pixel(22, 22, ghost_col)
-		# ===== 5-6层：高级区 =====
-		"深渊恶魔":
-			# 恶魔
-			_set_pixel_line(img, 8, 6, 12, 6, col)   # 角左
-			_set_pixel_line(img, 20, 6, 24, 6, col)  # 角右
-			_set_pixel_line(img, 10, 8, 22, 8, col)   # 头顶
-			_set_pixel_line(img, 10, 12, 22, 12, col)  # 眼线
-			img.set_pixel(13, 12, Color.YELLOW)
-			img.set_pixel(19, 12, Color.YELLOW)
-			img.set_pixel(13, 13, Color.BLACK)
-			img.set_pixel(19, 13, Color.BLACK)
-			_set_pixel_line(img, 10, 16, 22, 16, col)  # 颧骨
-			_set_pixel_line(img, 12, 20, 20, 20, col)  # 嘴
-			img.set_pixel(14, 20, Color.BLACK)
-			img.set_pixel(15, 20, Color.BLACK)
-			img.set_pixel(17, 20, Color.BLACK)
-			img.set_pixel(18, 20, Color.BLACK)
-			_set_pixel_line(img, 8, 22, 24, 22, col)  # 身
-			_set_pixel_line(img, 8, 26, 24, 26, col)   # 腿
-		"兽人战士":
-			# 兽人（粗壮）
-			_set_pixel_line(img, 10, 6, 22, 6, col)  # 头顶
-			img.set_pixel(8, 8, col)   # 獠牙
-			img.set_pixel(24, 8, col)
-			img.set_pixel(13, 10, Color.RED)  # 眼睛
-			img.set_pixel(19, 10, Color.RED)
-			_set_pixel_line(img, 10, 14, 22, 14, col)  # 脸
-			_set_pixel_line(img, 8, 18, 24, 18, col)  # 身（宽）
-			_set_pixel_line(img, 4, 26, 12, 26, col)  # 粗腿左
-			_set_pixel_line(img, 20, 26, 28, 26, col)  # 粗腿右
-		"暗黑骷髅":
-			# 暗黑骷髅（蓝黑色调）
-			_set_pixel_line(img, 14, 4, 18, 4, col)  # 冠
-			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
-			_set_pixel_line(img, 10, 12, 22, 12, col)  # 眼窝
-			img.set_pixel(14, 12, Color.BLUE)  # 幽蓝眼火
-			img.set_pixel(18, 12, Color.BLUE)
-			_set_pixel_line(img, 12, 16, 20, 16, col)  # 下巴
-			_set_pixel_line(img, 10, 20, 22, 20, col)  # 身体
-			_set_pixel_line(img, 6, 26, 12, 26, col)  # 腿（左持剑）
-			_set_pixel_line(img, 20, 26, 26, 26, col)  # 腿右
-			_set_pixel_line(img, 4, 18, 6, 26, col)  # 剑柄
-		# ===== 7-8层：精英区 =====
-		"暗影刺客":
-			# 暗影刺客（黑衣人）
+			_set_pixel_line(img, 12, 16, 20, 16, col)  # 脸
+			_set_pixel_line(img, 8, 18, 24, 18, col)  # 身
+			_set_pixel_line(img, 6, 24, 12, 24, col)  # 袍
+			_set_pixel_line(img, 20, 24, 26, 24, col)
+			img.set_pixel(16, 4, Color.LIME_GREEN)  # 蛇眼
+		# ===== 5-6层：江湖散人 =====
+		"江湖刺客":
+			# 江湖刺客（黑衣蒙面）
 			_set_pixel_line(img, 12, 4, 20, 4, col)  # 兜帽顶
 			_set_pixel_line(img, 10, 8, 22, 8, col)  # 兜帽
-			img.set_pixel(14, 11, Color.RED)  # 眼睛（杀气）
+			img.set_pixel(14, 11, Color.RED)  # 杀气红眼
 			img.set_pixel(18, 11, Color.RED)
-			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸（暗）
+			_set_pixel_line(img, 12, 14, 20, 14, Color.DIM_GRAY)  # 蒙面
 			_set_pixel_line(img, 10, 16, 22, 16, col)  # 披风
 			_set_pixel_line(img, 8, 20, 24, 20, col)  # 身
-			_set_pixel_line(img, 6, 28, 12, 28, col)  # 腿（蹲伏）
+			_set_pixel_line(img, 6, 28, 12, 28, col)  # 蹲伏腿
 			_set_pixel_line(img, 20, 28, 26, 28, col)
-		"暗黑骑士":
-			# 暗黑骑士（重甲）
-			_set_pixel_line(img, 10, 4, 22, 4, col)  # 头盔顶
-			_set_pixel_line(img, 8, 8, 24, 8, col)  # 头盔
-			img.set_pixel(14, 10, Color.RED)  # 眼缝
-			img.set_pixel(18, 10, Color.RED)
-			_set_pixel_line(img, 8, 14, 24, 14, col)  # 肩甲
-			_set_pixel_line(img, 10, 18, 22, 18, col)  # 胸甲
-			_set_pixel_line(img, 10, 22, 22, 22, col)  # 腰甲
-			_set_pixel_line(img, 6, 28, 14, 28, col)  # 腿甲左
-			_set_pixel_line(img, 18, 28, 26, 28, col)  # 腿甲右
-			img.set_pixel(4, 14, col)   # 剑柄
-			img.set_pixel(2, 14, col)
-		"远古巨龙":
-			# 巨龙
-			_set_pixel_line(img, 6, 8, 10, 8, col)   # 角
-			_set_pixel_line(img, 22, 8, 26, 8, col)  # 角
-			_set_pixel_line(img, 8, 10, 24, 10, col)
-			img.set_pixel(12, 12, Color.YELLOW)
-			img.set_pixel(20, 12, Color.YELLOW)
-			img.set_pixel(12, 13, Color.BLACK)
-			img.set_pixel(20, 13, Color.BLACK)
-			_set_pixel_line(img, 10, 16, 22, 16, col)
-			_set_pixel_line(img, 8, 20, 24, 20, col)
-			_set_pixel_line(img, 6, 24, 26, 24, col)
-			_set_pixel_line(img, 4, 28, 8, 28, col)  # 尾
-			_set_pixel_line(img, 24, 28, 28, 28, col) # 尾
+			img.set_pixel(0, 20, Color.SILVER)  # 双匕首
+			img.set_pixel(2, 18, Color.SILVER)
+			img.set_pixel(30, 20, Color.SILVER)
+			img.set_pixel(28, 18, Color.SILVER)
+		"赏金猎人":
+			# 赏金猎人（皮甲猎装）
+			_set_pixel_line(img, 12, 4, 20, 4, Color.BROWN)  # 皮帽
+			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
+			img.set_pixel(14, 11, Color.GREEN)  # 锐利眼
+			img.set_pixel(18, 11, Color.GREEN)
+			_set_pixel_line(img, 12, 14, 20, 14, Color.BROWN)  # 皮甲
+			_set_pixel_line(img, 8, 18, 24, 18, Color.BROWN)  # 皮背心
+			_set_pixel_line(img, 6, 28, 12, 28, col)  # 腿
+			_set_pixel_line(img, 20, 28, 26, 28, col)
+			img.set_pixel(28, 14, Color.GRAY)  # 弩
+			img.set_pixel(30, 12, Color.GRAY)
+			img.set_pixel(30, 16, Color.GRAY)
+		"擂台霸主":
+			# 擂台霸主（肌肉猛男）
+			_set_pixel_line(img, 14, 4, 18, 4, col)  # 短发
+			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
+			img.set_pixel(14, 10, Color.ORANGE)  # 怒目
+			img.set_pixel(18, 10, Color.ORANGE)
+			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸
+			_set_pixel_line(img, 10, 18, 22, 18, col)  # 肌肉上身
+			_set_pixel_line(img, 8, 22, 24, 22, col)  # 宽腰
+			_set_pixel_line(img, 6, 26, 26, 26, col)  # 短裤
+			img.set_pixel(4, 22, col)  # 缠手绷带
+			img.set_pixel(4, 24, col)
+			img.set_pixel(26, 22, col)
+			img.set_pixel(26, 24, col)
+		# ===== 7-8层：门派精英 =====
+		"少林弟子":
+			# 少林弟子（黄色僧袍）
+			_set_pixel_line(img, 14, 4, 18, 4, Color.GOLD)  # 僧帽
+			img.set_pixel(12, 4, Color.GOLD)
+			img.set_pixel(20, 4, Color.GOLD)
+			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
+			img.set_pixel(14, 11, Color.BLACK)  # 眼
+			img.set_pixel(18, 11, Color.BLACK)
+			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸
+			_set_pixel_line(img, 10, 18, 22, 18, Color.GOLD)  # 袈裟
+			_set_pixel_line(img, 8, 22, 24, 22, col)  # 僧袍
+			_set_pixel_line(img, 6, 28, 12, 28, col)  # 腿
+			_set_pixel_line(img, 20, 28, 26, 28, col)
+			img.set_pixel(4, 16, Color.BROWN)  # 少林棍
+			img.set_pixel(4, 18, Color.BROWN)
+			img.set_pixel(4, 20, Color.BROWN)
+			img.set_pixel(4, 22, Color.BROWN)
+		"武当弟子":
+			# 武当弟子（青白道袍）
+			_set_pixel_line(img, 14, 4, 18, 4, col)  # 发髻
+			img.set_pixel(16, 4, Color.WHITE)
+			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
+			img.set_pixel(14, 11, Color.CYAN)  # 清澈眼
+			img.set_pixel(18, 11, Color.CYAN)
+			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸
+			_set_pixel_line(img, 10, 18, 22, 18, Color.WHITE)  # 白腰带
+			_set_pixel_line(img, 8, 22, 24, 22, col)  # 道袍
+			_set_pixel_line(img, 6, 28, 12, 28, col)  # 腿
+			_set_pixel_line(img, 20, 28, 26, 28, col)
+			img.set_pixel(2, 18, Color.SILVER)  # 剑柄
+			img.set_pixel(0, 16, Color.SILVER)
+			img.set_pixel(0, 20, Color.SILVER)
+		"隐世高手":
+			# 隐世高手（锦袍白发老者）
+			_set_pixel_line(img, 12, 4, 20, 4, Color.WHITE)  # 白发
+			img.set_pixel(10, 4, Color.WHITE)
+			img.set_pixel(22, 4, Color.WHITE)
+			_set_pixel_line(img, 12, 8, 20, 8, Color.WHITE)
+			img.set_pixel(14, 10, Color.PURPLE)  # 深邃眼
+			img.set_pixel(18, 10, Color.PURPLE)
+			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸
+			_set_pixel_line(img, 8, 18, 24, 18, Color.GOLD)  # 金纹
+			_set_pixel_line(img, 8, 22, 24, 22, col)  # 锦袍
+			_set_pixel_line(img, 6, 28, 26, 28, col)  # 宽袍下
+			img.set_pixel(4, 18, Color.GOLD)  # 折扇
+			img.set_pixel(6, 16, Color.GOLD)
+			img.set_pixel(6, 20, Color.GOLD)
+		# ===== Boss敌人 =====
+		"山贼王·韩霸天":
+			# 山贼王（巨型光头大汉）
+			_set_pixel_line(img, 10, 4, 22, 4, Color.BROWN)  # 头巾
+			_set_pixel_line(img, 8, 8, 24, 8, col)  # 光头
+			img.set_pixel(12, 10, Color.RED)  # 怒目
+			img.set_pixel(20, 10, Color.RED)
+			_set_pixel_line(img, 8, 14, 24, 14, col)  # 络腮胡
+			_set_pixel_line(img, 4, 18, 28, 18, col)  # 虎背
+			_set_pixel_line(img, 2, 24, 30, 24, col)  # 宽腰
+			_set_pixel_line(img, 0, 28, 14, 28, col)  # 粗腿
+			_set_pixel_line(img, 18, 28, 31, 28, col)
+			img.set_pixel(0, 14, Color.GRAY)  # 开山刀
+			img.set_pixel(2, 12, Color.GRAY)
+			img.set_pixel(2, 16, Color.GRAY)
+		"血刀门护法·血手赫连铁树":
+			# 血刀门护法（血红色霸气）
+			_set_pixel_line(img, 12, 4, 20, 4, Color.BLACK)  # 发髻
+			img.set_pixel(16, 4, col)
+			_set_pixel_line(img, 10, 8, 22, 8, col)  # 头顶
+			img.set_pixel(13, 11, Color.ORANGE)  # 血红眼
+			img.set_pixel(19, 11, Color.ORANGE)
+			img.set_pixel(13, 12, Color.RED)
+			img.set_pixel(19, 12, Color.RED)
+			_set_pixel_line(img, 10, 16, 22, 16, col)  # 脸
+			_set_pixel_line(img, 6, 18, 26, 18, Color.DARK_RED)  # 血围巾
+			_set_pixel_line(img, 4, 22, 28, 22, col)  # 身
+			_set_pixel_line(img, 2, 28, 14, 28, col)  # 腿
+			_set_pixel_line(img, 18, 28, 30, 28, col)
+			img.set_pixel(0, 18, Color.SILVER)  # 血刀（巨）
+			img.set_pixel(2, 14, Color.SILVER)
+			img.set_pixel(2, 16, Color.SILVER)
+			img.set_pixel(2, 20, Color.SILVER)
+			img.set_pixel(2, 22, Color.SILVER)
+		"门派叛徒·司马青云":
+			# 门派叛徒（紫袍飘逸）
+			_set_pixel_line(img, 14, 4, 18, 4, Color.PURPLE)  # 发冠
+			_set_pixel_line(img, 12, 8, 20, 8, Color.PURPLE)  # 头顶
+			img.set_pixel(14, 11, Color.PURPLE)  # 阴沉眼
+			img.set_pixel(18, 11, Color.PURPLE)
+			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸
+			_set_pixel_line(img, 8, 18, 24, 18, Color.PURPLE)  # 紫袍
+			_set_pixel_line(img, 6, 22, 26, 22, col)  # 袍身
+			_set_pixel_line(img, 4, 28, 28, 28, col)  # 飘带效果
+			img.set_pixel(30, 24, Color.PURPLE)  # 飘带
+			img.set_pixel(30, 26, Color.PURPLE)
+			img.set_pixel(28, 22, Color.SILVER)  # 剑柄
+			img.set_pixel(30, 20, Color.SILVER)
+		"华山掌门·岳不群":
+			# 华山掌门（君子剑外表）
+			_set_pixel_line(img, 14, 4, 18, 4, Color.GOLD)  # 发冠
+			img.set_pixel(16, 4, Color.WHITE)
+			_set_pixel_line(img, 12, 8, 20, 8, Color.GOLD)  # 头顶
+			img.set_pixel(14, 11, Color.CYAN)  # 正派眼神
+			img.set_pixel(18, 11, Color.CYAN)
+			img.set_pixel(14, 12, Color.WHITE)
+			img.set_pixel(18, 12, Color.WHITE)
+			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸（和善）
+			_set_pixel_line(img, 10, 18, 22, 18, Color.WHITE)  # 白衫
+			_set_pixel_line(img, 8, 22, 24, 22, col)  # 君子袍
+			_set_pixel_line(img, 6, 28, 12, 28, col)  # 腿
+			_set_pixel_line(img, 20, 28, 26, 28, col)
+			img.set_pixel(2, 18, Color.SILVER)  # 君子剑
+			img.set_pixel(0, 16, Color.SILVER)
+			img.set_pixel(0, 20, Color.SILVER)
+			img.set_pixel(0, 22, Color.SILVER)
+		"武当真人·张三丰":
+			# 武当真人·张三丰（白发道袍仙风道骨）
+			_set_pixel_line(img, 10, 4, 22, 4, Color.WHITE)  # 白发
+			img.set_pixel(8, 4, Color.WHITE)
+			img.set_pixel(24, 4, Color.WHITE)
+			img.set_pixel(16, 4, Color.GOLD)  # 道簪
+			_set_pixel_line(img, 10, 8, 22, 8, Color.WHITE)  # 头顶
+			img.set_pixel(14, 10, Color.CYAN)  # 仙风眼
+			img.set_pixel(18, 10, Color.CYAN)
+			img.set_pixel(14, 11, Color.WHITE)
+			img.set_pixel(18, 11, Color.WHITE)
+			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸（长须）
+			_set_pixel_line(img, 12, 16, 20, 16, Color.WHITE)  # 胡须
+			_set_pixel_line(img, 8, 18, 24, 18, Color.WHITE)  # 白道袍
+			_set_pixel_line(img, 6, 22, 26, 22, col)  # 青道袍
+			_set_pixel_line(img, 4, 28, 28, 28, col)  # 袍下
+			img.set_pixel(2, 20, Color.SILVER)  # 拂尘柄
+			img.set_pixel(0, 18, Color.WHITE)  # 拂尘毛
+			img.set_pixel(0, 22, Color.WHITE)
+			img.set_pixel(4, 16, Color.GOLD)  # 腰带扣
+			img.set_pixel(4, 18, Color.GOLD)
 	
 	var texture = ImageTexture.create_from_image(img)
 	return texture
@@ -3989,40 +4099,41 @@ func _process_boss_turn():
 	var hp_ratio = float(current_enemy["hp"]) / float(current_enemy["max_hp"])
 	var boss_key = _get_boss_floor_key()
 	
-	# 第8层远古巨龙多阶段处理
+	# 第8层武当真人张三丰多阶段处理
 	if boss_key == 8:
 		if boss_phase == 1 and hp_ratio <= 0.6:
 			boss_phase = 2
-			_show_boss_phase_announcement("第二阶段: 龙魂觉醒！ATK+30%！")
+			_show_boss_phase_announcement("第二阶段: 纯阳无极！ATK+30%！")
 			current_enemy["atk"] = int(current_enemy["atk"] * 1.3)
-			_battle_add_log("🐉 【阶段2】龙魂觉醒！Boss攻击力大幅提升！")
+			_battle_add_log("☯️ 【阶段2】纯阳无极！张三丰发动纯阳内力，攻击力大幅提升！")
 			_update_enemy_hp_bar()
 			await get_tree().create_timer(1.0).timeout
 		elif boss_phase == 2 and hp_ratio <= 0.3:
 			boss_phase = 3
-			_show_boss_phase_announcement("最终阶段: 湮灭！")
-			_battle_add_log("🔥 【最终阶段】Boss进入最终形态！")
+			_show_boss_phase_announcement("最终阶段: 一代宗师！")
+			_battle_add_log("🙏 【最终阶段】一代宗师降临！这是最后的考验！")
 			_update_enemy_hp_bar()
 			await get_tree().create_timer(1.0).timeout
 	
-	# Boss狂暴检测 (30%血量)
+	# Boss狂暴检测 (phase_hp血量触发)
 	var phase_hp = current_enemy.get("phase_hp", 0.0)
 	if phase_hp > 0 and not boss_enraged and hp_ratio <= phase_hp:
 		boss_enraged = true
-		var boss_name = current_enemy["name"]
-		if boss_key == 1:  # 哥布林王狂暴
+		var boss_name_str = current_enemy["name"]
+		if boss_key == 1:  # 山贼王狂暴
 			current_enemy["atk"] = int(current_enemy["atk"] * 1.5)
 			current_enemy["spd"] += 3
 			_show_boss_phase_announcement("狂暴化！ATK+50%！SPD+3！")
-			_battle_add_log("👹 %s 狂暴化！ATK+50%%，速度提升！但每回合自残10HP！")
-		elif boss_key == 3:  # 巫妖复活
+			_battle_add_log("👹 %s 狂暴化！ATK+50%%，速度提升！但每回合自残10HP！" % boss_name_str)
+		elif boss_key == 3:  # 血刀门护法血战到底
 			boss_revived = true
-			current_enemy["hp"] = int(current_enemy["max_hp"] * 0.5)
-			_show_boss_phase_announcement("不死之身！复活！")
-			_battle_add_log("💀 %s 触发【不死之身】！回复50%% HP！")
+			current_enemy["atk"] = int(current_enemy["atk"] * 1.8)
+			current_enemy["spd"] += 4
+			_show_boss_phase_announcement("血战到底！ATK+80%！SPD+4！")
+			_battle_add_log("🩸 %s 触发【血战到底】！ATK+80%%，SPD+4！每回合自残20HP！" % boss_name_str)
 		else:
 			_show_boss_phase_announcement("Boss狂暴！")
-			_battle_add_log("👹 %s 进入狂暴状态！")
+			_battle_add_log("👹 %s 进入狂暴状态！" % boss_name_str)
 		_update_enemy_hp_bar()
 		await get_tree().create_timer(1.0).timeout
 	
@@ -4030,31 +4141,31 @@ func _process_boss_turn():
 	
 	# 根据Boss类型执行特殊技能
 	match boss_key:
-		1: _boss_grak_action(hp_ratio)
-		3: _boss_lich_action(hp_ratio)
-		5: _boss_magmato_action(hp_ratio)
-		7: _boss_seraphiel_action(hp_ratio)
-		8: _boss_dragon_action(hp_ratio)
+		1: _boss_hanbatian_action(hp_ratio)
+		3: _boss_helian_action(hp_ratio)
+		5: _boss_sima_action(hp_ratio)
+		7: _boss_yue_action(hp_ratio)
+		8: _boss_zhang_action(hp_ratio)
 		_: _boss_default_attack()
 
-func _boss_grak_action(hp_ratio: float):
-	# 哥布林王: 普通攻击/怒吼/召唤/狂暴
+func _boss_hanbatian_action(hp_ratio: float):
+	# 山贼王·韩霸天: 普通攻击/战吼/召集喽啰/狂暴化
 	var roll = randi() % 100
 	if roll < 30:
-		_boss_default_attack("战棍敲击")
+		_boss_default_attack("开山刀斩")
 	elif roll < 55:
-		# 怒吼：全体攻击
+		# 战吼：全体攻击+震慑
 		var dmg = int(current_enemy["atk"] * 0.8)
 		_apply_player_damage(dmg)
-		_battle_add_log("⚡ 怒吼！全体受到 %d 伤害，恐惧2回合！" % dmg)
-		# 恐惧效果：降低逃跑成功率（本游戏暂不实现）
+		_battle_add_log("⚡ 战吼！全体受到 %d 伤害震慑！" % dmg)
+		enemy_stun_turns = max(enemy_stun_turns, 1)
 	elif roll < 80 and boss_action_counter > 2:
-		# 召唤哥布林
+		# 召集喽啰
 		var summon_dmg = int(player_data.attack_power() * 0.5)
 		_apply_player_damage(summon_dmg)
-		_battle_add_log("👺 召唤哥布林！两只哥布林战士参战，造成 %d 伤害！" % summon_dmg)
+		_battle_add_log("👺 召集喽啰！两名山贼参战，造成 %d 伤害！" % summon_dmg)
 	else:
-		# 狂暴自残+攻击
+		# 狂暴化：自残+高伤攻击
 		var self_dmg = 10
 		current_enemy["hp"] -= self_dmg
 		var atk_dmg = int(current_enemy["atk"] * 1.5)
@@ -4063,145 +4174,162 @@ func _boss_grak_action(hp_ratio: float):
 		_spawn_enemy_damage("-%d" % self_dmg, "poison", Vector2(0, -20))
 	_update_enemy_hp_bar()
 
-func _boss_lich_action(hp_ratio: float):
-	# 巫妖王: 暗影冲击/亡灵大军/生命虹吸/灵魂收割/不死之身
+func _boss_helian_action(hp_ratio: float):
+	# 血刀门护法·血手赫连铁树: 一线斩/血雾/血刀斩/嗜血狂刀/血战到底
 	var roll = randi() % 100
 	if roll < 25:
-		# 暗影冲击+诅咒
-		var dmg = int(current_enemy["atk"] * 1.3)
+		# 一线斩：高伤单体+破甲
+		var dmg = int(current_enemy["atk"] * 3.0)
 		_apply_player_damage(dmg)
-		_battle_add_log("💀 暗影冲击！造成 %d 伤害，附带诅咒！" % dmg)
-	elif roll < 45 and boss_action_counter > 3:
-		# 亡灵大军
-		var drain = int(current_enemy["atk"] * 2.0)
-		_apply_player_damage(int(drain * 0.5))
-		var heal = int(drain * 0.5)
+		_battle_add_log("🗡️ 一线斩！造成 %d 伤害，斩断护甲！" % dmg)
+	elif roll < 45:
+		# 血雾：回复并进入强化状态
+		var heal = int(current_enemy["max_hp"] * 0.15)
 		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
-		_battle_add_log("💀 亡灵大军！造成 %d 伤害，回复 %d HP！" % [int(drain*0.5), heal])
+		current_enemy["atk"] = int(current_enemy["atk"] * 1.2)
+		_battle_add_log("🩸 血雾！回复 %d HP，ATK+20%%！" % heal)
 	elif roll < 65:
-		# 生命虹吸
-		var dmg = int(current_enemy["atk"] * 2.0)
-		_apply_player_damage(dmg)
-		var heal = int(dmg * 0.5)
-		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
-		_battle_add_log("🩸 生命虹吸！造成 %d 伤害，回复 %d HP！" % [dmg, heal])
-	elif roll < 80 and hp_ratio < 0.3:
-		# 灵魂收割（斩杀）
-		var dmg = int(current_enemy["atk"] * 1.5)
-		_apply_player_damage(dmg)
-		_battle_add_log("💀 灵魂收割！全体 %d 伤害！" % dmg)
-	else:
-		_boss_default_attack("暗影攻击")
-
-func _boss_magmato_action(hp_ratio: float):
-	# 熔岩巨魔: 岩浆之拳/熔岩喷射/碎地重击/熔岩护甲
-	var roll = randi() % 100
-	if roll < 30:
-		# 岩浆之拳+燃烧
-		var dmg = int(current_enemy["atk"] * 1.4)
-		_apply_player_damage(dmg)
-		_battle_add_log("🌋 岩浆之拳！造成 %d 伤害，附带灼烧！" % dmg)
-	elif roll < 55:
-		# 熔岩喷射（全体）
-		var dmg = int(current_enemy["atk"] * 1.2)
-		_apply_player_damage(dmg)
-		_battle_add_log("🌋 熔岩喷射！全体受到 %d 伤害！" % dmg)
-	elif roll < 75:
-		# 碎地重击（高伤害+眩晕）
-		var dmg = int(current_enemy["atk"] * 2.5)
-		_apply_player_damage(dmg)
-		enemy_stun_turns = 1
-		_battle_add_log("💥 碎地重击！造成 %d 伤害，眩晕1回合！" % dmg)
-	elif roll < 90:
-		# 熔岩护甲
-		var shield_gain = 50
-		player_shield += shield_gain
-		_battle_add_log("🛡️ 熔岩护甲！获得 %d 临时HP！" % shield_gain)
-	else:
-		_boss_default_attack("岩浆之拳")
-
-func _boss_seraphiel_action(hp_ratio: float):
-	# 堕落天使: 天罚之剑/神圣裁决/堕落之光/命运之手/羽翼护盾
-	var roll = randi() % 100
-	if roll < 20:
-		# 天罚之剑（必定命中+沉默）
-		var dmg = int(current_enemy["atk"] * 1.5)
-		_apply_player_damage(dmg)
-		enemy_stun_turns = max(enemy_stun_turns, 1)
-		_battle_add_log("⚔️ 天罚之剑！造成 %d 伤害，20%%沉默！" % dmg)
-	elif roll < 40:
-		# 神圣裁决（全体+圣光）
+		# 血刀斩：持续掉血
 		var dmg = int(current_enemy["atk"] * 1.8)
 		_apply_player_damage(dmg)
-		_battle_add_log("✨ 神圣裁决！全体受到 %d 圣光伤害！" % dmg)
-	elif roll < 60 and hp_ratio > 0.5:
-		# 堕落之光（治疗）
-		var heal = int(current_enemy["max_hp"] * 0.3)
+		poison_stacks += 2
+		poison_dmg += 5
+		poison_turns += 2
+		_battle_add_log("🗡️ 血刀斩！造成 %d 伤害，附加流血！" % dmg)
+	elif roll < 80 and hp_ratio < 0.3:
+		# 嗜血狂刀：低血量斩杀
+		var dmg = int(current_enemy["atk"] * 2.5)
+		_apply_player_damage(dmg)
+		var heal = int(dmg * 0.4)
 		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
-		_battle_add_log("💚 堕落之光！回复 %d HP！" % heal)
-	elif roll < 75:
-		# 命运之手（HP降至1）
-		_apply_player_damage(player_data.hp - 1)
-		_battle_add_log("🖐️ 命运之手！将一名敌人HP降至1！")
+		_battle_add_log("🩸 嗜血狂刀！造成 %d 伤害，吸血 %d HP！" % [dmg, heal])
 	else:
-		# 羽翼护盾
-		boss_shield_stacks = 3
-		_battle_add_log("🛡️ 羽翼护盾！获得3层护盾！")
+		_boss_default_attack("血刀斩")
 
-func _boss_dragon_action(hp_ratio: float):
-	# 远古巨龙: 三阶段Boss
+func _boss_sima_action(hp_ratio: float):
+	# 门派叛徒·司马青云: 御剑术/剑气纵横/夺命十三剑/金蝉脱壳
+	var roll = randi() % 100
+	if roll < 30:
+		# 御剑术：高伤单体+穿刺
+		var dmg = int(current_enemy["atk"] * 1.5)
+		_apply_player_damage(dmg)
+		_battle_add_log("🗡️ 御剑术！飞剑穿刺，造成 %d 伤害！" % dmg)
+	elif roll < 55:
+		# 剑气纵横：全体攻击
+		var dmg = int(current_enemy["atk"] * 1.2)
+		_apply_player_damage(dmg)
+		_battle_add_log("⚡ 剑气纵横！全体受到 %d 剑气伤害！" % dmg)
+	elif roll < 75:
+		# 夺命十三剑：极高单体伤害
+		var dmg = int(current_enemy["atk"] * 2.8)
+		_apply_player_damage(dmg)
+		enemy_stun_turns = max(enemy_stun_turns, 1)
+		_battle_add_log("💀 夺命十三剑！连刺十三剑，%d 伤害，眩晕1回合！" % dmg)
+	elif roll < 90:
+		# 金蝉脱壳：闪避+反击
+		vanish_turns = 2
+		_battle_add_log("🌫️ 金蝉脱壳！隐身闪避2回合！")
+	else:
+		_boss_default_attack("夺命剑法")
+
+func _boss_yue_action(hp_ratio: float):
+	# 华山掌门·岳不群: 紫霞神功/独孤九剑/吸星大法/辟邪剑法/伪君子真面目
+	var roll = randi() % 100
+	if roll < 20:
+		# 紫霞神功：全体+内功debuff
+		var dmg = int(current_enemy["atk"] * 1.3)
+		_apply_player_damage(dmg)
+		player_data.atk = int(player_data.atk * 0.85)
+		_battle_add_log("🌀 紫霞神功！全体 %d 伤害，我方ATK降低15%%！" % dmg)
+	elif roll < 40:
+		# 独孤九剑：破招极高伤
+		var dmg = int(current_enemy["atk"] * 2.5)
+		_apply_player_damage(dmg)
+		_battle_add_log("⚔️ 独孤九剑！破尽天下招式，%d 伤害！" % dmg)
+	elif roll < 55:
+		# 吸星大法：吸玩家HP
+		var dmg = int(current_enemy["atk"] * 1.5)
+		_apply_player_damage(dmg)
+		var heal = int(dmg * 0.6)
+		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
+		_battle_add_log("🖐️ 吸星大法！造成 %d 伤害，吸取 %d HP！" % [dmg, heal])
+	elif roll < 75:
+		# 辟邪剑法：连续攻击
+		for i in range(3):
+			var dmg = int(current_enemy["atk"] * 0.8)
+			_apply_player_damage(dmg)
+		_battle_add_log("🗡️ 辟邪剑法！快剑三连击，每击 %d 伤害！" % int(current_enemy["atk"] * 0.8))
+	else:
+		# 伪君子真面目：爆发+护盾
+		var dmg = int(current_enemy["atk"] * 2.0)
+		_apply_player_damage(dmg)
+		player_shield += 80
+		_battle_add_log("🎭 伪君子真面目！露出獠牙，%d 伤害，获得80护盾！" % dmg)
+
+func _boss_zhang_action(hp_ratio: float):
+	# 武当真人·张三丰: 太极拳/太极剑/梯云纵/纯阳无极功/武当九阳功/一代宗师
 	if boss_phase == 1:
-		# 空中优势
+		# 第一阶段：太极以柔克刚
 		var roll = randi() % 100
-		if roll < 30:
-			var dmg = int(current_enemy["atk"] * 1.6)
-			_apply_player_damage(dmg)
-			_battle_add_log("🐉 龙息！造成 %d 伤害，附带风压减速！" % dmg)
-		elif roll < 55:
-			var dmg = int(current_enemy["atk"] * 1.3)
-			_apply_player_damage(dmg)
-			_battle_add_log("🌀 飓风降临！全体 %d 伤害！" % dmg)
-		elif roll < 80:
+		if roll < 25:
+			# 太极拳：借力打力，反弹伤害
 			var dmg = int(current_enemy["atk"] * 1.2)
 			_apply_player_damage(dmg)
-			_battle_add_log("⚡ 召唤雷云！落雷造成 %d 不可躲避伤害！" % dmg)
+			_battle_add_log("☯️ 太极拳！以柔克刚，%d 伤害并吸收攻势！" % dmg)
+		elif roll < 50:
+			# 太极剑：群体攻击
+			var dmg = int(current_enemy["atk"] * 1.5)
+			_apply_player_damage(dmg)
+			_battle_add_log("⚔️ 太极剑！剑意如风，%d 伤害！" % dmg)
+		elif roll < 75:
+			# 梯云纵：轻盈闪避+反击
+			vanish_turns = 1
+			var dmg = int(current_enemy["atk"] * 0.8)
+			_apply_player_damage(dmg)
+			_battle_add_log("🦶 梯云纵！纵云梯飞身闪避，顺手一击 %d 伤害！" % dmg)
 		else:
-			_boss_default_attack("龙息")
+			_boss_default_attack("太极推手")
 	elif boss_phase == 2:
-		# 地面搏斗
+		# 第二阶段：纯阳无极功爆发
 		var roll = randi() % 100
 		if roll < 30:
+			# 武当九阳功：全体高伤害
+			var dmg = int(current_enemy["atk"] * 2.5)
+			_apply_player_damage(dmg)
+			_battle_add_log("🔥 武当九阳功！纯阳内力爆发，全体 %d 伤害！" % dmg)
+		elif roll < 55:
+			# 纯阳无极功：回复+强化
+			var heal = int(current_enemy["max_hp"] * 0.2)
+			current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
+			current_enemy["atk"] = int(current_enemy["atk"] * 1.15)
+			_battle_add_log("☯️ 纯阳无极功！回复 %d HP，ATK+15%%！" % heal)
+		elif roll < 80:
+			# 太极剑·连绵不绝
+			for i in range(4):
+				var dmg = int(current_enemy["atk"] * 0.7)
+				_apply_player_damage(dmg)
+			_battle_add_log("⚔️ 太极剑·连绵不绝！四剑连发，每击 %d 伤害！" % int(current_enemy["atk"] * 0.7))
+		else:
+			_boss_default_attack("武当剑法")
+	else:
+		# 第三阶段：一代宗师·收徒考验
+		var roll = randi() % 100
+		if roll < 35:
+			# 太极拳·云手：全体+推退
 			var dmg = int(current_enemy["atk"] * 3.0)
 			_apply_player_damage(dmg)
-			_battle_add_log("💥 毁天灭地！造成 %d 全体伤害！" % dmg)
-		elif roll < 55:
-			var def_boost = int(current_enemy["def"] * 1.4)
-			current_enemy["def"] += def_boost
-			_battle_add_log("🐉 龙鳞护体！DEF+%d，持续5回合！" % def_boost)
-		elif roll < 80:
-			var dmg = int(current_enemy["atk"] * 1.0)
-			_apply_player_damage(dmg * 3)
-			_battle_add_log("🌀 暴风领域！三次空气刃，共 %d 伤害！" % (dmg*3))
-		else:
-			_boss_default_attack("毁天灭地")
-	else:
-		# 最终形态
-		var roll = randi() % 100
-		if roll < 40:
-			var dmg = int(current_enemy["atk"] * 5.0)
+			_battle_add_log("☯️ 太极拳·云手！一代宗师全力一击，%d 伤害！" % dmg)
+		elif roll < 60:
+			# 太极剑·无形：必中沉默
+			var dmg = int(current_enemy["atk"] * 2.0)
 			_apply_player_damage(dmg)
-			_battle_add_log("💀 湮灭！造成 %d 真实伤害！" % dmg)
-		elif roll < 80:
-			# 狂暴自残+攻击
-			var self_dmg = int(current_enemy["max_hp"] * 0.05)
-			current_enemy["hp"] -= self_dmg
-			var atk_dmg = int(current_enemy["atk"] * 1.5)
-			_apply_player_damage(atk_dmg)
-			current_enemy["atk"] = int(current_enemy["atk"] * 1.1)
-			_battle_add_log("🔥 狂暴！自残%d HP，ATK永久+10%%！" % self_dmg)
-			_spawn_enemy_damage("-%d" % self_dmg, "poison", Vector2(0, -20))
+			silenced = true
+			_battle_add_log("⚔️ 太极剑·无形！剑意无形，%d 伤害，我方沉默1回合！" % dmg)
 		else:
-			_boss_default_attack("湮灭")
+			# 一代宗师：考验结束，回复
+			var heal = int(current_enemy["max_hp"] * 0.25)
+			current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
+			_battle_add_log("🙏 一代宗师！张三丰：\"你已通过考验！\" 回复 %d HP！" % heal)
 	_update_enemy_hp_bar()
 
 func _boss_default_attack(skill_name: String = "攻击"):
