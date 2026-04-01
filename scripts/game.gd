@@ -47,6 +47,16 @@ var arcane_shield_mp: int = 0      # 魔法盾MP值
 var spell_pierce_turns: int = 0     # 法术穿透回合（无视DEF）
 var mana_drain_turns: int = 0       # 魔力回旋回合
 var mana_drain_amount: int = 0      # 魔力回旋每次吸取量
+# 法师T3状态
+var absolute_zero_turns: int = 0    # 绝对零度冰冻回合
+var meteor_turns: int = 0           # 陨石术灼烧回合（独立标记）
+var meteor_dmg: int = 0             # 陨石术每回合灼烧伤害
+var elemental_storm_turns: int = 0   # 元素风暴持续回合
+var elemental_storm_dmg: int = 0     # 元素风暴每回合元素伤害
+var time_stop_active: bool = false  # 时间静止激活（本回合敌人跳过）
+var time_stop_turns: int = 0        # 时间静止剩余回合
+var arcane_truth_turns: int = 0     # 奥术真理持续回合（所有属性伤害+50%）
+var arcane_truth_active: bool = false  # 奥术真理本场战斗标记
 
 # 猎人T2状态
 var hunter_evasion_turns: int = 0    # 猎豹加速闪避回合
