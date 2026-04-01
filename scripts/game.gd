@@ -3388,9 +3388,13 @@ func _on_skill_selected(skill_name: String):
 			var base_dmg = int(_get_effective_atk() * 2.2 - pierce_def + randi() % 7 - 3)
 			var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 			current_enemy["hp"] -= dmg
-			_battle_add_log("🗡️ 背刺！%s造成 %d 伤害" % ("暴击！" if is_crit else "", dmg))
+			var backstab_msg = "暴击！" if is_crit else ""
+			_battle_add_log("🗡️ 背刺！" + backstab_msg + "造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
-			_spawn_enemy_damage("%d" % dmg, "crit" if is_crit else "damage", Vector2(randi()%15-7, -30 if is_crit else -20))
+			var backstab_dmg_type = "crit" if is_crit else "damage"
+			var backstab_offset_x = (randi() % 15) - 7
+			var backstab_offset_y = -30 if is_crit else -20
+			_spawn_enemy_damage("%d" % dmg, backstab_dmg_type, Vector2(backstab_offset_x, backstab_offset_y))
 		"暗影":
 			var dmg = int(_get_effective_atk() * 1.8)
 			current_enemy["hp"] -= dmg
@@ -4293,8 +4297,12 @@ func _on_attack():
 	var base_dmg = player_data.attack_power() - pierce_def + randi() % 7 - 3
 	var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 	current_enemy["hp"] -= dmg
-	_battle_add_log("⚔️ 攻击！%s造成 %d 伤害" % ("暴击！" if is_crit else "", dmg))
-	_spawn_enemy_damage("%d" % dmg, "crit" if is_crit else "damage", Vector2(randi()%15-7, -25 if is_crit else -18))
+	var attack_msg = "暴击！" if is_crit else ""
+	_battle_add_log("⚔️ 攻击！" + attack_msg + "造成 %d 伤害" % dmg)
+	var attack_dmg_type = "crit" if is_crit else "damage"
+	var attack_offset_x = (randi() % 15) - 7
+	var attack_offset_y = -25 if is_crit else -18
+	_spawn_enemy_damage("%d" % dmg, attack_dmg_type, Vector2(attack_offset_x, attack_offset_y))
 	if audio_manager:
 		if is_crit:
 			audio_manager.play_sfx("crit")
@@ -4535,22 +4543,22 @@ func _update_portrait_animation(delta: float):
 				flash.modulate = Color(1, 1, 1, alpha)
 		if portrait_damage_flash <= 0:
 			portrait_damage_flash = 0.0
-			var flash = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
-			if flash:
-				flash.modulate = Color(1, 1, 1, 0.0)
+			var flash_node = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
+			if flash_node:
+				flash_node.modulate = Color(1, 1, 1, 0.0)
 	
 	# 更新治疗绿光
 	if portrait_heal_glow > 0:
 		portrait_heal_glow -= delta
-		var flash = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
-		if flash:
+		var heal_flash = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
+		if heal_flash:
 			var alpha = max(0.0, portrait_heal_glow / 0.5) * 0.5
-			flash.modulate = Color(1, 1, 1, alpha)
+			heal_flash.modulate = Color(1, 1, 1, alpha)
 		if portrait_heal_glow <= 0:
 			portrait_heal_glow = 0.0
-			var flash = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
-			if flash:
-				flash.modulate = Color(1, 1, 1, 0.0)
+			var heal_flash_reset = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
+			if heal_flash_reset:
+				heal_flash_reset.modulate = Color(1, 1, 1, 0.0)
 	
 	# 更新肖像面板的HP/MP条（每次动画帧都更新）
 	_update_portrait_bars(portrait_panel)
