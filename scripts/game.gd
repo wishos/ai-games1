@@ -39,6 +39,14 @@ var berserk_atk_boost: int = 0  # 狂暴ATK加成值
 var battle_cry_turns: int = 0   # 战吼buff回合数
 var battle_cry_atk_boost: int = 0  # 战吼自身ATK加成
 var battle_cry_team_boost: int = 0  # 战吼队友ATK加成（对玩家=自身）
+# 法师T2状态
+var meteor_burn_turns: int = 0     # 流星火雨灼烧回合
+var meteor_burn_dmg: int = 0        # 流星火雨每回合灼烧伤害
+var frost_slow_turns: int = 0       # 霜冻领域减速回合
+var arcane_shield_mp: int = 0      # 魔法盾MP值
+var spell_pierce_turns: int = 0     # 法术穿透回合（无视DEF）
+var mana_drain_turns: int = 0       # 魔力回旋回合
+var mana_drain_amount: int = 0      # 魔力回旋每次吸取量
 
 # 技能冷却系统
 var skill_cooldowns: Dictionary = {}  # {skill_name: remaining_turns}
@@ -1912,6 +1920,14 @@ func _start_battle():
 	battle_cry_turns = 0
 	battle_cry_atk_boost = 0
 	battle_cry_team_boost = 0
+	# 法师T2状态重置
+	meteor_burn_turns = 0
+	meteor_burn_dmg = 0
+	frost_slow_turns = 0
+	arcane_shield_mp = 0
+	spell_pierce_turns = 0
+	mana_drain_turns = 0
+	mana_drain_amount = 0
 	
 	# 生成敌人
 	var enemy_types = ["slime", "skeleton", "demon"]
@@ -1978,6 +1994,14 @@ func _start_boss_battle():
 	resonance_stacks = 0
 	contract_active = false
 	contract_turns = 0
+	# 法师T2状态重置
+	meteor_burn_turns = 0
+	meteor_burn_dmg = 0
+	frost_slow_turns = 0
+	arcane_shield_mp = 0
+	spell_pierce_turns = 0
+	mana_drain_turns = 0
+	mana_drain_amount = 0
 	boss_phase = 1
 	boss_enraged = false
 	boss_shield_stacks = 0
@@ -2799,6 +2823,10 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	"血之狂暴": 4, "旋风斩": 3, "战吼": 3,
 	# 法师 T1
 	"火球": 1, "冰霜": 1, "闪电": 2,
+	# 法师 T2 (元素大师)
+	"流星火雨": 4, "霜冻领域": 3, "连锁闪电": 3,
+	# 法师 T2 (奥术师)
+	"魔法盾": 3, "法术穿透": 3, "魔力回旋": 4,
 	# 猎人 T1
 	"狙击": 1, "陷阱": 0, "毒箭": 2,
 	# 盗贼 T1
@@ -2819,6 +2847,15 @@ func _get_effective_atk() -> int:
 	atk += battle_cry_atk_boost  # 战吼ATK加成
 	atk += berserk_atk_boost     # 狂暴ATK加成
 	return atk
+
+# 法术穿透：无视敌人防御，消耗1层
+func _consume_spell_pierce() -> int:
+	if spell_pierce_turns > 0:
+		spell_pierce_turns -= 1
+		if spell_pierce_turns <= 0:
+			_battle_add_log("💠 法术穿透效果消失")
+		return 0  # 无视防御
+	return current_enemy["def"]  # 正常防御
 
 func _get_skill_cooldown(skill: String) -> int:
 	return _SKILL_COOLDOWNS.get(skill, 1)
@@ -2850,6 +2887,8 @@ func _on_skill_menu():
 		"猛击": 10, "防御": 0, "冲锋": 20,
 		"血之狂暴": 15, "旋风斩": 25, "战吼": 15,
 		"火球": 15, "冰霜": 15, "闪电": 25,
+		"流星火雨": 35, "霜冻领域": 30, "连锁闪电": 40,
+		"魔法盾": 20, "法术穿透": 25, "魔力回旋": 30,
 		"狙击": 10, "陷阱": 15, "毒箭": 20,
 		"背刺": 15, "暗影": 20, "消失": 25,
 		"治疗": 15, "护盾": 10, "复活": 50,
@@ -2864,7 +2903,7 @@ func _on_skill_menu():
 		var cd_remaining = skill_cooldowns.get(skill, 0)
 		var cd_total = _get_skill_cooldown(skill)
 		# T2技能需要Lv10
-		var t2_skills = ["血之狂暴", "旋风斩", "战吼"]
+		var t2_skills = ["血之狂暴", "旋风斩", "战吼", "流星火雨", "霜冻领域", "连锁闪电", "魔法盾", "法术穿透", "魔力回旋"]
 		var is_t2 = t2_skills.has(skill)
 		var level_locked = is_t2 and player_data.level < 10
 		var can_use = player_data.mp >= cost and cd_remaining <= 0 and not level_locked
@@ -2931,6 +2970,8 @@ func _on_skill_selected(skill_name: String):
 		"猛击": 10, "防御": 0, "冲锋": 20,
 		"血之狂暴": 15, "旋风斩": 25, "战吼": 15,
 		"火球": 15, "冰霜": 15, "闪电": 25,
+		"流星火雨": 35, "霜冻领域": 30, "连锁闪电": 40,
+		"魔法盾": 20, "法术穿透": 25, "魔力回旋": 30,
 		"狙击": 10, "陷阱": 15, "毒箭": 20,
 		"背刺": 15, "暗影": 20, "消失": 25,
 		"治疗": 15, "护盾": 10, "复活": 50,
@@ -2955,7 +2996,8 @@ func _on_skill_selected(skill_name: String):
 	match skill_name:
 		# 战士
 		"猛击":
-			var dmg = int(_get_effective_atk() * 1.5 - current_enemy["def"] + randi() % 7 - 3)
+			var pierce_def = _consume_spell_pierce()
+			var dmg = int(_get_effective_atk() * 1.5 - pierce_def + randi() % 7 - 3)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚔️ 猛击！造成 %d 伤害" % dmg)
@@ -2967,7 +3009,8 @@ func _on_skill_selected(skill_name: String):
 			player_data.mp = min(player_data.max_mp, player_data.mp + 5)
 			_battle_add_log("🛡️ 防御姿态！伤害减半，回复5MP")
 		"冲锋":
-			var dmg = int(_get_effective_atk() * 2.5 - current_enemy["def"] + randi() % 11 - 5)
+			var pierce_def = _consume_spell_pierce()
+			var dmg = int(_get_effective_atk() * 2.5 - pierce_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			enemy_stun_turns = 1
@@ -2984,7 +3027,8 @@ func _on_skill_selected(skill_name: String):
 			var hits = 2 + randi() % 3  # 2-4次攻击
 			var total_dmg = 0
 			for i in range(hits):
-				var hit_dmg = int(_get_effective_atk() * 1.2 - current_enemy["def"] + randi() % 7 - 3)
+				var pierce_def = _consume_spell_pierce()
+				var hit_dmg = int(_get_effective_atk() * 1.2 - pierce_def + randi() % 7 - 3)
 				hit_dmg = max(1, hit_dmg)
 				current_enemy["hp"] -= hit_dmg
 				total_dmg += hit_dmg
@@ -3000,14 +3044,16 @@ func _on_skill_selected(skill_name: String):
 			_spawn_player_damage("ATK+40%", "buff")
 		# 法师
 		"火球":
-			var dmg = int(_get_effective_atk() * 2.0 - current_enemy["def"] + randi() % 11 - 5)
+			var pierce_def = _consume_spell_pierce()
+			var dmg = int(_get_effective_atk() * 2.0 - pierce_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("🔥 火球术！造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(randi()%20-10, -30))
 		"冰霜":
-			var dmg = int(_get_effective_atk() * 1.8 - current_enemy["def"] + randi() % 11 - 5)
+			var pierce_def = _consume_spell_pierce()
+			var dmg = int(_get_effective_atk() * 1.8 - pierce_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			current_enemy["spd"] = max(1, current_enemy["spd"] - 2)
@@ -3015,22 +3061,74 @@ func _on_skill_selected(skill_name: String):
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(0, -20))
 		"闪电":
-			var dmg = int(_get_effective_atk() * 3.0 - current_enemy["def"] + randi() % 11 - 5)
+			var pierce_def = _consume_spell_pierce()
+			var dmg = int(_get_effective_atk() * 3.0 - pierce_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚡ 闪电术！造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -35))
+		# 法师 T2 (元素大师路线)
+		"流星火雨":
+			var pierce_def = _consume_spell_pierce()
+			var burn_dmg = int(_get_effective_atk() * 0.8)
+			current_enemy["hp"] -= burn_dmg
+			meteor_burn_turns = 3
+			meteor_burn_dmg = burn_dmg
+			_battle_add_log("🌠 流星火雨！立即造成 %d 伤害，灼烧 %d 伤害/回合×3回合" % [burn_dmg, burn_dmg])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % burn_dmg, "crit", Vector2(0, -40))
+		"霜冻领域":
+			var pierce_def = _consume_spell_pierce()
+			var f_dmg = int(_get_effective_atk() * 1.5 - pierce_def + randi() % 11 - 5)
+			f_dmg = max(1, f_dmg)
+			current_enemy["hp"] -= f_dmg
+			frost_slow_turns = 2
+			_battle_add_log("❄️ 霜冻领域！造成 %d 伤害，敌人速度-50%%持续2回合" % f_dmg)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % f_dmg, "damage", Vector2(0, -25))
+		"连锁闪电":
+			var pierce_def = _consume_spell_pierce()
+			var chain_dmg1 = int(_get_effective_atk() * 2.5 - pierce_def + randi() % 7 - 3)
+			chain_dmg1 = max(1, chain_dmg1)
+			current_enemy["hp"] -= chain_dmg1
+			_battle_add_log("⚡ 连锁闪电！造成 %d 伤害" % chain_dmg1)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % chain_dmg1, "crit", Vector2(0, -35))
+			# 连锁效果：本回合内额外造成递减伤害
+			await get_tree().create_timer(0.3).timeout
+			var chain_dmg2 = int(_get_effective_atk() * 1.5 - _consume_spell_pierce() + randi() % 5 - 2)
+			chain_dmg2 = max(1, chain_dmg2)
+			current_enemy["hp"] -= chain_dmg2
+			_battle_add_log("⚡⚡ 闪电连锁！追加 %d 伤害" % chain_dmg2)
+			_spawn_enemy_damage("%d" % chain_dmg2, "crit", Vector2(15, -20))
+		# 法师 T2 (奥术师路线)
+		"魔法盾":
+			arcane_shield_mp = int(player_data.max_mp * 0.8)
+			player_shield += arcane_shield_mp
+			_battle_add_log("🔮 魔法盾！消耗 %d MP，护盾值+%d（下次受击时优先消耗）" % [arcane_shield_mp, arcane_shield_mp])
+			_spawn_player_damage("+%d" % arcane_shield_mp, "shield")
+		"法术穿透":
+			spell_pierce_turns = 2
+			_battle_add_log("💠 法术穿透！下2次攻击无视敌人防御")
+			_spawn_player_damage("SPIERCE!", "buff")
+		"魔力回旋":
+			mana_drain_turns = 3
+			mana_drain_amount = int(player_data.max_mp * 0.15)
+			_battle_add_log("🌀 魔力回旋！持续3回合，每回合吸取 %d MP并恢复等量HP" % mana_drain_amount)
+			_spawn_player_damage("DRAIN x3", "buff")
 		# 猎人
 		"狙击":
-			var dmg = int(_get_effective_atk() * 2.0 - current_enemy["def"] + randi() % 7 - 3)
+			var pierce_def = _consume_spell_pierce()
+			var dmg = int(_get_effective_atk() * 2.0 - pierce_def + randi() % 7 - 3)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("🎯 狙击！必定命中，造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -30))
 		"毒箭":
-			var dmg = int(_get_effective_atk() * 1.5 - current_enemy["def"] + randi() % 7 - 3)
+			var pierce_def = _consume_spell_pierce()
+			var dmg = int(_get_effective_atk() * 1.5 - pierce_def + randi() % 7 - 3)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			poison_stacks += 1
@@ -3042,7 +3140,8 @@ func _on_skill_selected(skill_name: String):
 		# 盗贼
 		"背刺":
 			var is_crit = randi() % 100 < player_data.luk * 3
-			var base_dmg = int(_get_effective_atk() * 2.2 - current_enemy["def"] + randi() % 7 - 3)
+			var pierce_def = _consume_spell_pierce()
+			var base_dmg = int(_get_effective_atk() * 2.2 - pierce_def + randi() % 7 - 3)
 			var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("🗡️ 背刺！%s造成 %d 伤害" % ("暴击！" if is_crit else "", dmg))
@@ -3085,14 +3184,16 @@ func _on_skill_selected(skill_name: String):
 			_battle_add_log("⚔️ 格挡！伤害减少，护盾+%d" % player_shield)
 			_spawn_player_damage("+%d" % player_shield, "shield")
 		"斩击":
-			var dmg = int(_get_effective_atk() * 1.8 - current_enemy["def"] + randi() % 11 - 5)
+			var pierce_def = _consume_spell_pierce()
+			var dmg = int(_get_effective_atk() * 1.8 - pierce_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚔️ 神圣斩击！造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg)
 		"神圣":
-			var dmg = int(_get_effective_atk() * 2.5 - current_enemy["def"] * 0.5 + randi() % 11 - 5)
+			var effective_def = int(_consume_spell_pierce() * 0.5)
+			var dmg = int(_get_effective_atk() * 2.5 - effective_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			var heal = int(player_data.max_hp * 0.15)
@@ -3278,6 +3379,39 @@ func _process_battle(delta: float):
 		_update_enemy_hp_bar()
 		if _check_battle_end():
 			return
+	
+	# 流星火雨灼烧
+	if meteor_burn_turns > 0:
+		current_enemy["hp"] -= meteor_burn_dmg
+		_battle_add_log("🔥 灼烧！流星火雨造成 %d 伤害（剩余%d回合）" % [meteor_burn_dmg, meteor_burn_turns])
+		_spawn_enemy_damage("%d" % meteor_burn_dmg, "poison", Vector2(-20, -10))
+		meteor_burn_turns -= 1
+		_update_enemy_hp_bar()
+		if _check_battle_end():
+			return
+	
+	# 霜冻领域减速效果
+	if frost_slow_turns > 0:
+		frost_slow_turns -= 1
+		if frost_slow_turns <= 0:
+			_battle_add_log("❄️ 霜冻领域效果结束")
+	
+	# 法术穿透buff（减少）
+	if spell_pierce_turns > 0:
+		spell_pierce_turns -= 1
+		if spell_pierce_turns <= 0:
+			_battle_add_log("💠 法术穿透效果结束")
+	
+	# 魔力回旋（回合开始时触发：吸MP+回HP）
+	if mana_drain_turns > 0:
+		mana_drain_turns -= 1
+		player_data.mp = min(player_data.max_mp, player_data.mp + mana_drain_amount)
+		var drain_heal = int(player_data.max_hp * 0.05)
+		player_data.hp = min(player_data.max_hp, player_data.hp + drain_heal)
+		_battle_add_log("🌀 魔力回旋！回复 %d MP 和 %d HP（剩余%d回合）" % [mana_drain_amount, drain_heal, mana_drain_turns])
+		_spawn_player_damage("+%d MP" % mana_drain_amount, "heal")
+		if mana_drain_turns <= 0:
+			_battle_add_log("🌀 魔力回旋结束")
 	
 	# 血之狂暴debuff（每回合自损10HP）
 	if berserk_turns > 0:
@@ -3689,7 +3823,8 @@ func _on_attack():
 		return
 	is_player_turn = false
 	var is_crit = randi() % 100 < player_data.luk * 2
-	var base_dmg = player_data.attack_power() - current_enemy["def"] + randi() % 7 - 3
+	var pierce_def = _consume_spell_pierce()
+	var base_dmg = player_data.attack_power() - pierce_def + randi() % 7 - 3
 	var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 	current_enemy["hp"] -= dmg
 	_battle_add_log("⚔️ 攻击！%s造成 %d 伤害" % ("暴击！" if is_crit else "", dmg))

@@ -41,7 +41,7 @@ func _setup_job_skills():
 		Job.WARRIOR:
 			skills = ["猛击", "防御", "冲锋", "血之狂暴", "旋风斩", "战吼"]
 		Job.MAGE:
-			skills = ["火球", "冰霜", "闪电"]
+			skills = ["火球", "冰霜", "闪电", "流星火雨", "霜冻领域", "连锁闪电", "魔法盾", "法术穿透", "魔力回旋"]
 		Job.HUNTER:
 			skills = ["狙击", "陷阱", "毒箭"]
 		Job.THIEF:
