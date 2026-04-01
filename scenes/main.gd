@@ -75,6 +75,9 @@ var player_fog_tile: Vector2i = Vector2i.ZERO
 
 # 背景层
 var bg_layer: Node2D
+var parallax_bg: ParallaxBackground
+var parallax_mid: ParallaxLayer
+var parallax_fore: ParallaxLayer
 var ground_layer: Node2D
 var object_layer: Node2D
 var entity_layer: Node2D
@@ -109,9 +112,26 @@ func _ready():
 	_create_title_screen()
 
 func _setup_layers():
+	# 视差背景层 (最远)
+	parallax_bg = ParallaxBackground.new()
+	parallax_bg.name = "ParallaxBG"
+	add_child(parallax_bg)
+	
 	bg_layer = Node2D.new()
 	bg_layer.name = "BGLayer"
 	add_child(bg_layer)
+	
+	# 视差中层
+	parallax_mid = ParallaxLayer.new()
+	parallax_mid.name = "ParallaxMid"
+	parallax_mid.motion_scale = Vector2(0.5, 0.5)
+	parallax_bg.add_child(parallax_mid)
+	
+	# 视差前景
+	parallax_fore = ParallaxLayer.new()
+	parallax_fore.name = "ParallaxFore"
+	parallax_fore.motion_scale = Vector2(0.2, 0.2)
+	parallax_bg.add_child(parallax_fore)
 	
 	ground_layer = Node2D.new()
 	ground_layer.name = "GroundLayer"
@@ -513,6 +533,10 @@ func _draw_scene_bg():
 	# 清除旧背景
 	for child in bg_layer.get_children():
 		child.queue_free()
+	for child in parallax_mid.get_children():
+		child.queue_free()
+	for child in parallax_fore.get_children():
+		child.queue_free()
 	
 	var bg = ColorRect.new()
 	bg.name = "SceneBG"
@@ -523,11 +547,285 @@ func _draw_scene_bg():
 	# 添加装饰性建筑轮廓
 	match current_scene_name:
 		"临安城":
-			_draw_building_outlines()
+			_draw_wuxia_town_parallax()
 		"清风寨外围":
-			_draw_forest_outlines()
+			_draw_forest_parallax()
 		_:
-			_draw_building_outlines()
+			_draw_wuxia_town_parallax()
+
+func _draw_wuxia_town_parallax():
+	# === 远景层：天空 + 远山 ===
+	var sky = ColorRect.new()
+	sky.name = "SkyLayer"
+	sky.size = Vector2(2560, 720)
+	sky.position = Vector2(-640, 0)
+	# 渐变天空
+	sky.color = Color(0.04, 0.08, 0.18, 1)
+	parallax_bg.add_child(sky)
+	
+	# 远山剪影
+	for i in range(5):
+		var mt = ColorRect.new()
+		mt.name = "Mountain_%d" % i
+		var mw = 400 + randi() % 300
+		var mh = 150 + randi() % 150
+		mt.size = Vector2(mw, mh)
+		mt.position = Vector2(-200 + i * 500 + randi() % 100, 300 - mh/2)
+		mt.color = Color(0.06, 0.10, 0.18, 0.9)
+		mt.set_meta("follow_camera", true)
+		parallax_bg.add_child(mt)
+	
+	# === 中景层：建筑群 ===
+	var buildings_container = Node2D.new()
+	buildings_container.name = "MidBuildings"
+	buildings_container.set_meta("follow_camera", true)
+	parallax_mid.add_child(buildings_container)
+	
+	var buildings_data = [
+		{"x": 50, "y": 80, "w": 100, "h": 180, "type": "pagoda"},
+		{"x": 200, "y": 120, "w": 80, "h": 140, "type": "house"},
+		{"x": 320, "y": 60, "w": 130, "h": 200, "type": "tower"},
+		{"x": 500, "y": 100, "w": 90, "h": 160, "type": "house"},
+		{"x": 640, "y": 50, "w": 110, "h": 210, "type": "pagoda"},
+		{"x": 800, "y": 90, "w": 85, "h": 170, "type": "house"},
+		{"x": 930, "y": 70, "w": 120, "h": 190, "type": "tower"},
+		{"x": 1100, "y": 110, "w": 95, "h": 150, "type": "house"},
+	]
+	
+	for b in buildings_data:
+		var bld = _create_building_sprite(b)
+		bld.position = Vector2(b["x"], b["y"])
+		buildings_container.add_child(bld)
+	
+	# === 近景层：装饰物 ===
+	var fore_container = Node2D.new()
+	fore_container.name = "ForeDecor"
+	fore_container.set_meta("follow_camera", true)
+	parallax_fore.add_child(fore_container)
+	
+	# 添加灯笼
+	_add_chinese_lanterns(fore_container)
+	
+	# 添加旗帜
+	_add_banner_poles(fore_container)
+
+func _create_building_sprite(data: Dictionary) -> Node2D:
+	var container = Node2D.new()
+	var btype = data.get("type", "house")
+	var w = data["w"]
+	var h = data["h"]
+	var x = data["x"]
+	
+	match btype:
+		"pagoda":
+			# 多层宝塔
+			var floors = 3 + randi() % 2
+			for f in range(floors):
+				var floor_h = h / floors
+				var fw = w * (1.0 - f * 0.12)
+				var fx = (w - fw) / 2
+				var wall = ColorRect.new()
+				wall.size = Vector2(fw, floor_h - 4)
+				wall.position = Vector2(fx, f * floor_h)
+				wall.color = PALETTE.wall
+				container.add_child(wall)
+				# 屋檐
+				if f < floors - 1:
+					var roof = ColorRect.new()
+					roof.size = Vector2(fw + 12, 8)
+					roof.position = Vector2(fx - 6, f * floor_h - 4)
+					roof.color = PALETTE.wall_top
+					container.add_child(roof)
+			# 顶尖
+			var tip = ColorRect.new()
+			tip.size = Vector2(6, 20)
+			tip.position = Vector2(w/2 - 3, 0)
+			tip.color = PALETTE.gold
+			container.add_child(tip)
+		"tower":
+			# 高塔
+			var wall = ColorRect.new()
+			wall.size = Vector2(w, h)
+			wall.color = PALETTE.wall
+			container.add_child(wall)
+			var roof = ColorRect.new()
+			roof.size = Vector2(w + 16, 12)
+			roof.position = Vector2(-8, 0)
+			roof.color = PALETTE.wall_top
+			container.add_child(roof)
+			# 窗户
+			for wy in range(3):
+				var win = ColorRect.new()
+				win.size = Vector2(8, 10)
+				win.position = Vector2(w/2 - 4, 20 + wy * (h/3 - 5))
+				win.color = Color(1.0, 0.8, 0.3, 0.6)
+				container.add_child(win)
+		_:
+			# 普通房屋
+			var wall = ColorRect.new()
+			wall.size = Vector2(w, h)
+			wall.color = PALETTE.wall
+			container.add_child(wall)
+			var roof = ColorRect.new()
+			roof.size = Vector2(w + 20, 20)
+			roof.position = Vector2(-10, -15)
+			roof.color = PALETTE.wall_top
+			container.add_child(roof)
+			# 门
+			var door = ColorRect.new()
+			door.size = Vector2(15, 25)
+			door.position = Vector2(w/2 - 7, h - 25)
+			door.color = Color(0.2, 0.12, 0.08)
+			container.add_child(door)
+	
+	return container
+
+func _add_chinese_lanterns(container: Node2D):
+	# 添加中国红笼
+	var lantern_positions = [150, 380, 620, 860, 1100]
+	for i in range(lantern_positions.size()):
+		var lx = lantern_positions[i] + randi() % 40 - 20
+		var ly = 250 + randi() % 80
+		var lantern = _create_lantern(Vector2(lx, ly))
+		container.add_child(lantern)
+
+func _create_lantern(pos: Vector2) -> Node2D:
+	var lantern = Node2D.new()
+	lantern.position = pos
+	
+	# 灯笼绳子
+	var rope = ColorRect.new()
+	rope.size = Vector2(2, 15)
+	rope.position = Vector2(-1, -15)
+	rope.color = Color(0.3, 0.2, 0.1)
+	lantern.add_child(rope)
+	
+	# 灯笼主体
+	var body = ColorRect.new()
+	body.size = Vector2(18, 22)
+	body.position = Vector2(-9, 0)
+	body.color = Color(0.7, 0.15, 0.1)
+	lantern.add_child(body)
+	
+	# 灯笼顶部
+	var cap = ColorRect.new()
+	cap.size = Vector2(22, 5)
+	cap.position = Vector2(-11, -5)
+	cap.color = PALETTE.gold
+	lantern.add_child(cap)
+	
+	# 灯笼底部装饰
+	var bottom = ColorRect.new()
+	bottom.size = Vector2(22, 5)
+	bottom.position = Vector2(-11, 22)
+	bottom.color = PALETTE.gold
+	lantern.add_child(bottom)
+	
+	# 灯笼穗
+	var fringe = ColorRect.new()
+	fringe.size = Vector2(4, 8)
+	fringe.position = Vector2(-2, 27)
+	fringe.color = PALETTE.gold
+	lantern.add_child(fringe)
+	
+	# 发光效果
+	var glow = PointLight2D.new()
+	glow.position = Vector2(0, 10)
+	glow.color = Color(1.0, 0.4, 0.1, 0.4)
+	glow.energy = 0.5
+	glow.texture = _create_light_texture()
+	glow.texture_scale = 0.5
+	lantern.add_child(glow)
+	
+	# 摇晃动画
+	lantern.set_meta("sway", true)
+	return lantern
+
+func _add_banner_poles(container: Node2D):
+	# 添加旗帜杆
+	var pole_positions = [280, 520, 760, 1000]
+	for px in pole_positions:
+		var pole = ColorRect.new()
+		pole.size = Vector2(4, 80)
+		pole.position = Vector2(px, 180)
+		pole.color = Color(0.35, 0.22, 0.12)
+		container.add_child(pole)
+		
+		# 旗帜
+		var flag = ColorRect.new()
+		flag.size = Vector2(30, 20)
+		flag.position = Vector2(px + 4, 185)
+		flag.color = _get_banner_color(px)
+		container.add_child(flag)
+
+func _get_banner_color(x: int) -> Color:
+	var colors = [
+		Color(0.8, 0.15, 0.15),  # 红
+		Color(0.15, 0.15, 0.7),  # 蓝
+		Color(0.8, 0.6, 0.1),    # 金黄
+		Color(0.15, 0.5, 0.15), # 绿
+	]
+	return colors[x % colors.size()]
+
+func _draw_forest_parallax():
+	# 森林场景的视差背景
+	var sky = ColorRect.new()
+	sky.name = "ForestSky"
+	sky.size = Vector2(2560, 720)
+	sky.position = Vector2(-640, 0)
+	sky.color = Color(0.03, 0.06, 0.12, 1)
+	parallax_bg.add_child(sky)
+	
+	# 多层树冠
+	var tree_container = Node2D.new()
+	tree_container.name = "ForestTrees"
+	tree_container.set_meta("follow_camera", true)
+	parallax_mid.add_child(tree_container)
+	
+	for i in range(30):
+		var tree_x = -200 + i * 100 + randi() % 60
+		var tree_y = 100 + randi() % 150
+		var tree_h = 200 + randi() % 200
+		var tree = _create_tree_sprite(tree_x, tree_y, tree_h)
+		tree_container.add_child(tree)
+	
+	# 前景树丛
+	var fore_container = Node2D.new()
+	fore_container.name = "ForestFore"
+	fore_container.set_meta("follow_camera", true)
+	parallax_fore.add_child(fore_container)
+	
+	for i in range(10):
+		var bush_x = -100 + i * 150 + randi() % 50
+		var bush = ColorRect.new()
+		bush.size = Vector2(80 + randi() % 40, 60 + randi() % 40)
+		bush.position = Vector2(bush_x, 620)
+		bush.color = Color(0.08, 0.18, 0.08, 0.9)
+		fore_container.add_child(bush)
+
+func _create_tree_sprite(x: int, y: int, h: int) -> Node2D:
+	var tree = Node2D.new()
+	tree.position = Vector2(x, y)
+	
+	# 树干
+	var trunk = ColorRect.new()
+	trunk.size = Vector2(h / 8, h * 0.6)
+	trunk.position = Vector2(-h/16, h * 0.4)
+	trunk.color = Color(0.2, 0.14, 0.08)
+	tree.add_child(trunk)
+	
+	# 树冠（多层）
+	var canopy_colors = [Color(0.12, 0.25, 0.12), Color(0.08, 0.2, 0.08), Color(0.15, 0.28, 0.15)]
+	for c in range(3):
+		var leaf = ColorRect.new()
+		var lw = h * (0.5 - c * 0.08)
+		var lh = h * (0.4 - c * 0.06)
+		leaf.size = Vector2(lw, lh)
+		leaf.position = Vector2(-lw/2, c * h * 0.1)
+		leaf.color = canopy_colors[c]
+		tree.add_child(leaf)
+	
+	return tree
 
 func _draw_building_outlines():
 	# 简化的建筑轮廓
@@ -1250,14 +1548,23 @@ func _process_explore(delta: float):
 		player.position.x = clamp(player.position.x, 30, 1250)
 		player.position.y = clamp(player.position.y, 230, 690)
 		
-		# 更新动画帧
+		# 更新动画帧 - 角色朝向跟随移动方向
 		if player_sprite:
-			var frame_x = 0
-			if velocity.x > 0:
-				frame_x = 2
-			elif velocity.x < 0:
-				frame_x = 1
-			player_sprite.frame = frame_x + (int(Time.get_ticks_msec() / 200) % 2)
+			# 水平翻转跟随方向
+			player_sprite.flip_h = (velocity.x < 0)
+			
+			# 根据移动方向选择帧行
+			var frame_row = 0  # 默认向下
+			if velocity.y < 0:
+				frame_row = 3  # 向上
+			elif velocity.y > 0:
+				frame_row = 0  # 向下
+			elif velocity.x != 0:
+				frame_row = 1  # 侧面（行走）
+			
+			# 行走动画帧
+			var anim_frame = (int(Time.get_ticks_msec() / 180) % 2)
+			player_sprite.frame = frame_row * 4 + anim_frame
 		
 		# 更新迷雾
 		_update_fog_around_player()
@@ -1265,7 +1572,16 @@ func _process_explore(delta: float):
 	else:
 		is_moving = false
 		if player_sprite:
-			player_sprite.frame = player_direction.y < 0 ? 4 : 0
+			player_sprite.flip_h = false
+			# 根据最后朝向选择站立帧
+			var idle_frame = 0
+			if player_direction.y < 0:
+				idle_frame = 12  # 向上
+			elif player_direction.y > 0:
+				idle_frame = 0   # 向下
+			else:
+				idle_frame = 4   # 侧面
+			player_sprite.frame = idle_frame
 	
 	# 冲刺
 	if Input.is_action_pressed("dash") and can_dash and velocity.length() > 0:

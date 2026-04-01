@@ -2069,6 +2069,9 @@ func _create_battle_ui():
 	battle_log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	log_panel.add_child(battle_log)
 	
+	# ===== 角色肖像面板 =====
+	_create_battle_portrait_panel(battle_ui)
+	
 	# 玩家行动按钮区域
 	var action_panel = Panel.new()
 	action_panel.name = "ActionPanel"
@@ -2160,7 +2163,468 @@ func _create_battle_ui():
 	skill_list_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	player_panel.add_child(skill_list_label)
 
-func _create_action_button(text: String, pos: Vector2) -> Button:
+# ==================== 角色肖像面板 ====================
+# 肖像动画状态
+var portrait_breath_time: float = 0.0
+var portrait_damage_flash: float = 0.0  # 受伤害闪红
+var portrait_heal_glow: float = 0.0     # 治疗绿光
+
+func _create_battle_portrait_panel(parent: Control):
+	# 整体肖像面板 (右上角，敌方面板下方)
+	var portrait_panel = Panel.new()
+	portrait_panel.name = "PortraitPanel"
+	portrait_panel.position = Vector2(560, 155)
+	portrait_panel.size = Vector2(300, 255)
+	portrait_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.92)
+	
+	# 华丽边框
+	var frame_style = StyleBoxFlat.new()
+	frame_style.bg_color = Color(0.04, 0.04, 0.08, 0.92)
+	var job_color = _get_job_color(player_data.job)
+	frame_style.border_color = job_color
+	frame_style.border_width_left = 3; frame_style.border_width_top = 3
+	frame_style.border_width_right = 3; frame_style.border_width_bottom = 3
+	frame_style.corner_radius_top_left = 6; frame_style.corner_radius_top_right = 6
+	frame_style.corner_radius_bottom_right = 6; frame_style.corner_radius_bottom_left = 6
+	portrait_panel.add_theme_stylebox_override("panel", frame_style)
+	parent.add_child(portrait_panel)
+	
+	# 内部装饰背景（肖像区域）
+	var portrait_bg = Panel.new()
+	portrait_bg.name = "PortraitBG"
+	portrait_bg.position = Vector2(10, 10)
+	portrait_bg.size = Vector2(130, 130)
+	portrait_bg.self_modulate = Color(0.02, 0.02, 0.04, 0.95)
+	var bg_style = StyleBoxFlat.new()
+	bg_style.bg_color = Color(0.02, 0.02, 0.04, 0.95)
+	bg_style.border_color = job_color * Color(0.5, 0.5, 0.5, 0.5)
+	bg_style.border_width_left = 1; bg_style.border_width_top = 1
+	bg_style.border_width_right = 1; bg_style.border_width_bottom = 1
+	bg_style.corner_radius_top_left = 4; bg_style.corner_radius_top_right = 4
+	bg_style.corner_radius_bottom_right = 4; bg_style.corner_radius_bottom_left = 4
+	portrait_bg.add_theme_stylebox_override("panel", bg_style)
+	portrait_panel.add_child(portrait_bg)
+	
+	# 肖像精灵容器（用于动画）
+	var portrait_container = Node2D.new()
+	portrait_container.name = "PortraitContainer"
+	portrait_container.position = Vector2(75, 75)
+	portrait_bg.add_child(portrait_container)
+	
+	# 肖像底层阴影
+	var portrait_shadow = Sprite2D.new()
+	portrait_shadow.name = "PortraitShadow"
+	portrait_shadow.texture = _create_portrait_shadow()
+	portrait_shadow.position = Vector2(0, 35)
+	portrait_container.add_child(portrait_shadow)
+	
+	# 肖像主精灵
+	var portrait_sprite = Sprite2D.new()
+	portrait_sprite.name = "PortraitSprite"
+	portrait_sprite.texture = _create_job_portrait_texture(player_data.job)
+	portrait_sprite.position = Vector2(0, 0)
+	portrait_container.add_child(portrait_sprite)
+	
+	# 受伤/治疗闪红特效
+	var portrait_flash = Sprite2D.new()
+	portrait_flash.name = "PortraitFlash"
+	var flash_tex = _create_portrait_flash(job_color)
+	portrait_flash.texture = flash_tex
+	portrait_flash.position = Vector2(0, 0)
+	portrait_flash.modulate = Color(1, 1, 1, 0)  # 初始不可见
+	portrait_container.add_child(portrait_flash)
+	
+	# 职业名称 + 等级标签
+	var name_lbl = Label.new()
+	name_lbl.name = "PortraitName"
+	name_lbl.position = Vector2(10, 150)
+	name_lbl.size = Vector2(280, 22)
+	name_lbl.text = "【%s】 Lv.%d" % [player_data.get_job_name(), player_data.level]
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.add_theme_color_override("font_color", job_color)
+	name_lbl.add_theme_font_size_override("font_size", 15)
+	portrait_panel.add_child(name_lbl)
+	
+	# HP条
+	var php_title = Label.new()
+	php_title.position = Vector2(148, 14)
+	php_title.text = "HP"
+	php_title.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
+	php_title.add_theme_font_size_override("font_size", 11)
+	portrait_panel.add_child(php_title)
+	
+	var php_bar = ProgressBar.new()
+	php_bar.name = "PortraitHP"
+	php_bar.position = Vector2(148, 32)
+	php_bar.size = Vector2(142, 18)
+	php_bar.min_value = 0
+	php_bar.max_value = player_data.max_hp
+	php_bar.value = player_data.hp
+	php_bar.show_percentage = false
+	php_bar.add_theme_stylebox_override("background", _create_hp_bar_bg())
+	php_bar.add_theme_stylebox_override("fill", _create_hp_bar_fill())
+	portrait_panel.add_child(php_bar)
+	
+	# HP数值
+	var php_val = Label.new()
+	php_val.name = "PortraitHPVal"
+	php_val.position = Vector2(148, 52)
+	php_val.size = Vector2(142, 18)
+	php_val.text = "%d / %d" % [player_data.hp, player_data.max_hp]
+	php_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	php_val.add_theme_color_override("font_color", Color(1, 0.7, 0.7))
+	php_val.add_theme_font_size_override("font_size", 11)
+	portrait_panel.add_child(php_val)
+	
+	# MP条
+	var pmp_title = Label.new()
+	pmp_title.position = Vector2(148, 76)
+	pmp_title.text = "MP"
+	pmp_title.add_theme_color_override("font_color", Color(0.3, 0.5, 1))
+	pmp_title.add_theme_font_size_override("font_size", 11)
+	portrait_panel.add_child(pmp_title)
+	
+	var pmp_bar = ProgressBar.new()
+	pmp_bar.name = "PortraitMP"
+	pmp_bar.position = Vector2(148, 94)
+	pmp_bar.size = Vector2(142, 18)
+	pmp_bar.min_value = 0
+	pmp_bar.max_value = player_data.max_mp
+	pmp_bar.value = player_data.mp
+	pmp_bar.show_percentage = false
+	pmp_bar.add_theme_stylebox_override("background", _create_hp_bar_bg())
+	pmp_bar.add_theme_stylebox_override("fill", _create_hp_bar_fill_mp())
+	portrait_panel.add_child(pmp_bar)
+	
+	# MP数值
+	var pmp_val = Label.new()
+	pmp_val.name = "PortraitMPVal"
+	pmp_val.position = Vector2(148, 114)
+	pmp_val.size = Vector2(142, 18)
+	pmp_val.text = "%d / %d" % [player_data.mp, player_data.max_mp]
+	pmp_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pmp_val.add_theme_color_override("font_color", Color(0.6, 0.7, 1))
+	pmp_val.add_theme_font_size_override("font_size", 11)
+	portrait_panel.add_child(pmp_val)
+	
+	# 状态效果图标区域
+	var status_container = Panel.new()
+	status_container.name = "StatusContainer"
+	status_container.position = Vector2(148, 138)
+	status_container.size = Vector2(142, 35)
+	status_container.self_modulate = Color(0, 0, 0, 0.3)
+	var sc_style = StyleBoxFlat.new()
+	sc_style.bg_color = Color(0.02, 0.02, 0.04, 0.3)
+	sc_style.border_color = Color(0.3, 0.3, 0.3, 0.3)
+	sc_style.border_width_left = 1; sc_style.border_width_top = 1
+	sc_style.border_width_right = 1; sc_style.border_width_bottom = 1
+	sc_style.corner_radius_top_left = 3; sc_style.corner_radius_top_right = 3
+	sc_style.corner_radius_bottom_right = 3; sc_style.corner_radius_bottom_left = 3
+	status_container.add_theme_stylebox_override("panel", sc_style)
+	portrait_panel.add_child(status_container)
+	
+	# 职业属性标签
+	var attr_lbl = Label.new()
+	attr_lbl.name = "PortraitAttr"
+	attr_lbl.position = Vector2(10, 180)
+	attr_lbl.size = Vector2(280, 70)
+	var attr_text = "⚔️%d  🛡️%d  ⚡%d  🍀%d" % [
+		player_data.attack_power(), player_data.defense(),
+		player_data.spd + player_data.accessory.get("spd", 0),
+		player_data.luk + player_data.accessory.get("luk", 0)
+	]
+	attr_lbl.text = attr_text
+	attr_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	attr_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.65))
+	attr_lbl.add_theme_font_size_override("font_size", 12)
+	portrait_panel.add_child(attr_lbl)
+	
+	# 状态效果标签（文字版，备用）
+	var effect_lbl = Label.new()
+	effect_lbl.name = "PortraitEffect"
+	effect_lbl.position = Vector2(10, 215)
+	effect_lbl.size = Vector2(280, 35)
+	effect_lbl.add_theme_color_override("font_color", Color(0.6, 0.9, 0.6))
+	effect_lbl.add_theme_font_size_override("font_size", 11)
+	effect_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	effect_lbl.text = ""
+	portrait_panel.add_child(effect_lbl)
+	
+	# 初始化动画状态
+	portrait_breath_time = 0.0
+	portrait_damage_flash = 0.0
+	portrait_heal_glow = 0.0
+
+# 职业对应颜色
+func _get_job_color(job: int) -> Color:
+	var colors = [
+		Color(0.9, 0.3, 0.3),   # 战士 - 红色
+		Color(0.3, 0.3, 1.0),   # 法师 - 蓝色
+		Color(0.3, 0.8, 0.3),   # 猎人 - 绿色
+		Color(0.7, 0.3, 0.9),   # 盗贼 - 紫色
+		Color(0.3, 0.9, 0.5),   # 牧师 - 翠绿
+		Color(0.5, 0.7, 0.95),  # 骑士 - 银蓝
+		Color(0.95, 0.7, 0.2),  # 吟游诗人 - 金色
+		Color(1.0, 0.4, 0.2)    # 召唤师 - 橙红
+	]
+	return colors[job] if job < colors.size() else PALETTE.gold
+
+# 创建职业肖像纹理 (80×80像素艺术)
+func _create_job_portrait_texture(job: int) -> ImageTexture:
+	var img = Image.create(80, 80, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	
+	var cape_col = _get_job_color(job)  # 用职业色作为主色调
+	var armor_col = _get_job_color(job) * Color(0.5, 0.5, 0.5, 1) + Color(0.5, 0.5, 0.5, 0)
+	var skin_col = Color("#e8c8a0")
+	var hair_col = Color("#2a1a0a")
+	var white = Color.WHITE
+	var black = Color.BLACK
+	
+	match job:
+		PlayerData.Job.WARRIOR:
+			# 战士: 重甲红披风
+			_set_box(img, 20, 35, 60, 72, Color(0.4, 0.4, 0.5))  # 铠甲身体
+			_set_box(img, 24, 38, 56, 68, Color(0.5, 0.5, 0.6))  # 铠甲高光
+			_set_box(img, 15, 40, 22, 70, cape_col)  # 红色披风
+			_set_box(img, 14, 42, 20, 65, cape_col * Color(0.8, 0.8, 0.8, 1))  # 披风褶皱
+			_set_box(img, 58, 40, 65, 70, cape_col)  # 披风右
+			_set_box(img, 28, 8, 52, 32, skin_col)  # 脸
+			_set_box(img, 28, 4, 52, 12, hair_col)  # 头发
+			_set_box(img, 33, 14, 37, 16, black)  # 左眼
+			_set_box(img, 43, 14, 47, 16, black)  # 右眼
+			_set_box(img, 34, 15, 36, 15, white)  # 左眼高光
+			_set_box(img, 44, 15, 46, 15, white)  # 右眼高光
+			_set_line(img, 25, 35, 28, 35, Color(0.6, 0.6, 0.7))  # 肩甲
+			_set_line(img, 52, 35, 55, 35, Color(0.6, 0.6, 0.7))  # 肩甲
+			# 剑柄
+			_set_line(img, 62, 20, 68, 14, Color(0.7, 0.7, 0.8))
+			_set_line(img, 63, 21, 67, 21, Color(1.0, 0.8, 0.2))  # 剑格
+		PlayerData.Job.MAGE:
+			# 法师: 蓝袍，手持法杖
+			_set_box(img, 22, 35, 58, 74, Color(0.15, 0.15, 0.45))  # 深蓝法袍
+			_set_box(img, 24, 37, 56, 72, Color(0.2, 0.2, 0.55))  # 法袍高光
+			_set_box(img, 18, 36, 26, 73, Color(0.15, 0.15, 0.4))  # 左侧袍
+			_set_box(img, 54, 36, 62, 73, Color(0.15, 0.15, 0.4))  # 右侧袍
+			_set_box(img, 26, 8, 54, 32, skin_col)  # 脸
+			_set_box(img, 26, 3, 54, 10, hair_col)  # 头发(深色)
+			_set_box(img, 32, 13, 36, 15, Color(0.2, 0.4, 1.0))  # 左眼蓝
+			_set_box(img, 44, 13, 48, 15, Color(0.2, 0.4, 1.0))  # 右眼蓝
+			_set_box(img, 33, 14, 35, 14, white)  # 左眼高光
+			_set_box(img, 45, 14, 47, 14, white)  # 右眼高光
+			# 魔法帽
+			_set_triangle(img, 26, 8, 54, 8, 40, -8, Color(0.15, 0.15, 0.45))
+			# 法杖
+			_set_line(img, 65, 10, 65, 70, Color(0.5, 0.3, 0.1))
+			_set_circle(img, 65, 8, 5, Color(0.3, 0.6, 1.0))  # 魔法球
+			_set_circle(img, 65, 8, 3, white)  # 魔法球高光
+		PlayerData.Job.HUNTER:
+			# 猎人: 绿棕猎装，背弓
+			_set_box(img, 24, 35, 56, 72, Color(0.25, 0.4, 0.2))  # 绿色猎装
+			_set_box(img, 26, 37, 54, 70, Color(0.3, 0.45, 0.25))
+			_set_box(img, 24, 35, 56, 72, Color(0.35, 0.25, 0.15))  # 棕色皮甲
+			_set_box(img, 18, 38, 24, 65, Color(0.25, 0.4, 0.2))  # 斗篷左
+			_set_box(img, 56, 38, 62, 65, Color(0.25, 0.4, 0.2))  # 斗篷右
+			_set_box(img, 28, 8, 52, 32, skin_col)  # 脸
+			_set_box(img, 28, 4, 52, 10, Color(0.3, 0.2, 0.1))  # 棕色头发
+			_set_box(img, 33, 14, 37, 16, black)  # 左眼
+			_set_box(img, 43, 14, 47, 16, black)  # 右眼
+			_set_box(img, 34, 15, 36, 15, white)
+			_set_box(img, 44, 15, 46, 15, white)
+			# 弓
+			_set_line(img, 2, 15, 2, 65, Color(0.4, 0.25, 0.1))
+			_set_line(img, 2, 15, 2, 65, Color(0.5, 0.35, 0.15), 2)  # 弓弦
+		PlayerData.Job.THIEF:
+			# 盗贼: 黑色夜行衣，双刃
+			_set_box(img, 24, 35, 56, 72, Color(0.12, 0.12, 0.2))  # 黑色夜衣
+			_set_box(img, 26, 37, 54, 70, Color(0.18, 0.18, 0.28))  # 夜衣高光
+			_set_box(img, 16, 38, 24, 68, Color(0.15, 0.15, 0.25))  # 斗篷左
+			_set_box(img, 56, 38, 64, 68, Color(0.15, 0.15, 0.25))  # 斗篷右
+			_set_box(img, 28, 8, 52, 32, skin_col)  # 脸
+			_set_box(img, 28, 4, 52, 10, Color(0.1, 0.1, 0.15))  # 深色头发
+			_set_box(img, 26, 5, 30, 8, Color(0.05, 0.05, 0.1))  # 兜帽
+			_set_box(img, 50, 5, 54, 8, Color(0.05, 0.05, 0.1))  # 兜帽
+			_set_box(img, 33, 14, 37, 16, Color(0.9, 0.7, 0.1))  # 左眼(金色)
+			_set_box(img, 43, 14, 47, 16, Color(0.9, 0.7, 0.1))  # 右眼(金色)
+			_set_box(img, 34, 15, 36, 15, white)
+			_set_box(img, 44, 15, 46, 15, white)
+			# 双匕首
+			_set_line(img, 6, 35, 6, 55, Color(0.7, 0.7, 0.8))
+			_set_line(img, 74, 35, 74, 55, Color(0.7, 0.7, 0.8))
+		PlayerData.Job.PRIEST:
+			# 牧师: 白色长袍，金色圣徽
+			_set_box(img, 22, 35, 58, 74, Color(0.9, 0.9, 0.95))  # 白色法袍
+			_set_box(img, 24, 37, 56, 72, Color(0.95, 0.95, 1.0))  # 法袍高光
+			_set_box(img, 18, 36, 26, 73, Color(0.85, 0.85, 0.9))  # 左袖
+			_set_box(img, 54, 36, 62, 73, Color(0.85, 0.85, 0.9))  # 右袖
+			_set_box(img, 28, 8, 52, 32, skin_col)  # 脸
+			_set_box(img, 28, 4, 52, 10, Color(0.8, 0.7, 0.4))  # 金发
+			# 圣环
+			_set_circle_line(img, 40, 6, 18, Color(1.0, 0.85, 0.3), 2)
+			_set_box(img, 33, 14, 37, 16, Color(0.2, 0.4, 1.0))  # 左眼蓝
+			_set_box(img, 43, 14, 47, 16, Color(0.2, 0.4, 1.0))  # 右眼蓝
+			_set_box(img, 34, 15, 36, 15, white)
+			_set_box(img, 44, 15, 46, 15, white)
+			# 圣徽
+			_set_box(img, 35, 36, 45, 48, Color(1.0, 0.85, 0.2))
+			_set_box(img, 37, 38, 43, 46, Color(1.0, 0.9, 0.4))
+			# 十字架
+			_set_line(img, 40, 37, 40, 47, Color(1.0, 0.85, 0.2), 3)
+			_set_line(img, 36, 41, 44, 41, Color(1.0, 0.85, 0.2), 3)
+		PlayerData.Job.KNIGHT:
+			# 骑士: 全身板甲，蓝披风
+			_set_box(img, 20, 35, 60, 74, Color(0.4, 0.45, 0.55))  # 银色板甲
+			_set_box(img, 22, 37, 58, 72, Color(0.5, 0.55, 0.65))  # 板甲高光
+			_set_box(img, 15, 40, 22, 72, cape_col)  # 蓝色披风
+			_set_box(img, 14, 42, 20, 68, cape_col * Color(0.7, 0.7, 0.7, 1))  # 披风褶皱
+			_set_box(img, 58, 40, 65, 72, cape_col)  # 披风右
+			_set_box(img, 28, 8, 52, 32, skin_col)  # 脸
+			_set_box(img, 28, 3, 52, 10, Color(0.3, 0.3, 0.35))  # 头发
+			_set_box(img, 28, 4, 52, 6, Color(0.4, 0.4, 0.45))  # 头盔顶
+			_set_box(img, 33, 14, 37, 16, black)  # 左眼(头盔缝)
+			_set_box(img, 43, 14, 47, 16, black)  # 右眼
+			_set_line(img, 25, 35, 28, 35, Color(0.6, 0.65, 0.75))  # 肩甲
+			_set_line(img, 52, 35, 55, 35, Color(0.6, 0.65, 0.75))
+			# 盾牌
+			_set_line(img, 2, 40, 2, 65, Color(0.35, 0.4, 0.5), 10)
+			_set_line(img, 4, 42, 4, 63, cape_col, 6)  # 盾牌蓝心
+		PlayerData.Job.BARD:
+			# 吟游诗人: 彩色斗篷，琵琶
+			_set_box(img, 22, 35, 58, 74, Color(0.7, 0.35, 0.2))  # 棕色外套
+			_set_box(img, 24, 37, 56, 72, Color(0.8, 0.4, 0.25))  # 外套高光
+			_set_box(img, 18, 38, 26, 72, cape_col)  # 彩色斗篷
+			_set_box(img, 54, 38, 62, 72, cape_col * Color(0.6, 0.6, 0.8, 1))  # 斗篷另一色
+			_set_box(img, 28, 8, 52, 32, skin_col)  # 脸
+			_set_box(img, 28, 4, 52, 10, Color(0.5, 0.35, 0.2))  # 棕色头发
+			_set_box(img, 33, 14, 37, 16, black)  # 左眼
+			_set_box(img, 43, 14, 47, 16, black)  # 右眼
+			_set_box(img, 34, 15, 36, 15, white)
+			_set_box(img, 44, 15, 46, 15, white)
+			# 琵琶
+			_set_line(img, 65, 25, 68, 60, Color(0.4, 0.25, 0.1))
+			_set_circle(img, 66, 62, 8, Color(0.5, 0.3, 0.15))  # 琴身
+			_set_line(img, 66, 54, 66, 62, Color(0.3, 0.2, 0.1), 2)
+			# 音符装饰
+			_set_circle(img, 8, 15, 4, Color(0.8, 0.7, 0.2))
+			_set_line(img, 12, 11, 12, 18, Color(0.8, 0.7, 0.2), 2)
+			_set_circle(img, 16, 22, 3, Color(0.8, 0.7, 0.2))
+			_set_line(img, 19, 19, 19, 24, Color(0.8, 0.7, 0.2), 2)
+		PlayerData.Job.SUMMONER:
+			# 召唤师: 暗紫袍，符文，魔法球
+			_set_box(img, 22, 35, 58, 74, Color(0.3, 0.1, 0.35))  # 暗紫色袍
+			_set_box(img, 24, 37, 56, 72, Color(0.4, 0.15, 0.45))  # 紫袍高光
+			_set_box(img, 18, 36, 26, 73, Color(0.25, 0.08, 0.3))  # 左侧袍
+			_set_box(img, 54, 36, 62, 73, Color(0.25, 0.08, 0.3))  # 右侧袍
+			_set_box(img, 28, 8, 52, 32, skin_col)  # 脸
+			_set_box(img, 28, 3, 52, 10, Color(0.15, 0.05, 0.2))  # 深紫发
+			_set_box(img, 33, 14, 37, 16, Color(0.9, 0.2, 0.8))  # 左眼紫红
+			_set_box(img, 43, 14, 47, 16, Color(0.9, 0.2, 0.8))  # 右眼紫红
+			_set_box(img, 34, 15, 36, 15, white)
+			_set_box(img, 44, 15, 46, 15, white)
+			# 符文项链
+			_set_line(img, 30, 33, 50, 33, Color(0.8, 0.2, 0.9), 2)
+			_set_circle(img, 40, 33, 4, Color(0.6, 0.1, 0.7))
+			_set_circle(img, 40, 33, 2, Color(1.0, 0.5, 1.0))
+			# 法杖 + 魔法球
+			_set_line(img, 64, 10, 64, 68, Color(0.3, 0.2, 0.1))
+			_set_circle(img, 64, 8, 6, Color(0.8, 0.2, 0.9))  # 紫色魔法球
+			_set_circle(img, 64, 8, 4, Color(1.0, 0.5, 1.0))  # 高光
+			# 魔法符文装饰
+			_set_line(img, 10, 25, 15, 20, Color(0.7, 0.2, 0.8), 2)
+			_set_line(img, 15, 25, 10, 20, Color(0.7, 0.2, 0.8), 2)
+			_set_circle(img, 12, 22, 2, Color(0.5, 0.1, 0.6))
+	
+	var tex = ImageTexture.create_from_image(img)
+	return tex
+
+# 肖像阴影纹理
+func _create_portrait_shadow() -> ImageTexture:
+	var img = Image.create(80, 20, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var cx = 40; var cy = 10
+	var rx = 30; var ry = 8
+	for x in range(80):
+		for y in range(20):
+			var dx = float(x - cx) / rx
+			var dy = float(y - cy) / ry
+			var d = dx*dx + dy*dy
+			if d <= 1.0:
+				var alpha = max(0.0, 1.0 - d) * 0.25
+				img.set_pixel(x, y, Color(0, 0, 0, alpha))
+	var tex = ImageTexture.create_from_image(img)
+	return tex
+
+# 肖像闪红/绿特效
+func _create_portrait_flash(col: Color) -> ImageTexture:
+	var img = Image.create(80, 80, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	# 红色叠加层
+	for x in range(80):
+		for y in range(80):
+			var dist = sqrt(pow(x-40, 2) + pow(y-40, 2))
+			if dist < 35:
+				var alpha = (1.0 - dist/35.0) * 0.6
+				img.set_pixel(x, y, Color(col.r, col.g, col.b, alpha))
+	var tex = ImageTexture.create_from_image(img)
+	return tex
+
+# 辅助绘图函数
+func _set_box(img: Image, x1: int, y1: int, x2: int, y2: int, col: Color):
+	for x in range(max(0,x1), min(80,x2+1)):
+		for y in range(max(0,y1), min(80,y2+1)):
+			img.set_pixel(x, y, col)
+
+func _set_triangle(img: Image, x1: int, y1: int, x2: int, y2: int, x3: int, y3: int, col: Color):
+	# 三角形填充 (x1,y1)-(x2,y2)-(x3,y3)
+	var min_y = int(min(y1, min(y2, y3)))
+	var max_y = int(max(y1, max(y2, y3)))
+	for y in range(max(0, min_y), min(80, max_y + 1)):
+		var intersections: Array = []
+		# 与边的交点
+		if y1 != y2:
+			var t = float(y - y1) / float(y2 - y1)
+			if t >= 0 and t <= 1:
+				intersections.append(x1 + (x2 - x1) * t)
+		if y1 != y3:
+			var t = float(y - y1) / float(y3 - y1)
+			if t >= 0 and t <= 1:
+				intersections.append(x1 + (x3 - x1) * t)
+		if y2 != y3:
+			var t = float(y - y2) / float(y3 - y2)
+			if t >= 0 and t <= 1:
+				intersections.append(x2 + (x3 - x2) * t)
+		if intersections.size() >= 2:
+			var x_start = int(min(intersections[0], intersections[1]))
+			var x_end = int(max(intersections[0], intersections[1]))
+			for x in range(max(0, x_start), min(80, x_end + 1)):
+				img.set_pixel(x, y, col)
+
+func _set_line(img: Image, x1: int, y1: int, x2: int, y2: int, col: Color, thick: int = 1):
+	var dx = x2 - x1; var dy = y2 - y1
+	var steps = max(abs(dx), abs(dy))
+	for i in range(steps + 1):
+		var t = float(i) / max(1, steps)
+		var x = int(x1 + dx * t)
+		var y = int(y1 + dy * t)
+		for tx in range(-thick+1, thick):
+			for ty in range(-thick+1, thick):
+				var px = x + tx; var py = y + ty
+				if px >= 0 and px < 80 and py >= 0 and py < 80:
+					img.set_pixel(px, py, col)
+
+func _set_circle(img: Image, cx: int, cy: int, r: int, col: Color):
+	for x in range(cx-r-1, cx+r+2):
+		for y in range(cy-r-1, cy+r+2):
+			var dist = sqrt(pow(x-cx, 2) + pow(y-cy, 2))
+			if dist <= r:
+				img.set_pixel(x, y, col)
+
+func _set_circle_line(img: Image, cx: int, cy: int, r: int, col: Color, thick: int = 1):
+	for x in range(cx-r-1, cx+r+2):
+		for y in range(cy-r-1, cy+r+2):
+			var dist = sqrt(pow(x-cx, 2) + pow(y-cy, 2))
+			if abs(dist - r) <= thick:
+
 	var btn = Button.new()
 	btn.text = text
 	btn.position = pos
@@ -2221,6 +2685,15 @@ func _create_hp_bar_bg() -> StyleBoxFlat:
 func _create_hp_bar_fill() -> StyleBoxFlat:
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0.85, 0.15, 0.15)
+	style.corner_radius_top_left = 2
+	style.corner_radius_top_right = 2
+	style.corner_radius_bottom_right = 2
+	style.corner_radius_bottom_left = 2
+	return style
+
+func _create_hp_bar_fill_mp() -> StyleBoxFlat:
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.15, 0.35, 0.85)
 	style.corner_radius_top_left = 2
 	style.corner_radius_top_right = 2
 	style.corner_radius_bottom_right = 2
@@ -2515,6 +2988,7 @@ func _on_skill_selected(skill_name: String):
 		"治疗":
 			var heal = int(player_data.max_hp * 0.4)
 			player_data.hp = min(player_data.max_hp, player_data.hp + heal)
+			_trigger_portrait_heal_glow()  # 治疗时肖像绿光
 			_battle_add_log("💚 治疗！恢复 %d HP" % heal)
 		"护盾":
 			player_shield = int(player_data.defense() * 1.5)
@@ -2522,6 +2996,7 @@ func _on_skill_selected(skill_name: String):
 		"复活":
 			if player_data.hp <= 0:
 				player_data.hp = int(player_data.max_hp * 0.5)
+				_trigger_portrait_heal_glow()  # 复活时肖像绿光
 				_battle_add_log("✨ 复活！恢复50% HP")
 			else:
 				player_data.mp -= 10  # 不消耗额外MP已消耗
@@ -2555,6 +3030,7 @@ func _on_skill_selected(skill_name: String):
 			player_data.hp = min(player_data.max_hp, player_data.hp + heal)
 			var heal2 = int(player_data.max_mp * 0.2)
 			player_data.mp = min(player_data.max_mp, player_data.mp + heal2)
+			_trigger_portrait_heal_glow()  # 治疗时肖像绿光
 			_battle_add_log("🎶 治疗旋律！恢复 %d HP 和 %d MP" % [heal, heal2])
 		"沉默":
 			enemy_stun_turns = 2
@@ -2618,6 +3094,9 @@ func _process_battle(delta: float):
 			enemy_sprite.position.x += diff * 8 * delta
 		else:
 			enemy_sprite.position.x = enemy_sprite_pos.x
+	
+	# ===== 肖像面板动画 =====
+	_update_portrait_animation(delta)
 	
 	# 战斗消息消失
 	if battle_message_timer > 0:
@@ -2707,6 +3186,7 @@ func _process_battle(delta: float):
 		player_defending = false
 	e_dmg = max(1, e_dmg)
 	player_data.hp -= e_dmg
+	_trigger_portrait_damage_flash()  # 受伤时肖像闪红
 	_battle_add_log("👹 %s 攻击！造成 %d 伤害" % [current_enemy["name"], e_dmg])
 	if audio_manager:
 		audio_manager.play_sfx("hit")
@@ -2982,6 +3462,7 @@ func _apply_player_damage(dmg: int):
 		player_defending = false
 	dmg = max(1, dmg)
 	player_data.hp -= dmg
+	_trigger_portrait_damage_flash()  # 受伤时肖像闪红
 	if audio_manager:
 		audio_manager.play_sfx("hit")
 	_update_battle_player_ui()
@@ -3241,6 +3722,92 @@ func _exp_check():
 		if audio_manager:
 			audio_manager.play_sfx("levelup")
 	show_message("升级了！Lv.%d" % player_data.level)
+
+# 肖像动画更新（每帧调用）
+func _update_portrait_animation(delta: float):
+	if not battle_ui:
+		return
+	var portrait_panel = battle_ui.get_node_or_null("PortraitPanel")
+	if not portrait_panel:
+		return
+	
+	# 更新呼吸动画
+	portrait_breath_time += delta
+	var breath_scale = 1.0 + sin(portrait_breath_time * 2.5) * 0.012  # 轻微上下浮动
+	var portrait_container = portrait_panel.get_node_or_null("PortraitContainer")
+	if portrait_container:
+		portrait_container.scale = Vector2(breath_scale, breath_scale)
+	
+	# 更新受伤闪红
+	if portrait_damage_flash > 0:
+		portrait_damage_flash -= delta
+		var portrait_sprite = portrait_container.get_node_or_null("PortraitSprite") if portrait_container else null
+		if portrait_sprite:
+			var flash = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
+			if flash:
+				var alpha = max(0.0, portrait_damage_flash / 0.4) * 0.65
+				flash.modulate = Color(1, 1, 1, alpha)
+		if portrait_damage_flash <= 0:
+			portrait_damage_flash = 0.0
+			var flash = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
+			if flash:
+				flash.modulate = Color(1, 1, 1, 0.0)
+	
+	# 更新治疗绿光
+	if portrait_heal_glow > 0:
+		portrait_heal_glow -= delta
+		var flash = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
+		if flash:
+			var alpha = max(0.0, portrait_heal_glow / 0.5) * 0.5
+			flash.modulate = Color(1, 1, 1, alpha)
+		if portrait_heal_glow <= 0:
+			portrait_heal_glow = 0.0
+			var flash = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
+			if flash:
+				flash.modulate = Color(1, 1, 1, 0.0)
+	
+	# 更新肖像面板的HP/MP条（每次动画帧都更新）
+	_update_portrait_bars(portrait_panel)
+
+func _update_portrait_bars(portrait_panel: Panel):
+	if not portrait_panel:
+		return
+	var php_bar = portrait_panel.get_node_or_null("PortraitHP")
+	var php_val = portrait_panel.get_node_or_null("PortraitHPVal")
+	var pmp_bar = portrait_panel.get_node_or_null("PortraitMP")
+	var pmp_val = portrait_panel.get_node_or_null("PortraitMPVal")
+	if php_bar:
+		php_bar.max_value = player_data.max_hp
+		php_bar.value = max(0, player_data.hp)
+		# HP条颜色随血量变化
+		var hp_ratio = float(player_data.hp) / float(player_data.max_hp)
+		var hp_fill = php_bar.get_theme_stylebox("fill")
+		if hp_fill:
+			var new_fill = StyleBoxFlat.new()
+			if hp_ratio > 0.5:
+				new_fill.bg_color = Color(0.85, 0.15, 0.15)
+			elif hp_ratio > 0.25:
+				new_fill.bg_color = Color(0.95, 0.55, 0.05)
+			else:
+				new_fill.bg_color = Color(0.85, 0.05, 0.05)
+			new_fill.corner_radius_top_left = 2; new_fill.corner_radius_top_right = 2
+			new_fill.corner_radius_bottom_right = 2; new_fill.corner_radius_bottom_left = 2
+			php_bar.add_theme_stylebox_override("fill", new_fill)
+	if php_val:
+		php_val.text = "%d / %d" % [max(0, player_data.hp), player_data.max_hp]
+	if pmp_bar:
+		pmp_bar.max_value = player_data.max_mp
+		pmp_bar.value = player_data.mp
+	if pmp_val:
+		pmp_val.text = "%d / %d" % [player_data.mp, player_data.max_mp]
+
+# 触发肖像受伤闪红
+func _trigger_portrait_damage_flash():
+	portrait_damage_flash = 0.4  # 闪红持续0.4秒
+
+# 触发肖像治疗绿光
+func _trigger_portrait_heal_glow():
+	portrait_heal_glow = 0.5  # 绿光持续0.5秒
 
 func _update_enemy_hp_bar():
 	if enemy_hp_bar:
