@@ -118,6 +118,70 @@ const PALETTE = {
 	"gold": Color("#c9a227")
 }
 
+# Boss数据 (第1/3/5/7/8层)
+const BOSS_DATA = {
+	1: {
+		"name": "哥布林王 Grak",
+		"title": "第1层Boss",
+		"hp": 350, "atk": 25, "def": 12, "spd": 5, "luk": 5,
+		"exp": 500, "gold": 300,
+		"color": Color(0.3, 0.7, 0.2),
+		"phase_hp": 0.3,  # 30%血量触发狂暴
+		"skills": ["普通攻击", "怒吼", "召唤哥布林", "狂暴化"],
+		"description": "盘踞在地牢入口的哥布林首领，贪婪而狡猾，手下众多。"
+	},
+	3: {
+		"name": "巫妖领主 Lich Lord",
+		"title": "第3层Boss",
+		"hp": 600, "atk": 45, "def": 15, "spd": 6, "luk": 8,
+		"exp": 1200, "gold": 800,
+		"color": Color(0.4, 0.4, 0.8),
+		"phase_hp": 0.2,  # 20%血量触发不死之身
+		"skills": ["暗影冲击", "亡灵大军", "生命虹吸", "灵魂收割", "不死之身"],
+		"description": "曾是大陆上最伟大的亡灵法师，因追求永生而堕落为巫妖。"
+	},
+	5: {
+		"name": "熔岩巨魔 Magmato",
+		"title": "第5层Boss",
+		"hp": 1200, "atk": 55, "def": 35, "spd": 3, "luk": 2,
+		"exp": 2500, "gold": 1500,
+		"color": Color(0.9, 0.3, 0.1),
+		"phase_hp": 0.0,
+		"skills": ["岩浆之拳", "熔岩喷射", "碎地重击", "熔岩护甲"],
+		"description": "沉睡于火山深处的远古巨魔，体内流淌着岩浆。"
+	},
+	7: {
+		"name": "堕落天使 Seraphiel",
+		"title": "第7层Boss",
+		"hp": 2000, "atk": 70, "def": 30, "spd": 8, "luk": 12,
+		"exp": 5000, "gold": 3000,
+		"color": Color(0.8, 0.8, 1.0),
+		"phase_hp": 0.0,
+		"skills": ["天罚之剑", "神圣裁决", "堕落之光", "命运之手", "羽翼护盾"],
+		"description": "曾是天界最强大的守护天使，因质疑神谕而被逐出天堂。"
+	},
+	8: {
+		"name": "远古巨龙 Zephyranthes",
+		"title": "最终Boss",
+		"hp": 5000, "atk": 100, "def": 50, "spd": 10, "luk": 15,
+		"exp": 15000, "gold": 10000,
+		"color": Color(0.2, 0.05, 0.4),
+		"phase_hp": 0.6,  # 60%进入第二阶段
+		"phase2_hp": 0.3,  # 30%进入第三阶段
+		"skills": ["龙息", "飓风降临", "召唤雷云", "毁天灭地", "龙鳞护体", "湮灭"],
+		"description": "传说中太古时代便存在的巨龙，掌管着天空与风暴的力量。"
+	}
+}
+
+# 转换状态
+var is_transitioning: bool = false
+var transition_overlay: ColorRect
+var current_boss_data: Dictionary = {}
+var boss_phase: int = 1  # Boss战阶段
+var boss_enraged: bool = false  # Boss狂暴标记
+var boss_shield_stacks: int = 0  # 堕落天使护盾层数
+var boss_revived: bool = false  # 巫妖复活标记
+
 # 墙壁碰撞区 (简化)
 var wall_rects: Array = []
 
@@ -832,21 +896,243 @@ func _process_explore(delta):
 	_update_minimap()
 
 func _next_floor():
-	if current_floor < 8:
-		current_floor += 1
-		player.position = Vector2(640, 400)
-		player_tile_x = 40
-		player_tile_y = 25
-		# 重置迷雾
-		for key in fog_map:
-			var fog = fog_map[key]
-			fog.color = Color(0.02, 0.02, 0.04, 0.95)
-		_reveal_area(player_tile_x, player_tile_y, 5)
-		_update_minimap()
-		show_message(">> 深入第 %d 层..." % current_floor)
-		floor_label.text = "第 %d 层" % current_floor
-	else:
+	if current_floor >= 8:
 		show_message("这是最后一层！")
+		return
+	if is_transitioning:
+		return
+	
+	is_transitioning = true
+	is_player_turn = false
+	
+	# 淡出
+	_show_transition_overlay()
+	
+	var tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(transition_overlay, "color:a", 1.0, 0.5)
+	
+	await tween.finished
+	await get_tree().create_timer(0.3).timeout
+	
+	# 执行楼层切换
+	current_floor += 1
+	player.position = Vector2(640, 400)
+	player_tile_x = 40
+	player_tile_y = 25
+	for key in fog_map:
+		var fog = fog_map[key]
+		fog.color = Color(0.02, 0.02, 0.04, 0.95)
+	_reveal_area(player_tile_x, player_tile_y, 5)
+	_update_minimap()
+	
+	# 检查是否是Boss层
+	var boss_key = _get_boss_floor_key()
+	if boss_key > 0:
+		# 显示Boss名字公告
+		_show_floor_announcement("第 %d 层" % current_floor)
+		# 更新floor_label
+		floor_label.text = "第 %d 层 · BOSS!" % current_floor
+	else:
+		_show_floor_announcement("第 %d 层" % current_floor)
+		floor_label.text = "第 %d 层" % current_floor
+	
+	# 淡入
+	tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(transition_overlay, "color:a", 0.0, 0.5)
+	await tween.finished
+	
+	_hide_transition_overlay()
+	is_transitioning = false
+	is_player_turn = true
+	
+	# 如果是Boss层，短暂提示后开始Boss战
+	if boss_key > 0:
+		await get_tree().create_timer(1.5).timeout
+		_start_boss_encounter()
+
+func _get_boss_floor_key() -> int:
+	# 检查是否是Boss层
+	if BOSS_DATA.has(current_floor):
+		return current_floor
+	return 0
+
+func _show_transition_overlay():
+	if transition_overlay == null:
+		transition_overlay = ColorRect.new()
+		transition_overlay.name = "TransitionOverlay"
+		transition_overlay.size = Vector2(1280, 720)
+		transition_overlay.position = Vector2(0, 0)
+		transition_overlay.color = Color(0, 0, 0, 0.0)
+		add_child(transition_overlay)
+	transition_overlay.visible = true
+
+func _hide_transition_overlay():
+	if transition_overlay:
+		transition_overlay.visible = false
+
+func _show_floor_announcement(text: String):
+	# 创建楼层公告
+	var announce = Label.new()
+	announce.name = "FloorAnnounce"
+	announce.text = text
+	announce.position = Vector2(0, 300)
+	announce.size = Vector2(1280, 80)
+	announce.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	announce.add_theme_color_override("font_color", PALETTE.gold)
+	announce.add_theme_font_size_override("font_size", 48)
+	announce.modulate = Color(1, 1, 1, 0)
+	add_child(announce)
+	
+	var tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(announce, "modulate:a", 1.0, 0.3)
+	tween.tween_property(announce, "scale", Vector2(1.1, 1.1), 0.3)
+	await get_tree().create_timer(1.2).timeout
+	tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(announce, "modulate:a", 0.0, 0.4)
+	tween.tween_property(announce, "scale", Vector2(1.2, 1.2), 0.4)
+	await tween.finished
+	announce.queue_free()
+
+func _start_boss_encounter():
+	if not BOSS_DATA.has(current_floor):
+		return
+	
+	var boss_def = BOSS_DATA[current_floor]
+	var mult = 1.0 + current_floor * 0.12
+	
+	current_boss_data = {
+		"name": boss_def["name"],
+		"hp": int(boss_def["hp"] * mult),
+		"max_hp": int(boss_def["hp"] * mult),
+		"atk": int(boss_def["atk"] * mult),
+		"def": int(boss_def["def"] * mult),
+		"spd": boss_def["spd"],
+		"exp": boss_def["exp"],
+		"gold": boss_def["gold"],
+		"color": boss_def["color"],
+		"phase_hp": boss_def.get("phase_hp", 0.0),
+		"phase2_hp": boss_def.get("phase2_hp", 0.0),
+		"description": boss_def["description"]
+	}
+	boss_phase = 1
+	boss_enraged = false
+	boss_shield_stacks = 0
+	boss_revived = false
+	
+	# 显示Boss登场画面
+	_show_boss_intro(boss_def)
+
+func _show_boss_intro(boss_def: Dictionary):
+	# 暗色遮罩
+	var overlay = ColorRect.new()
+	overlay.name = "BossIntroOverlay"
+	overlay.size = Vector2(1280, 720)
+	overlay.color = Color(0, 0, 0, 0.95)
+	overlay.position = Vector2(0, 0)
+	overlay.modulate = Color(1, 1, 1, 0)
+	add_child(overlay)
+	
+	# Boss名称面板
+	var panel = Panel.new()
+	panel.name = "BossIntroPanel"
+	panel.position = Vector2(290, 200)
+	panel.size = Vector2(700, 320)
+	panel.self_modulate = Color(0.03, 0.03, 0.06, 0.98)
+	panel.add_theme_stylebox_override("panel", _create_stylebox())
+	panel.modulate = Color(1, 1, 1, 0)
+	add_child(panel)
+	
+	# Boss标题
+	var title = Label.new()
+	title.name = "BossTitle"
+	title.position = Vector2(0, 20)
+	title.size = Vector2(700, 50)
+	title.text = "⚠️ BOSS出现! ⚠️"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2))
+	title.add_theme_font_size_override("font_size", 32)
+	panel.add_child(title)
+	
+	# Boss名称
+	var boss_name = Label.new()
+	boss_name.name = "BossName"
+	boss_name.position = Vector2(0, 80)
+	boss_name.size = Vector2(700, 50)
+	boss_name.text = boss_def["name"]
+	boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_name.add_theme_color_override("font_color", PALETTE.gold)
+	boss_name.add_theme_font_size_override("font_size", 40)
+	panel.add_child(boss_name)
+	
+	# 分割线
+	var sep = ColorRect.new()
+	sep.position = Vector2(100, 135)
+	sep.size = Vector2(500, 2)
+	sep.color = PALETTE.gold * Color(0.5, 0.5, 0.5, 0.5)
+	panel.add_child(sep)
+	
+	# 描述
+	var desc = Label.new()
+	desc.name = "BossDesc"
+	desc.position = Vector2(50, 150)
+	desc.size = Vector2(600, 80)
+	desc.text = boss_def["description"]
+	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc.add_theme_color_override("font_color", Color(0.75, 0.75, 0.8))
+	desc.add_theme_font_size_override("font_size", 16)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
+	panel.add_child(desc)
+	
+	# 技能列表
+	var skills_text = "技能: " + ", ".join(boss_def["skills"])
+	var skills_lbl = Label.new()
+	skills_lbl.name = "BossSkills"
+	skills_lbl.position = Vector2(50, 230)
+	skills_lbl.size = Vector2(600, 40)
+	skills_lbl.text = skills_text
+	skills_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	skills_lbl.add_theme_color_override("font_color", Color(0.8, 0.6, 0.3))
+	skills_lbl.add_theme_font_size_override("font_size", 14)
+	panel.add_child(skills_lbl)
+	
+	# 警告
+	var warn = Label.new()
+	warn.name = "BossWarn"
+	warn.position = Vector2(0, 270)
+	warn.size = Vector2(700, 40)
+	warn.text = ">>> 准备战斗! <<<"
+	warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	warn.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+	warn.add_theme_font_size_override("font_size", 24)
+	panel.add_child(warn)
+	
+	# 动画
+	var tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(overlay, "modulate:a", 1.0, 0.4)
+	await get_tree().create_timer(0.5).timeout
+	
+	tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(panel, "modulate:a", 1.0, 0.6)
+	tween.tween_property(panel, "scale", Vector2(1.05, 1.05), 0.6)
+	await get_tree().create_timer(2.5).timeout
+	
+	# 淡出并清理
+	tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(overlay, "modulate:a", 0.0, 0.5)
+	tween.tween_property(panel, "modulate:a", 0.0, 0.5)
+	await tween.finished
+	overlay.queue_free()
+	panel.queue_free()
+	
+	# 开始Boss战斗
+	_start_boss_battle()
 
 func _update_ui():
 	job_label.text = player_data.get_job_name()
@@ -1624,7 +1910,8 @@ func _start_battle():
 		"spd": edata.spd,
 		"exp": edata.exp_reward,
 		"gold": edata.gold_reward,
-		"color": edata.color
+		"color": edata.color,
+		"is_boss": false
 	}
 	
 	show_message("遭遇了 " + current_enemy["name"] + "！")
@@ -1648,6 +1935,43 @@ func _start_battle():
 		var trap_dmg = int(player_data.attack_power() * 1.5)
 		current_enemy["hp"] -= trap_dmg
 		_battle_add_log("⚡ 陷阱触发！造成 %d 伤害" % trap_dmg)
+		_update_enemy_hp_bar()
+		_check_battle_end()
+
+func _start_boss_battle():
+	game_state = State.BATTLE
+	is_player_turn = true
+	player_defending = false
+	player_shield = 0
+	poison_stacks = 0
+	poison_turns = 0
+	trapped = false
+	enemy_stun_turns = 0
+	vanish_turns = 0
+	resonance_stacks = 0
+	contract_active = false
+	contract_turns = 0
+	boss_phase = 1
+	boss_enraged = false
+	boss_shield_stacks = 0
+	boss_revived = false
+	
+	# 使用Boss数据
+	current_enemy = current_boss_data.duplicate()
+	current_enemy["is_boss"] = true
+	
+	show_message("⚠️ Boss战: " + current_enemy["name"] + "！")
+	_create_battle_ui()
+	if audio_manager:
+		audio_manager.play_bgm("boss")
+	
+	# 猎人陷阱对Boss也有效
+	if player_data.job == PlayerData.Job.HUNTER and player_data.skills.has("陷阱"):
+		trapped = true
+		await get_tree().create_timer(0.5).timeout
+		var trap_dmg = int(player_data.attack_power() * 1.0)  # Boss战陷阱伤害降低
+		current_enemy["hp"] -= trap_dmg
+		_battle_add_log("⚡ 陷阱触发！对Boss造成 %d 伤害" % trap_dmg)
 		_update_enemy_hp_bar()
 		_check_battle_end()
 
@@ -2288,7 +2612,12 @@ func _process_battle(delta: float):
 		else:
 			_battle_add_log("💨 消失！闪避失败...")
 	
-	# 敌人攻击
+	# Boss特殊能力处理
+	if current_enemy.get("is_boss", false):
+		_process_boss_turn()
+		return
+	
+	# 普通敌人攻击
 	var e_dmg = current_enemy["atk"] + randi() % 5 - 2
 	if player_defending or player_shield > 0:
 		e_dmg = int(e_dmg * 0.5)
