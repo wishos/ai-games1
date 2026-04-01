@@ -344,7 +344,7 @@ func _show_title_screen():
 	var tip = Label.new()
 	tip.position = Vector2(0, 420)
 	tip.size = Vector2(1000, 25)
-	tip.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I)"
+	tip.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · F2存档"
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
 	tip.add_theme_font_size_override("font_size", 13)
@@ -447,7 +447,7 @@ func _setup_ui():
 	# 提示操作
 	var hint_label = Label.new()
 	hint_label.position = Vector2(1070, 80)
-	hint_label.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I)"
+	hint_label.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · F2存档"
 	hint_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	add_child(hint_label)
 	
@@ -517,7 +517,7 @@ func _setup_player():
 	player.add_child(col)
 	
 	add_child(player)
-	show_message("WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I)")
+	show_message("WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · F2存档")
 
 func _create_knight_texture() -> ImageTexture:
 	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
@@ -894,6 +894,10 @@ func _process_explore(delta):
 	
 	_update_ui()
 	_update_minimap()
+
+	# F2 存档/读档快捷键
+	if Input.is_key_pressed(KEY_F2) and is_player_turn and game_state == State.EXPLORE:
+		_open_save_ui()
 
 func _next_floor():
 	if current_floor >= 8:
@@ -3234,3 +3238,329 @@ func _game_over():
 	player_data.gold = max(0, player_data.gold - 100)
 	current_floor = 1
 	is_player_turn = true
+
+# ==================== 存档系统 ====================
+
+const SAVE_DIR = "user://saves/"
+const SAVE_FILE = "save_%d.json"
+const SAVE_SLOTS = 3
+
+func _get_save_path(slot: int) -> String:
+	return SAVE_DIR + (SAVE_FILE % slot)
+
+func _ensure_save_dir():
+	var dir = DirAccess.open("user://")
+	if dir:
+		if not dir.dir_exists("saves"):
+			dir.make_dir("saves")
+
+func has_save(slot: int) -> bool:
+	_ensure_save_dir()
+	return FileAccess.file_exists(_get_save_path(slot))
+
+func save_game(slot: int) -> bool:
+	_ensure_save_dir()
+	var path = _get_save_path(slot)
+	var save_data = {
+		"version": "1.0",
+		"timestamp": Time.get_datetime_string_from_system(),
+		"slot": slot,
+		"player": {
+			"job": player_data.job,
+			"job_name": player_data.get_job_name(),
+			"hp": player_data.hp,
+			"max_hp": player_data.max_hp,
+			"mp": player_data.mp,
+			"max_mp": player_data.max_mp,
+			"level": player_data.level,
+			"exp": player_data.exp,
+			"gold": player_data.gold,
+			"atk": player_data.atk,
+			"def": player_data.def,
+			"spd": player_data.spd,
+			"luk": player_data.luk,
+			"skills": player_data.skills,
+			"weapon": player_data.weapon,
+			"armor": player_data.armor,
+			"accessory": player_data.accessory,
+			"inventory": player_data.inventory
+		},
+		"progress": {
+			"current_floor": current_floor
+		}
+	}
+	
+	var json_str = JSON.stringify(save_data, "\t")
+	var file = FileAccess.open(path, FileAccess.WRITE)
+	if file:
+		file.store_string(json_str)
+		file.close()
+		show_message("💾 存档成功！存档槽 %d" % (slot + 1))
+		if audio_manager:
+			audio_manager.play_sfx("purchase")
+		return true
+	else:
+		show_message("❌ 存档失败！")
+		return false
+
+func load_game(slot: int) -> bool:
+	var path = _get_save_path(slot)
+	if not FileAccess.file_exists(path):
+		show_message("存档槽 %d 不存在！" % (slot + 1))
+		return false
+	
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		show_message("❌ 读取存档失败！")
+		return false
+	
+	var json_str = file.get_as_text()
+	file.close()
+	
+	var json = JSON.new()
+	var parse_result = json.parse(json_str)
+	if parse_result != OK:
+		show_message("❌ 存档数据损坏！")
+		return false
+	
+	var save_data = json.get_data()
+	if typeof(save_data) != TYPE_DICTIONARY:
+		show_message("❌ 存档格式错误！")
+		return false
+	
+	# 恢复玩家数据
+	var pdata = save_data.get("player", {})
+	player_data = PlayerData.new()
+	player_data.job = pdata.get("job", 0)
+	player_data.hp = pdata.get("hp", 100)
+	player_data.max_hp = pdata.get("max_hp", 100)
+	player_data.mp = pdata.get("mp", 30)
+	player_data.max_mp = pdata.get("max_mp", 30)
+	player_data.level = pdata.get("level", 1)
+	player_data.exp = pdata.get("exp", 0)
+	player_data.gold = pdata.get("gold", 0)
+	player_data.atk = pdata.get("atk", 14)
+	player_data.def = pdata.get("def", 6)
+	player_data.spd = pdata.get("spd", 5)
+	player_data.luk = pdata.get("luk", 3)
+	player_data.skills = pdata.get("skills", [])
+	player_data.weapon = pdata.get("weapon", {})
+	player_data.armor = pdata.get("armor", {})
+	player_data.accessory = pdata.get("accessory", {})
+	player_data.inventory = pdata.get("inventory", [])
+	
+	# 恢复进度
+	var prog = save_data.get("progress", {})
+	current_floor = prog.get("current_floor", 1)
+	
+	show_message("📂 读档成功！%s Lv.%d" % [player_data.get_job_name(), player_data.level])
+	if audio_manager:
+		audio_manager.play_sfx("purchase")
+	return true
+
+func delete_save(slot: int) -> bool:
+	var path = _get_save_path(slot)
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)
+		show_message("🗑️ 删除存档 %d" % (slot + 1))
+		return true
+	return false
+
+func _get_save_info(slot: int) -> Dictionary:
+	var path = _get_save_path(slot)
+	if not FileAccess.file_exists(path):
+		return {}
+	
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return {}
+	
+	var json_str = file.get_as_text()
+	file.close()
+	var json = JSON.new()
+	if json.parse(json_str) != OK:
+		return {}
+	
+	var save_data = json.get_data()
+	if typeof(save_data) != TYPE_DICTIONARY:
+		return {}
+	
+	var pdata = save_data.get("player", {})
+	return {
+		"job_name": pdata.get("job_name", "未知"),
+		"level": pdata.get("level", 1),
+		"floor": save_data.get("progress", {}).get("current_floor", 1),
+		"gold": pdata.get("gold", 0),
+		"timestamp": save_data.get("timestamp", ""),
+		"exists": true
+	}
+
+# ==================== 存档UI ====================
+
+var save_ui: Control = null
+var _save_slot_buttons: Array = []
+
+func _open_save_ui():
+	if game_state == State.BATTLE or game_state == State.SHOP:
+		return
+	if save_ui != null:
+		_close_save_ui()
+		return
+	_close_save_ui()
+	
+	save_ui = Control.new()
+	save_ui.name = "SaveUI"
+	save_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(save_ui)
+	
+	var overlay = ColorRect.new()
+	overlay.size = Vector2(1280, 720)
+	overlay.color = Color(0, 0, 0, 0.8)
+	overlay.gui_input.connect(_on_save_overlay_click)
+	save_ui.add_child(overlay)
+	
+	var panel = Panel.new()
+	panel.name = "SavePanel"
+	panel.position = Vector2(340, 160)
+	panel.size = Vector2(600, 400)
+	panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
+	panel.add_theme_stylebox_override("panel", _create_stylebox())
+	save_ui.add_child(panel)
+	
+	var title = Label.new()
+	title.position = Vector2(20, 15)
+	title.text = "💾 存档 / 读档"
+	title.add_theme_color_override("font_color", PALETTE.gold)
+	title.add_theme_font_size_override("font_size", 20)
+	panel.add_child(title)
+	
+	var close_btn = Button.new()
+	close_btn.text = "❌"
+	close_btn.position = Vector2(550, 10)
+	close_btn.size = Vector2(40, 40)
+	close_btn.pressed.connect(_close_save_ui)
+	panel.add_child(close_btn)
+	
+	# 存档槽
+	_save_slot_buttons.clear()
+	for slot in range(SAVE_SLOTS):
+		var info = _get_save_info(slot)
+		var sy = 70 + slot * 100
+		var slot_panel = Panel.new()
+		slot_panel.name = "Slot_%d" % slot
+		slot_panel.position = Vector2(20, sy)
+		slot_panel.size = Vector2(560, 85)
+		var sstyle = StyleBoxFlat.new()
+		if info.get("exists", false):
+			sstyle.bg_color = Color(0.06, 0.08, 0.06, 0.95)
+			sstyle.border_color = Color(0.3, 0.5, 0.3)
+		else:
+			sstyle.bg_color = Color(0.06, 0.06, 0.1, 0.95)
+			sstyle.border_color = Color(0.3, 0.3, 0.35)
+		sstyle.border_width_left = 1; sstyle.border_width_top = 1
+		sstyle.border_width_right = 1; sstyle.border_width_bottom = 1
+		sstyle.corner_radius_top_left = 3; sstyle.corner_radius_top_right = 3
+		sstyle.corner_radius_bottom_right = 3; sstyle.corner_radius_bottom_left = 3
+		slot_panel.add_theme_stylebox_override("panel", sstyle)
+		panel.add_child(slot_panel)
+		
+		var slot_lbl = Label.new()
+		slot_lbl.position = Vector2(15, 10)
+		slot_lbl.text = "存档槽 %d" % (slot + 1)
+		slot_lbl.add_theme_color_override("font_color", PALETTE.gold)
+		slot_lbl.add_theme_font_size_override("font_size", 14)
+		slot_panel.add_child(slot_lbl)
+		
+		if info.get("exists", false):
+			var detail_lbl = Label.new()
+			detail_lbl.position = Vector2(15, 35)
+			detail_lbl.text = "%s Lv.%d | 第%d层 | %d金币\n%s" % [
+				info.get("job_name", "?"), info.get("level", 1),
+				info.get("floor", 1), info.get("gold", 0),
+				info.get("timestamp", "")
+			]
+			detail_lbl.add_theme_color_override("font_color", Color(0.75, 0.75, 0.7))
+			detail_lbl.add_theme_font_size_override("font_size", 12)
+			slot_panel.add_child(detail_lbl)
+			
+			var save_btn = Button.new()
+			save_btn.text = "💾 覆盖"
+			save_btn.position = Vector2(380, 10)
+			save_btn.size = Vector2(80, 32)
+			save_btn.add_theme_font_size_override("font_size", 12)
+			save_btn.pressed.connect(_on_save_slot_write.bind(slot))
+			slot_panel.add_child(save_btn)
+			_save_slot_buttons.append(save_btn)
+			
+			var load_btn = Button.new()
+			load_btn.text = "📂 读档"
+			load_btn.position = Vector2(470, 10)
+			load_btn.size = Vector2(80, 32)
+			load_btn.add_theme_font_size_override("font_size", 12)
+			load_btn.pressed.connect(_on_save_slot_read.bind(slot))
+			slot_panel.add_child(load_btn)
+			_save_slot_buttons.append(load_btn)
+			
+			var del_btn = Button.new()
+			del_btn.text = "🗑️"
+			del_btn.position = Vector2(470, 48)
+			del_btn.size = Vector2(80, 32)
+			del_btn.add_theme_font_size_override("font_size", 12)
+			del_btn.pressed.connect(_on_save_slot_delete.bind(slot))
+			slot_panel.add_child(del_btn)
+		else:
+			var empty_lbl = Label.new()
+			empty_lbl.position = Vector2(15, 35)
+			empty_lbl.text = "(空)"
+			empty_lbl.add_theme_color_override("font_color", Color(0.35, 0.35, 0.35))
+			slot_lbl.add_theme_font_size_override("font_size", 12)
+			slot_panel.add_child(empty_lbl)
+			
+			var new_btn = Button.new()
+			new_btn.text = "💾 新建存档"
+			new_btn.position = Vector2(380, 25)
+			new_btn.size = Vector2(160, 35)
+			new_btn.add_theme_font_size_override("font_size", 13)
+			new_btn.pressed.connect(_on_save_slot_write.bind(slot))
+			slot_panel.add_child(new_btn)
+
+func _close_save_ui():
+	if save_ui != null:
+		save_ui.queue_free()
+		save_ui = null
+	_save_slot_buttons.clear()
+
+func _on_save_overlay_click(event: InputEvent):
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_close_save_ui()
+
+func _on_save_slot_write(slot: int):
+	save_game(slot)
+	_close_save_ui()
+
+func _on_save_slot_read(slot: int):
+	if load_game(slot):
+		_close_save_ui()
+		# 重建UI以反映加载的数据
+		_rebuild_ui_from_player_data()
+		# 重置迷雾和探索
+		for key in fog_map:
+			var fog = fog_map[key]
+			fog.color = Color(0.02, 0.02, 0.04, 0.95)
+		_reveal_area(player_tile_x, player_tile_y, 5)
+		_update_minimap()
+		_update_ui()
+
+func _on_save_slot_delete(slot: int):
+	delete_save(slot)
+	_close_save_ui()
+
+func _rebuild_ui_from_player_data():
+	# 当读档后，重新设置玩家精灵
+	if player:
+		var sprite = player.get_node_or_null("Sprite")
+		if sprite:
+			sprite.texture = _create_job_texture(player_data.job)
+	# 更新UI
+	_update_ui()
+

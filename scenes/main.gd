@@ -786,7 +786,7 @@ func _create_npc_texture(sprite_type: String) -> ImageTexture:
 	match sprite_type:
 		"npc_inn_keeper":
 			_set_pixel_box(img, 8, 12, 24, 28, Color(0.4, 0.3, 0.2))  # 棕色衣服
-			_set_pixel_box(img, 10, 4, 22, 12,			_set_pixel_box(img, 10, 4, 22, 12, Color("#e8c8a0"))  # 脸
+			_set_pixel_box(img, 10, 4, 22, 12, Color("#e8c8a0"))  # 脸
 			img.set_pixel(14, 8, Color.BLACK)
 			img.set_pixel(18, 8, Color.BLACK)
 		"npc_weapon":
