@@ -1,11 +1,18 @@
 extends Node2D
 
+# 强制预加载类定义 (解决class_name编译顺序问题)
+const _PlayerDataClass = preload("res://scripts/player.gd")
+const _EnemyDataClass = preload("res://scripts/enemy.gd")
+
 # 游戏状态
 enum State { TITLE, EXPLORE, BATTLE, DIALOG, SHOP, CLASS_SELECT }
 var game_state = State.CLASS_SELECT
 
+# 职业枚举 (从PlayerData复制)
+enum Job { WARRIOR, MAGE, HUNTER, THIEF, PRIEST, KNIGHT, BARD, SUMMONER }
+
 # 玩家数据
-var player_data: PlayerData
+var player_data
 var player: CharacterBody2D
 
 # 地图
@@ -248,6 +255,30 @@ var boss_revived: bool = false  # 巫妖复活标记
 # 墙壁碰撞区 (简化)
 var wall_rects: Array = []
 
+# 动态加载EnemyData类 (解决class_name编译顺序问题)
+func _get_enemy_data():
+	return load("res://scripts/enemy.gd")
+
+# 动态加载PlayerData类
+func _get_player_data():
+	return load("res://scripts/player.gd")
+
+# 消息显示函数
+func show_message(msg: String):
+	if message_label:
+		message_label.text = msg
+	else:
+		print("消息: ", msg)
+
+# 相机抖动更新
+func _update_camera_shake(delta: float):
+	if camera_shake_timer > 0:
+		camera_shake_timer -= delta
+		var intensity = camera_shake_intensity * (camera_shake_timer / camera_shake_duration)
+		camera_offset = Vector2(randf_range(-intensity, intensity), randf_range(-intensity, intensity))
+	else:
+		camera_offset = Vector2.ZERO
+
 func _ready():
 	randomize()
 	# 初始化粒子容器
@@ -322,14 +353,14 @@ func _show_title_screen():
 	
 	# 职业数据
 	var job_list: Array = [
-		{"id": PlayerData.Job.WARRIOR, "name": "⚔️ 战士", "desc": "高血量 · 猛击/防御/冲锋", "color": Color(0.9, 0.3, 0.3)},
-		{"id": PlayerData.Job.MAGE, "name": "🔮 法师", "desc": "高魔攻 · 火球/冰霜/闪电", "color": Color(0.3, 0.3, 1.0)},
-		{"id": PlayerData.Job.HUNTER, "name": "🏹 猎人", "desc": "高速度 · 狙击/陷阱/毒箭", "color": Color(0.3, 0.8, 0.3)},
-		{"id": PlayerData.Job.THIEF, "name": "🗡️ 盗贼", "desc": "高暴击 · 背刺/暗影/消失", "color": Color(0.6, 0.3, 0.8)},
-		{"id": PlayerData.Job.PRIEST, "name": "💚 牧师", "desc": "治疗 · 治疗/护盾/复活", "color": Color(0.3, 0.9, 0.5)},
-		{"id": PlayerData.Job.KNIGHT, "name": "🛡️ 骑士", "desc": "高防御 · 格挡/斩击/神圣", "color": Color(0.5, 0.7, 0.9)},
-		{"id": PlayerData.Job.BARD, "name": "🎵 吟游诗人", "desc": "辅助 · 鼓舞/旋律/沉默", "color": Color(0.9, 0.6, 0.2)},
-		{"id": PlayerData.Job.SUMMONER, "name": "🔥 召唤师", "desc": "召唤 · 召唤/契约/共鸣", "color": Color(1.0, 0.4, 0.2)},
+		{"id": Job.WARRIOR, "name": "⚔️ 战士", "desc": "高血量 · 猛击/防御/冲锋", "color": Color(0.9, 0.3, 0.3)},
+		{"id": Job.MAGE, "name": "🔮 法师", "desc": "高魔攻 · 火球/冰霜/闪电", "color": Color(0.3, 0.3, 1.0)},
+		{"id": Job.HUNTER, "name": "🏹 猎人", "desc": "高速度 · 狙击/陷阱/毒箭", "color": Color(0.3, 0.8, 0.3)},
+		{"id": Job.THIEF, "name": "🗡️ 盗贼", "desc": "高暴击 · 背刺/暗影/消失", "color": Color(0.6, 0.3, 0.8)},
+		{"id": Job.PRIEST, "name": "💚 牧师", "desc": "治疗 · 治疗/护盾/复活", "color": Color(0.3, 0.9, 0.5)},
+		{"id": Job.KNIGHT, "name": "🛡️ 骑士", "desc": "高防御 · 格挡/斩击/神圣", "color": Color(0.5, 0.7, 0.9)},
+		{"id": Job.BARD, "name": "🎵 吟游诗人", "desc": "辅助 · 鼓舞/旋律/沉默", "color": Color(0.9, 0.6, 0.2)},
+		{"id": Job.SUMMONER, "name": "🔥 召唤师", "desc": "召唤 · 召唤/契约/共鸣", "color": Color(1.0, 0.4, 0.2)},
 	]
 	
 	# 职业按钮网格 (4×2)
@@ -438,8 +469,8 @@ func _on_job_selected(job_id: int):
 	print("技能: " + str(player_data.skills))
 	show_message("欢迎，%s！你的冒险开始了..." % player_data.get_job_name())
 
-func _setup_player_data(job_id: int = PlayerData.Job.WARRIOR):
-	player_data = PlayerData.new()
+func _setup_player_data(job_id: int = Job.WARRIOR):
+	player_data = _get_player_data().new()
 	player_data.job = job_id
 	player_data._setup_job_skills()
 
@@ -631,14 +662,14 @@ func _create_knight_texture() -> ImageTexture:
 
 func _create_job_texture(job: int) -> ImageTexture:
 	match job:
-		PlayerData.Job.WARRIOR: return _create_knight_texture()
-		PlayerData.Job.MAGE: return _create_mage_texture()
-		PlayerData.Job.HUNTER: return _create_hunter_texture()
-		PlayerData.Job.THIEF: return _create_thief_texture()
-		PlayerData.Job.PRIEST: return _create_priest_texture()
-		PlayerData.Job.KNIGHT: return _create_knight_texture()
-		PlayerData.Job.BARD: return _create_bard_texture()
-		PlayerData.Job.SUMMONER: return _create_summoner_texture()
+		Job.WARRIOR: return _create_knight_texture()
+		Job.MAGE: return _create_mage_texture()
+		Job.HUNTER: return _create_hunter_texture()
+		Job.THIEF: return _create_thief_texture()
+		Job.PRIEST: return _create_priest_texture()
+		Job.KNIGHT: return _create_knight_texture()
+		Job.BARD: return _create_bard_texture()
+		Job.SUMMONER: return _create_summoner_texture()
 	return _create_knight_texture()
 
 func _create_mage_texture() -> ImageTexture:
@@ -2012,9 +2043,10 @@ func _start_battle():
 	summoner_beast_boost_turns = 0
 	
 	# 生成敌人（根据层数选择敌人类型）
-	var enemy_pool = EnemyData.get_floor_enemies(current_floor)
+	var enemy_data_class = _get_enemy_data()
+	var enemy_pool = enemy_data_class.get_floor_enemies(current_floor)
 	var etype = enemy_pool[randi() % enemy_pool.size()]
-	var edata = EnemyData.new(etype, current_floor)
+	var edata = enemy_data_class.new(etype, current_floor)
 	current_enemy = {
 		"name": edata.name,
 		"hp": edata.hp,
@@ -2047,7 +2079,7 @@ func _start_battle():
 	contract_turns = 0
 	
 	# 猎人陷阱被动检测
-	if player_data.job == PlayerData.Job.HUNTER and player_data.skills.has("陷阱"):
+	if player_data.job == Job.HUNTER and player_data.skills.has("陷阱"):
 		trapped = true
 		await get_tree().create_timer(0.5).timeout
 		var trap_dmg = int(player_data.attack_power() * 1.5)
@@ -2136,7 +2168,7 @@ func _start_boss_battle():
 		audio_manager.play_bgm("boss")
 	
 	# 猎人陷阱对Boss也有效
-	if player_data.job == PlayerData.Job.HUNTER and player_data.skills.has("陷阱"):
+	if player_data.job == Job.HUNTER and player_data.skills.has("陷阱"):
 		trapped = true
 		await get_tree().create_timer(0.5).timeout
 		var trap_dmg = int(player_data.attack_power() * 1.0)  # Boss战陷阱伤害降低
@@ -2539,7 +2571,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 	var black = Color.BLACK
 	
 	match job:
-		PlayerData.Job.WARRIOR:
+		Job.WARRIOR:
 			# 战士: 重甲红披风
 			_set_box(img, 20, 35, 60, 72, Color(0.4, 0.4, 0.5))  # 铠甲身体
 			_set_box(img, 24, 38, 56, 68, Color(0.5, 0.5, 0.6))  # 铠甲高光
@@ -2557,7 +2589,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			# 剑柄
 			_set_line(img, 62, 20, 68, 14, Color(0.7, 0.7, 0.8))
 			_set_line(img, 63, 21, 67, 21, Color(1.0, 0.8, 0.2))  # 剑格
-		PlayerData.Job.MAGE:
+		Job.MAGE:
 			# 法师: 蓝袍，手持法杖
 			_set_box(img, 22, 35, 58, 74, Color(0.15, 0.15, 0.45))  # 深蓝法袍
 			_set_box(img, 24, 37, 56, 72, Color(0.2, 0.2, 0.55))  # 法袍高光
@@ -2575,7 +2607,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			_set_line(img, 65, 10, 65, 70, Color(0.5, 0.3, 0.1))
 			_set_circle(img, 65, 8, 5, Color(0.3, 0.6, 1.0))  # 魔法球
 			_set_circle(img, 65, 8, 3, white)  # 魔法球高光
-		PlayerData.Job.HUNTER:
+		Job.HUNTER:
 			# 猎人: 绿棕猎装，背弓
 			_set_box(img, 24, 35, 56, 72, Color(0.25, 0.4, 0.2))  # 绿色猎装
 			_set_box(img, 26, 37, 54, 70, Color(0.3, 0.45, 0.25))
@@ -2591,7 +2623,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			# 弓
 			_set_line(img, 2, 15, 2, 65, Color(0.4, 0.25, 0.1))
 			_set_line(img, 2, 15, 2, 65, Color(0.5, 0.35, 0.15), 2)  # 弓弦
-		PlayerData.Job.THIEF:
+		Job.THIEF:
 			# 盗贼: 黑色夜行衣，双刃
 			_set_box(img, 24, 35, 56, 72, Color(0.12, 0.12, 0.2))  # 黑色夜衣
 			_set_box(img, 26, 37, 54, 70, Color(0.18, 0.18, 0.28))  # 夜衣高光
@@ -2608,7 +2640,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			# 双匕首
 			_set_line(img, 6, 35, 6, 55, Color(0.7, 0.7, 0.8))
 			_set_line(img, 74, 35, 74, 55, Color(0.7, 0.7, 0.8))
-		PlayerData.Job.PRIEST:
+		Job.PRIEST:
 			# 牧师: 白色长袍，金色圣徽
 			_set_box(img, 22, 35, 58, 74, Color(0.9, 0.9, 0.95))  # 白色法袍
 			_set_box(img, 24, 37, 56, 72, Color(0.95, 0.95, 1.0))  # 法袍高光
@@ -2628,7 +2660,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			# 十字架
 			_set_line(img, 40, 37, 40, 47, Color(1.0, 0.85, 0.2), 3)
 			_set_line(img, 36, 41, 44, 41, Color(1.0, 0.85, 0.2), 3)
-		PlayerData.Job.KNIGHT:
+		Job.KNIGHT:
 			# 骑士: 全身板甲，蓝披风
 			_set_box(img, 20, 35, 60, 74, Color(0.4, 0.45, 0.55))  # 银色板甲
 			_set_box(img, 22, 37, 58, 72, Color(0.5, 0.55, 0.65))  # 板甲高光
@@ -2645,7 +2677,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			# 盾牌
 			_set_line(img, 2, 40, 2, 65, Color(0.35, 0.4, 0.5), 10)
 			_set_line(img, 4, 42, 4, 63, cape_col, 6)  # 盾牌蓝心
-		PlayerData.Job.BARD:
+		Job.BARD:
 			# 吟游诗人: 彩色斗篷，琵琶
 			_set_box(img, 22, 35, 58, 74, Color(0.7, 0.35, 0.2))  # 棕色外套
 			_set_box(img, 24, 37, 56, 72, Color(0.8, 0.4, 0.25))  # 外套高光
@@ -2666,7 +2698,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			_set_line(img, 12, 11, 12, 18, Color(0.8, 0.7, 0.2), 2)
 			_set_circle(img, 16, 22, 3, Color(0.8, 0.7, 0.2))
 			_set_line(img, 19, 19, 19, 24, Color(0.8, 0.7, 0.2), 2)
-		PlayerData.Job.SUMMONER:
+		Job.SUMMONER:
 			# 召唤师: 暗紫袍，符文，魔法球
 			_set_box(img, 22, 35, 58, 74, Color(0.3, 0.1, 0.35))  # 暗紫色袍
 			_set_box(img, 24, 37, 56, 72, Color(0.4, 0.15, 0.45))  # 紫袍高光
@@ -4203,7 +4235,7 @@ func _boss_helian_action(hp_ratio: float):
 		var dmg = int(current_enemy["atk"] * 1.8)
 		_apply_player_damage(dmg)
 		poison_stacks += 2
-		poison_dmg += 5
+		poison_damage += 5
 		poison_turns += 2
 		_battle_add_log("🗡️ 血刀斩！造成 %d 伤害，附加流血！" % dmg)
 	elif roll < 80 and hp_ratio < 0.3:
@@ -4914,7 +4946,7 @@ func load_game(slot: int) -> bool:
 	
 	# 恢复玩家数据
 	var pdata = save_data.get("player", {})
-	player_data = PlayerData.new()
+	player_data = _get_player_data().new()
 	player_data.job = pdata.get("job", 0)
 	player_data.hp = pdata.get("hp", 100)
 	player_data.max_hp = pdata.get("max_hp", 100)
