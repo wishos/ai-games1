@@ -1662,6 +1662,9 @@ func _process(delta: float):
 	
 	# 更新UI
 	_update_explore_ui()
+	
+	# 更新小地图
+	_update_minimap()
 
 func _process_explore(delta: float):
 	if not player:
@@ -1927,9 +1930,11 @@ func _create_attack_effect(pos: Vector2):
 	
 	# 动画
 	var tween = create_tween()
+	var idx = 0
 	for child in slash.get_children():
-		tween.parallel().tween_property(child, "modulate:a", 0.0, 0.15 + i * 0.02)
-		tween.parallel().tween_property(child, "scale", Vector2(1.5, 1.5), 0.15 + i * 0.02)
+		tween.parallel().tween_property(child, "modulate:a", 0.0, 0.12 + idx * 0.03)
+		tween.parallel().tween_property(child, "scale", Vector2(1.5, 1.5), 0.12 + idx * 0.03)
+		idx += 1
 	tween.tween_callback(slash.queue_free)
 	
 	# 同时播放冲击波
@@ -2122,6 +2127,57 @@ func _generate_enemy(type: String) -> Dictionary:
 	var enemy = enemies.get(type, enemies["土匪"]).duplicate()
 	enemy["max_hp"] = enemy["hp"]
 	return enemy
+
+# ==================== God Ray Helper ====================
+func _create_god_ray(pos: Vector2, scale: Vector2, angle: float) -> ColorRect:
+	var ray = ColorRect.new()
+	ray.name = "GodRay"
+	ray.size = Vector2(80, 400)
+	ray.position = pos
+	var mat = ShaderMaterial.new()
+	var shader = load("res://shaders/god_ray.gdshader")
+	if shader:
+		mat.shader = shader
+		mat.set_shader_parameter("source_uv", Vector2(0.5, 0.0))
+		mat.set_shader_parameter("exposure", 0.3)
+		mat.set_shader_parameter("decay", 0.92)
+		mat.set_shader_parameter("density", 0.6)
+		mat.set_shader_parameter("weight", 0.4)
+		mat.set_shader_parameter("num_samples", 70)
+		mat.set_shader_parameter("ray_width", 0.12)
+	ray.material = mat
+	return ray
+
+# ==================== 战斗处理 ====================
+func _process_battle(delta: float):
+	if not battle_in_progress:
+		return
+	# 战斗AI回合等
+
+# ==================== 背包系统 ====================
+func _open_inventory():
+	show_message("背包系统开发中...", 2.0)
+
+func _open_quest_log():
+	show_message("任务日志开发中...", 2.0)
+
+func _show_save_menu():
+	show_message("按E保存游戏", 2.0)
+
+# ==================== 商店系统 ====================
+func _open_shop():
+	show_message("商店系统开发中...", 2.0)
+
+# ==================== 酒馆菜单 ====================
+func _show_tavern_menu():
+	show_message("酒馆休息 - 恢复HP/MP...", 2.0)
+	if player:
+		GlobalData.player_data["hp"] = GlobalData.player_data.get("max_hp", 100)
+		GlobalData.player_data["mp"] = GlobalData.player_data.get("max_mp", 30)
+
+# ==================== 门派菜单 ====================
+func _show_dojo_menu():
+	show_message("门派修炼 - 提升属性...", 2.0)
 
 func _create_battle_ui():
 	# 暗色背景
