@@ -1929,11 +1929,9 @@ func _start_battle():
 	mana_drain_turns = 0
 	mana_drain_amount = 0
 	
-	# 生成敌人
-	var enemy_types = ["slime", "skeleton", "demon"]
-	if current_floor >= 7:
-		enemy_types.append("dragon")
-	var etype = enemy_types[randi() % enemy_types.size()]
+	# 生成敌人（根据层数选择敌人类型）
+	var enemy_pool = EnemyData.get_floor_enemies(current_floor)
+	var etype = enemy_pool[randi() % enemy_pool.size()]
 	var edata = EnemyData.new(etype, current_floor)
 	current_enemy = {
 		"name": edata.name,
@@ -2750,6 +2748,7 @@ func _create_enemy_texture(col: Color) -> ImageTexture:
 	img.fill(Color(0, 0, 0, 0))
 	
 	match current_enemy["name"]:
+		# ===== 1-2层：新手区 =====
 		"史莱姆":
 			# 史莱姆形状
 			for x in range(8, 24):
@@ -2765,6 +2764,32 @@ func _create_enemy_texture(col: Color) -> ImageTexture:
 			img.set_pixel(18, 18, Color.WHITE)
 			img.set_pixel(15, 19, Color.BLACK)
 			img.set_pixel(19, 19, Color.BLACK)
+		"洞穴蝙蝠":
+			# 蝙蝠（翅膀展开）
+			img.set_pixel(14, 8, col)   # 头
+			img.set_pixel(18, 8, col)
+			img.set_pixel(14, 10, Color.RED)  # 眼睛
+			img.set_pixel(18, 10, Color.RED)
+			_set_pixel_line(img, 2, 14, 14, 14, col)  # 左翼
+			_set_pixel_line(img, 18, 14, 30, 14, col)  # 右翼
+			_set_pixel_line(img, 4, 18, 12, 18, col)  # 左翼下
+			_set_pixel_line(img, 20, 18, 28, 18, col)  # 右翼下
+			img.set_pixel(15, 12, col)  # 身体
+			img.set_pixel(17, 12, col)
+			img.set_pixel(16, 14, col)
+		"野猪":
+			# 野猪
+			_set_pixel_line(img, 8, 14, 22, 14, col)  # 头顶
+			img.set_pixel(10, 12, col)   # 獠牙上
+			img.set_pixel(24, 14, col)  # 獠牙下
+			img.set_pixel(12, 14, Color.RED)  # 眼睛
+			img.set_pixel(18, 14, Color.RED)  # 眼睛
+			_set_pixel_line(img, 8, 18, 22, 18, col)  # 身
+			_set_pixel_line(img, 6, 22, 10, 22, col)  # 腿前
+			_set_pixel_line(img, 18, 22, 22, 22, col)  # 腿后
+			img.set_pixel(6, 26, col)   # 蹄
+			img.set_pixel(22, 26, col)  # 蹄
+		# ===== 3-4层：中级区 =====
 		"骷髅战士":
 			# 骷髅
 			_set_pixel_line(img, 14, 6, 18, 6, col)  # 头顶
@@ -2777,6 +2802,33 @@ func _create_enemy_texture(col: Color) -> ImageTexture:
 			_set_pixel_line(img, 8, 24, 24, 24, col)   # 骨盆
 			_set_pixel_line(img, 8, 28, 10, 28, col)  # 腿左
 			_set_pixel_line(img, 22, 28, 24, 28, col)  # 腿右
+		"哥布林":
+			# 哥布林（小绿怪）
+			img.set_pixel(12, 6, col)   # 左耳
+			img.set_pixel(20, 6, col)  # 右耳
+			_set_pixel_line(img, 10, 8, 22, 8, col)  # 头顶
+			img.set_pixel(13, 11, Color.YELLOW)  # 眼睛
+			img.set_pixel(19, 11, Color.YELLOW)
+			img.set_pixel(14, 12, Color.BLACK)
+			img.set_pixel(18, 12, Color.BLACK)
+			_set_pixel_line(img, 12, 16, 20, 16, col)  # 嘴（狞笑）
+			img.set_pixel(13, 16, Color.BLACK)
+			img.set_pixel(19, 16, Color.BLACK)
+			_set_pixel_line(img, 10, 18, 22, 18, col)  # 身
+			_set_pixel_line(img, 8, 24, 24, 24, col)  # 腿
+		"幽灵":
+			# 幽灵（半透明效果用淡色）
+			var ghost_col = Color(col.r, col.g, col.b, 0.7)
+			_set_pixel_line(img, 12, 6, 20, 6, ghost_col)  # 头顶
+			img.set_pixel(14, 10, Color.BLACK)  # 眼
+			img.set_pixel(18, 10, Color.BLACK)
+			_set_pixel_line(img, 10, 12, 22, 12, ghost_col)  # 脸
+			_set_pixel_line(img, 8, 16, 24, 16, ghost_col)  # 身
+			_set_pixel_line(img, 8, 20, 24, 20, ghost_col)  # 下摆（波浪）
+			img.set_pixel(10, 22, ghost_col)
+			img.set_pixel(16, 24, ghost_col)
+			img.set_pixel(22, 22, ghost_col)
+		# ===== 5-6层：高级区 =====
 		"深渊恶魔":
 			# 恶魔
 			_set_pixel_line(img, 8, 6, 12, 6, col)   # 角左
@@ -2795,6 +2847,54 @@ func _create_enemy_texture(col: Color) -> ImageTexture:
 			img.set_pixel(18, 20, Color.BLACK)
 			_set_pixel_line(img, 8, 22, 24, 22, col)  # 身
 			_set_pixel_line(img, 8, 26, 24, 26, col)   # 腿
+		"兽人战士":
+			# 兽人（粗壮）
+			_set_pixel_line(img, 10, 6, 22, 6, col)  # 头顶
+			img.set_pixel(8, 8, col)   # 獠牙
+			img.set_pixel(24, 8, col)
+			img.set_pixel(13, 10, Color.RED)  # 眼睛
+			img.set_pixel(19, 10, Color.RED)
+			_set_pixel_line(img, 10, 14, 22, 14, col)  # 脸
+			_set_pixel_line(img, 8, 18, 24, 18, col)  # 身（宽）
+			_set_pixel_line(img, 4, 26, 12, 26, col)  # 粗腿左
+			_set_pixel_line(img, 20, 26, 28, 26, col)  # 粗腿右
+		"暗黑骷髅":
+			# 暗黑骷髅（蓝黑色调）
+			_set_pixel_line(img, 14, 4, 18, 4, col)  # 冠
+			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
+			_set_pixel_line(img, 10, 12, 22, 12, col)  # 眼窝
+			img.set_pixel(14, 12, Color.BLUE)  # 幽蓝眼火
+			img.set_pixel(18, 12, Color.BLUE)
+			_set_pixel_line(img, 12, 16, 20, 16, col)  # 下巴
+			_set_pixel_line(img, 10, 20, 22, 20, col)  # 身体
+			_set_pixel_line(img, 6, 26, 12, 26, col)  # 腿（左持剑）
+			_set_pixel_line(img, 20, 26, 26, 26, col)  # 腿右
+			_set_pixel_line(img, 4, 18, 6, 26, col)  # 剑柄
+		# ===== 7-8层：精英区 =====
+		"暗影刺客":
+			# 暗影刺客（黑衣人）
+			_set_pixel_line(img, 12, 4, 20, 4, col)  # 兜帽顶
+			_set_pixel_line(img, 10, 8, 22, 8, col)  # 兜帽
+			img.set_pixel(14, 11, Color.RED)  # 眼睛（杀气）
+			img.set_pixel(18, 11, Color.RED)
+			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸（暗）
+			_set_pixel_line(img, 10, 16, 22, 16, col)  # 披风
+			_set_pixel_line(img, 8, 20, 24, 20, col)  # 身
+			_set_pixel_line(img, 6, 28, 12, 28, col)  # 腿（蹲伏）
+			_set_pixel_line(img, 20, 28, 26, 28, col)
+		"暗黑骑士":
+			# 暗黑骑士（重甲）
+			_set_pixel_line(img, 10, 4, 22, 4, col)  # 头盔顶
+			_set_pixel_line(img, 8, 8, 24, 8, col)  # 头盔
+			img.set_pixel(14, 10, Color.RED)  # 眼缝
+			img.set_pixel(18, 10, Color.RED)
+			_set_pixel_line(img, 8, 14, 24, 14, col)  # 肩甲
+			_set_pixel_line(img, 10, 18, 22, 18, col)  # 胸甲
+			_set_pixel_line(img, 10, 22, 22, 22, col)  # 腰甲
+			_set_pixel_line(img, 6, 28, 14, 28, col)  # 腿甲左
+			_set_pixel_line(img, 18, 28, 26, 28, col)  # 腿甲右
+			img.set_pixel(4, 14, col)   # 剑柄
+			img.set_pixel(2, 14, col)
 		"远古巨龙":
 			# 巨龙
 			_set_pixel_line(img, 6, 8, 10, 8, col)   # 角
