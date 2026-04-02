@@ -1707,16 +1707,60 @@ func _get_shop_items_by_tab(tab: int) -> Array:
 		3: return SHOP_POTIONS
 	return []
 
+var shop_bg_sprite: Sprite2D  # 商店背景精灵
+
 func _open_shop():
 	game_state = State.SHOP
 	if minimap_container:
 		minimap_container.visible = false
+	_create_shop_bg()  # 添加商店背景
 	_create_shop_ui()
 	show_message("欢迎光临商店！")
 	if audio_manager:
 		audio_manager.play_bgm("shop")
 
+
+func _create_shop_bg():
+	# 移除旧背景
+	if shop_bg_sprite:
+		shop_bg_sprite.queue_free()
+	
+	# 创建背景精灵（使用酒馆场景）
+	shop_bg_sprite = Sprite2D.new()
+	shop_bg_sprite.name = "ShopBG"
+	shop_bg_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	shop_bg_sprite.centered = false
+	shop_bg_sprite.position = Vector2(0, 0)
+	
+	var bg_tex = load("res://assets/doubao/tavern_scene.png")
+	if bg_tex:
+		shop_bg_sprite.texture = bg_tex
+		# 缩放到屏幕尺寸 (2048x2048 -> 1280x720 保持比例裁切)
+		var scale_x = 1280.0 / 2048.0
+		var scale_y = 720.0 / 2048.0
+		var scale = max(scale_x, scale_y)  # 用更大的缩放保证覆盖
+		shop_bg_sprite.scale = Vector2(scale, scale)
+		# 居中
+		var scaled_w = 2048 * scale
+		var scaled_h = 2048 * scale
+		shop_bg_sprite.position = Vector2((1280 - scaled_w) / 2, (720 - scaled_h) / 2)
+	else:
+		# 回退到纯色背景
+		var fallback = ColorRect.new()
+		fallback.size = Vector2(1280, 720)
+		fallback.color = Color(0.15, 0.1, 0.05, 1)
+		shop_bg_sprite = null
+		add_child(fallback)
+		return
+	
+	add_child(shop_bg_sprite)
+	# 确保背景在最底层
+	shop_bg_sprite.z_index = -10
+
 func _close_shop():
+	if shop_bg_sprite:
+		shop_bg_sprite.queue_free()
+		shop_bg_sprite = null
 	if shop_ui != null:
 		shop_ui.queue_free()
 		shop_ui = null
