@@ -601,8 +601,18 @@ func _setup_player():
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	var texture = _create_job_texture(player_data.job)
-	sprite.texture = texture
+	sprite.centered = false
+	sprite.offset = Vector2(-16, -16)  # 居中偏移
+	
+	# 使用PNG素材（256x256缩小到32x32）
+	var tex = _load_job_texture(player_data.job)
+	if tex:
+		sprite.texture = tex
+		sprite.scale = Vector2(0.125, 0.125)  # 256/32 = 8, 所以缩小8倍
+	else:
+		# 回退到程序生成的32x32纹理
+		sprite.texture = _create_job_texture(player_data.job)
+		sprite.scale = Vector2(1, 1)
 	player.add_child(sprite)
 	
 	var col = CollisionShape2D.new()
@@ -613,6 +623,30 @@ func _setup_player():
 	
 	add_child(player)
 	show_message("WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · F2存档")
+
+
+func _load_job_texture(job: int) -> Texture2D:
+	# 映射职业到PNG文件
+	var texture_path = {
+		Job.WARRIOR: "res://assets/warrior.png",
+		Job.MAGE: "res://assets/mage.png",
+		Job.HUNTER: "res://assets/archer.png",
+		Job.THIEF: "res://assets/ninja.png",
+		Job.PRIEST: "res://assets/knight.png",  # 暂时用knight
+		Job.KNIGHT: "res://assets/knight.png",
+		Job.BARD: "res://assets/warrior.png",    # 暂时用warrior
+		Job.SUMMONER: "res://assets/warrior.png"  # 暂时用warrior
+	}
+	
+	var path = texture_path.get(job, "res://assets/warrior.png")
+	var tex = load(path)
+	if tex:
+		# 设置缩放使256x256的图缩小到32x32显示
+		var sprite = Sprite2D.new()
+		sprite.texture = tex
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		return tex
+	return null
 
 func _create_knight_texture() -> ImageTexture:
 	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
@@ -869,21 +903,29 @@ var map_bg: ColorRect
 var map_ground: ColorRect
 
 func _generate_map():
-	# 背景
+	# 背景（天空）
+	remove_child(map_bg) if map_bg else null
 	map_bg = ColorRect.new()
 	map_bg.size = Vector2(1280, 720)
 	map_bg.position = Vector2(0, 0)
 	map_bg.color = PALETTE.sky_top
 	add_child(map_bg)
 	
-	# 地面
+	# 地面（草地）- 使用更大的色块模拟地表
+	remove_child(map_ground) if map_ground else null
 	map_ground = ColorRect.new()
-	map_ground.size = Vector2(1280, 500)
-	map_ground.position = Vector2(0, 200)
+	map_ground.size = Vector2(1280, 720)
+	map_ground.position = Vector2(0, 0)
 	map_ground.color = PALETTE.grass_1
 	add_child(map_ground)
 	
+	# 添加地表纹理（程序生成的像素草地）
+	var grass_pattern = _create_grass_pattern()
+	grass_pattern.position = Vector2(0, 0)
+	add_child(grass_pattern)
+	
 	# 迷雾
+	_clear_fog()
 	for x in range(0, 80):
 		for y in range(0, 45):
 			var fog = ColorRect.new()
@@ -895,6 +937,34 @@ func _generate_map():
 			fog_map[str(x) + "_" + str(y)] = fog
 	
 	_reveal_area(40, 25, 5)
+
+
+func _create_grass_pattern() -> Node2D:
+	var container = Node2D.new()
+	
+	# 创建草地纹理（16x16像素砖块排列）
+	for tx in range(0, 80):
+		for ty in range(0, 45):
+			var tile = ColorRect.new()
+			tile.size = Vector2(16, 16)
+			tile.position = Vector2(tx * 16, ty * 16)
+			# 交替草色增加变化
+			if (tx + ty) % 3 == 0:
+				tile.color = PALETTE.grass_2
+			else:
+				tile.color = PALETTE.grass_1
+			container.add_child(tile)
+	
+	return container
+
+
+func _clear_fog():
+	for key in fog_map.keys():
+		var fog = fog_map[key]
+		if fog and is_instance_valid(fog):
+			fog.queue_free()
+	fog_map.clear()
+
 
 var player_tile_x: int = 40
 var player_tile_y: int = 25
