@@ -600,6 +600,7 @@ func _setup_player():
 	
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var texture = _create_job_texture(player_data.job)
 	sprite.texture = texture
 	player.add_child(sprite)
@@ -2402,6 +2403,7 @@ func _create_battle_ui():
 	# 敌人精灵
 	enemy_sprite = Sprite2D.new()
 	enemy_sprite.name = "EnemySprite"
+	enemy_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	enemy_sprite.texture = _create_enemy_texture(current_enemy["color"])
 	enemy_sprite.position = Vector2(200, 100)
 	enemy_sprite_target = enemy_sprite.position
@@ -2590,6 +2592,7 @@ func _create_battle_portrait_panel(parent: Control):
 	# 肖像底层阴影
 	var portrait_shadow = Sprite2D.new()
 	portrait_shadow.name = "PortraitShadow"
+	portrait_shadow.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portrait_shadow.texture = _create_portrait_shadow()
 	portrait_shadow.position = Vector2(0, 35)
 	portrait_container.add_child(portrait_shadow)
@@ -2597,6 +2600,7 @@ func _create_battle_portrait_panel(parent: Control):
 	# 肖像主精灵
 	var portrait_sprite = Sprite2D.new()
 	portrait_sprite.name = "PortraitSprite"
+	portrait_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portrait_sprite.texture = _create_job_portrait_texture(player_data.job)
 	portrait_sprite.position = Vector2(0, 0)
 	portrait_container.add_child(portrait_sprite)
@@ -2604,6 +2608,7 @@ func _create_battle_portrait_panel(parent: Control):
 	# 受伤/治疗闪红特效
 	var portrait_flash = Sprite2D.new()
 	portrait_flash.name = "PortraitFlash"
+	portrait_flash.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var flash_tex = _create_portrait_flash(job_color)
 	portrait_flash.texture = flash_tex
 	portrait_flash.position = Vector2(0, 0)
