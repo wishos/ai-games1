@@ -1,0 +1,17 @@
+# Godot-specific
+.godot/
+*.import
+*.uid
+
+# Build artifacts
+*.pck
+*.exe
+*.dll
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+*.code-workspace
+*.sublime-*
