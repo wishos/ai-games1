@@ -2503,7 +2503,7 @@ func _create_battle_ui():
 	enemy_panel.name = "EnemyPanel"
 	enemy_panel.position = Vector2(440, 80)
 	enemy_panel.size = Vector2(400, 200)
-	enemy_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.9)
+	enemy_panel.self_modulate = Color(0.15, 0.12, 0.1, 0.95)  # 调亮背景以便看清sprite
 	enemy_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	battle_ui.add_child(enemy_panel)
 	
