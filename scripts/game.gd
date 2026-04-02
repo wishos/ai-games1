@@ -177,8 +177,8 @@ var audio_manager: Node
 const PALETTE = {
 	"sky_top": Color("#1a1528"),
 	"sky_bottom": Color("#3d2a4a"),
-	"grass_1": Color("#3a5a2a"),
-	"grass_2": Color("#4a6a35"),
+	"grass_1": Color("#5a8a3a"),  # 调亮
+	"grass_2": Color("#6a9a4a"),  # 调亮
 	"wall": Color("#4a4a5a"),
 	"wall_top": Color("#6a6a7a"),
 	"path": Color("#8a7a5a"),
@@ -916,7 +916,7 @@ func _generate_map():
 	map_ground = ColorRect.new()
 	map_ground.size = Vector2(1280, 720)
 	map_ground.position = Vector2(0, 0)
-	map_ground.color = PALETTE.grass_1
+	map_ground.color = PALETTE.grass_1  # 背景色
 	add_child(map_ground)
 	
 	# 添加地表纹理（程序生成的像素草地）
@@ -936,7 +936,7 @@ func _generate_map():
 			add_child(fog)
 			fog_map[str(x) + "_" + str(y)] = fog
 	
-	_reveal_area(40, 25, 5)
+	_reveal_area(40, 25, 8)  # 初始可见范围调大
 
 
 func _create_grass_pattern() -> Node2D:
@@ -978,8 +978,9 @@ func _reveal_area(cx: int, cy: int, radius: int):
 					var key = str(x) + "_" + str(y)
 					if fog_map.has(key):
 						var fog = fog_map[key]
-						var alpha = 0.95 - (dist / radius) * 0.85
-						fog.color = Color(0.02, 0.02, 0.04, max(0, alpha))
+						# 完全透明在中心，边缘渐变到50%不透明度
+						var alpha = max(0.0, 0.5 - (dist / radius) * 0.5)
+						fog.color = Color(0.02, 0.02, 0.04, alpha)
 
 func _process(delta):
 	_update_camera_shake(delta)
