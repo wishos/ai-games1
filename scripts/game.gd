@@ -72,6 +72,12 @@ var hunter_armor_pierce_turns: int = 0  # 穿甲箭穿透回合
 var hunter_trap_dot_dmg: int = 0     # 致命陷阱每回合伤害
 var hunter_trap_turns: int = 0        # 致命陷阱持续回合
 var hunter_trap_slow: int = 0         # 致命陷阱减速量
+# 猎人T3状态
+var hunter_one_hit_escape: bool = false  # 一击脱离：下次攻击必闪避
+var hunter_mark_turns: int = 0          # 猎杀时刻标记回合
+var hunter_mark_mult: float = 1.0       # 猎杀时刻伤害倍率
+var hunter_beast_turns: int = 0        # 野兽之力召唤回合
+var hunter_beast_dmg: int = 0           # 野兽之力每回合伤害
 # 盗贼T2状态
 var thief_poison_turns: int = 0      # 淬毒利刃回合
 var thief_poison_dmg: int = 0         # 淬毒利刃伤害
@@ -2323,6 +2329,12 @@ func _start_battle():
 	hunter_trap_dot_dmg = 0
 	hunter_trap_turns = 0
 	hunter_trap_slow = 0
+	# 猎人T3状态重置
+	hunter_one_hit_escape = false
+	hunter_mark_turns = 0
+	hunter_mark_mult = 1.0
+	hunter_beast_turns = 0
+	hunter_beast_dmg = 0
 	# 盗贼T2状态重置
 	thief_poison_turns = 0
 	thief_poison_dmg = 0
@@ -2433,6 +2445,12 @@ func _start_boss_battle():
 	hunter_trap_dot_dmg = 0
 	hunter_trap_turns = 0
 	hunter_trap_slow = 0
+	# 猎人T3状态重置
+	hunter_one_hit_escape = false
+	hunter_mark_turns = 0
+	hunter_mark_mult = 1.0
+	hunter_beast_turns = 0
+	hunter_beast_dmg = 0
 	# 盗贼T2状态重置
 	thief_poison_turns = 0
 	thief_poison_dmg = 0
@@ -3551,6 +3569,8 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	"召唤": 3, "契约": 4, "共鸣": 2,
 	# 猎人 T2
 	"致命陷阱": 4, "猎豹加速": 3, "穿甲箭": 3,
+	# 猎人 T3
+	"一击脱离": 4, "万箭齐发": 4, "猎杀时刻": 5, "野兽之力": 6,
 	# 盗贼 T2
 	"影遁": 4, "淬毒利刃": 3, "锁喉": 4,
 	# 牧师 T2
@@ -3570,6 +3590,12 @@ func _get_effective_atk() -> int:
 	atk += berserk_atk_boost     # 狂暴ATK加成
 	atk += bard_song_atk_boost    # 战斗乐章ATK加成
 	return atk
+
+# 应用猎人标记伤害倍率
+func _apply_hunter_mark(base_dmg: int) -> int:
+	if hunter_mark_turns > 0:
+		return int(base_dmg * hunter_mark_mult)
+	return base_dmg
 
 # 法术穿透：无视敌人防御，消耗1层
 func _consume_spell_pierce() -> int:
@@ -3623,6 +3649,7 @@ func _on_skill_menu():
 		"鼓舞": 10, "旋律": 15, "沉默": 20,
 		"召唤": 20, "契约": 20, "共鸣": 25,
 		"致命陷阱": 25, "猎豹加速": 20, "穿甲箭": 30,
+		"一击脱离": 35, "万箭齐发": 50, "猎杀时刻": 40, "野兽之力": 45,
 		"影遁": 25, "淬毒利刃": 25, "锁喉": 30,
 		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
 		"盾击": 15, "圣光审判": 30, "钢铁壁垒": 25,
@@ -3646,8 +3673,12 @@ func _on_skill_menu():
 			"战斗乐章", "疯狂节拍", "天籁之音",
 			"契约强化", "灵魂连接", "召唤兽强化"
 		]
+		var t3_skills = [
+			"一击脱离", "万箭齐发", "猎杀时刻", "野兽之力"
+		]
 		var is_t2 = t2_skills.has(skill)
-		var level_locked = is_t2 and player_data.level < 10
+		var is_t3 = t3_skills.has(skill)
+		var level_locked = (is_t2 and player_data.level < 10) or (is_t3 and player_data.level < 25)
 		var can_use = player_data.mp >= cost and cd_remaining <= 0 and not level_locked
 		var row = skill_idx / 2
 		var col = skill_idx % 2
@@ -3660,7 +3691,7 @@ func _on_skill_menu():
 				cd_text = " [CD:%d]" % cd_remaining
 			else:
 				cd_text = " [OK]"
-		var level_text = " Lv10" if is_t2 else ""
+		var level_text = "Lv25" if is_t3 else (" Lv10" if is_t2 else "")
 		sbtn.text = skill + level_text + " (MP:" + str(cost) + ")" + cd_text
 		sbtn.position = Vector2(sx, sy)
 		sbtn.size = Vector2(130, 48)
@@ -3721,6 +3752,7 @@ async func _on_skill_selected(skill_name: String):
 		"鼓舞": 10, "旋律": 15, "沉默": 20,
 		"召唤": 20, "契约": 20, "共鸣": 25,
 		"致命陷阱": 25, "猎豹加速": 20, "穿甲箭": 30,
+		"一击脱离": 35, "万箭齐发": 50, "猎杀时刻": 40, "野兽之力": 45,
 		"影遁": 25, "淬毒利刃": 25, "锁喉": 30,
 		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
 		"盾击": 15, "圣光审判": 30, "钢铁壁垒": 25,
@@ -4001,7 +4033,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % reso_dmg, "crit", Vector2(0, -30))
 		# 猎人 T2
 		"致命陷阱":
-			var trap_dmg = int(_get_effective_atk() * 1.0)
+			var trap_dmg = _apply_hunter_mark(int(_get_effective_atk() * 1.0))
 			current_enemy["hp"] -= trap_dmg
 			hunter_trap_dot_dmg = int(_get_effective_atk() * 0.4)
 			hunter_trap_turns = 3
@@ -4017,11 +4049,46 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_player_damage("EVASION+50%", "buff")
 		"穿甲箭":
 			hunter_armor_pierce_turns = 2
-			var pierce_dmg = int(_get_effective_atk() * 2.5)
+			var pierce_dmg = _apply_hunter_mark(int(_get_effective_atk() * 2.5))
 			current_enemy["hp"] -= pierce_dmg
 			_battle_add_log("🏹 穿甲箭！无视防御，造成 %d 伤害，持续2回合穿透" % pierce_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % pierce_dmg, "crit", Vector2(0, -35))
+		# 猎人 T3
+		"一击脱离":
+			var escape_dmg = _apply_hunter_mark(int(_get_effective_atk() * 4.0))
+			current_enemy["hp"] -= escape_dmg
+			hunter_one_hit_escape = true  # 下次敌人攻击必闪避
+			_battle_add_log("⚡ 一击脱离！造成 %d 伤害，本回合100%%闪避敌人攻击" % escape_dmg)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % escape_dmg, "crit", Vector2(0, -40))
+		"万箭齐发":
+			var arrow_dmg = _apply_hunter_mark(int(_get_effective_atk() * 1.5))
+			current_enemy["hp"] -= arrow_dmg
+			# 标记：敌人受伤+20%持续3回合
+			hunter_mark_turns = 3
+			hunter_mark_mult = 1.2
+			_battle_add_log("🏹 万箭齐发！造成 %d 伤害，标记敌人受到伤害+20%%持续3回合" % arrow_dmg)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % arrow_dmg, "crit", Vector2(0, -40))
+		"猎杀时刻":
+			if current_enemy["hp"] < current_enemy["max_hp"] * 0.5:
+				hunter_mark_turns = 2
+				hunter_mark_mult = 2.0
+				_battle_add_log("🎯 猎杀时刻！敌人HP<50%%，伤害+100%%持续2回合")
+				_spawn_player_damage("ATK×2.0!", "buff")
+			else:
+				# 敌人HP还高，改为造成较低伤害
+				var hunt_dmg = _apply_hunter_mark(int(_get_effective_atk() * 1.5))
+				current_enemy["hp"] -= hunt_dmg
+				_battle_add_log("🎯 猎杀时刻！敌人HP仍高，造成 %d 伤害" % hunt_dmg)
+				_enemy_hit_effect()
+				_spawn_enemy_damage("%d" % hunt_dmg, "damage", Vector2(0, -30))
+		"野兽之力":
+			hunter_beast_turns = 4
+			hunter_beast_dmg = int(player_data.attack_power() * 0.8)
+			_battle_add_log("🐺 野兽之力！召唤巨狼，每回合对敌人造成 %d 伤害，持续4回合" % hunter_beast_dmg)
+			_spawn_player_damage("🐺 野兽之力!", "buff")
 		# 盗贼 T2
 		"影遁":
 			var vanish_dmg = int(_get_effective_atk() * 3.0)
@@ -4290,6 +4357,13 @@ func _process_battle(delta: float):
 		if frost_slow_turns <= 0:
 			_battle_add_log("❄️ 霜冻领域效果结束")
 	
+	# 猎人T3: 猎杀时刻标记效果
+	if hunter_mark_turns > 0:
+		hunter_mark_turns -= 1
+		if hunter_mark_turns <= 0:
+			hunter_mark_mult = 1.0
+			_battle_add_log("🎯 猎杀时刻标记效果结束")
+	
 	# 法术穿透buff（减少）
 	if spell_pierce_turns > 0:
 		spell_pierce_turns -= 1
@@ -4419,6 +4493,16 @@ func _process_battle(delta: float):
 		if await _check_battle_end():
 			return
 	
+	# 猎人T3: 野兽之力 召唤狼每回合伤害
+	if hunter_beast_turns > 0:
+		current_enemy["hp"] -= hunter_beast_dmg
+		_battle_add_log("🐺 巨狼撕咬！对敌人造成 %d 伤害（剩余%d回合）" % [hunter_beast_dmg, hunter_beast_turns])
+		_spawn_enemy_damage("%d" % hunter_beast_dmg, "damage", Vector2(30, -10))
+		hunter_beast_turns -= 1
+		_update_enemy_hp_bar()
+		if await _check_battle_end():
+			return
+	
 	await get_tree().create_timer(0.5).timeout
 	
 	# 陷阱触发：敌人被困住，无法攻击并受到伤害
@@ -4432,6 +4516,14 @@ func _process_battle(delta: float):
 		if await _check_battle_end():
 			return
 		await get_tree().create_timer(0.4).timeout
+		_start_player_turn()
+		return
+	
+	# 一击脱离：100%闪避
+	if hunter_one_hit_escape:
+		hunter_one_hit_escape = false
+		_battle_add_log("⚡ 一击脱离！完美闪避了敌人攻击！")
+		_spawn_player_damage("MISS!", "miss")
 		_start_player_turn()
 		return
 	
