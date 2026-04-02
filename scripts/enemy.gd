@@ -110,17 +110,31 @@ func _setup_enemy(type: String, floor: int):
 			spd = 10; exp_reward = 150; gold_reward = 120
 			color = Color(0.3, 0.25, 0.5)  # 锦袍紫
 			faction = "散人"
+		"skeleton_warrior":
+			name = "骷髅战士"
+			hp = int(80 * mult); max_hp = hp
+			atk = int(22 * mult); def = 8
+			spd = 6; exp_reward = 60; gold_reward = 40
+			color = Color(0.9, 0.9, 0.9)  # 骨白色
+			faction = "邪派"
+		"demon_red":
+			name = "赤焰魔"
+			hp = int(120 * mult); max_hp = hp
+			atk = int(30 * mult); def = 12
+			spd = 8; exp_reward = 100; gold_reward = 80
+			color = Color(0.9, 0.2, 0.1)  # 赤红色
+			faction = "邪派"
 
 # 获取每层可用的敌人类型列表
 static func get_floor_enemies(floor: int) -> Array:
 	if floor <= 2:
 		return ["bandit", "bandit_elite", "deserter"]
 	elif floor <= 4:
-		return ["blood_sect_disciple", "riyue_follower", "wudu_disciple"]
+		return ["blood_sect_disciple", "riyue_follower", "wudu_disciple", "skeleton_warrior"]
 	elif floor <= 6:
-		return ["assassin", "bounty_hunter", "arena_champion"]
+		return ["assassin", "bounty_hunter", "arena_champion", "demon_red"]
 	else:
-		return ["shaolin_disciple", "wudang_disciple", "hidden_master"]
+		return ["shaolin_disciple", "wudang_disciple", "hidden_master", "skeleton_warrior", "demon_red"]
 
 func get_sprite_color() -> Color:
 	return color

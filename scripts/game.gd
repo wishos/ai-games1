@@ -2351,6 +2351,7 @@ func _start_battle():
 	var edata = enemy_data_class.new(etype, current_floor)
 	current_enemy = {
 		"name": edata.name,
+		"type": etype,  # 保存敌人类型用于选择素材
 		"hp": edata.hp,
 		"max_hp": edata.max_hp,
 		"atk": edata.atk,
@@ -2518,7 +2519,17 @@ func _create_battle_ui():
 	enemy_sprite = Sprite2D.new()
 	enemy_sprite.name = "EnemySprite"
 	enemy_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	enemy_sprite.texture = _create_enemy_texture(current_enemy["color"])
+	
+	# 尝试使用豆包素材
+	var enemy_type = current_enemy.get("type", "")
+	var loaded_tex = _load_enemy_texture(enemy_type)
+	if loaded_tex:
+		enemy_sprite.texture = loaded_tex
+		enemy_sprite.scale = Vector2(0.15, 0.15)  # 缩放到合适大小
+	else:
+		enemy_sprite.texture = _create_enemy_texture(current_enemy["color"])
+		enemy_sprite.scale = Vector2(1, 1)
+	
 	enemy_sprite.position = Vector2(200, 100)
 	enemy_sprite_target = enemy_sprite.position
 	enemy_sprite_pos = enemy_sprite.position
@@ -3199,7 +3210,25 @@ func _create_hp_bar_fill_mp() -> StyleBoxFlat:
 	style.corner_radius_bottom_left = 2
 	return style
 
-func _create_enemy_texture(col: Color) -> ImageTexture:
+# 敌人类型到豆包素材的映射
+const ENEMY_ASSETS = {
+	"skeleton_warrior": "res://assets/doubao/skeleton_warrior.png",
+	"demon_red": "res://assets/doubao/demon_red.png",
+	# 其他敌人使用默认程序生成
+}
+
+
+func _load_enemy_texture(enemy_type: String) -> Texture2D:
+	# 尝试加载豆包素材
+	var path = ENEMY_ASSETS.get(enemy_type, "")
+	if path != "":
+		var tex = load(path)
+		if tex:
+			return tex
+	return null
+
+
+func _create_enemy_texture(col: Color) -> Texture2D:
 	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
 	
