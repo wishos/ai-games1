@@ -2519,18 +2519,21 @@ func _create_battle_ui():
 	enemy_sprite = Sprite2D.new()
 	enemy_sprite.name = "EnemySprite"
 	enemy_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	enemy_sprite.centered = false  # 从左上角开始渲染
 	
 	# 尝试使用豆包素材
 	var enemy_type = current_enemy.get("type", "")
 	var loaded_tex = _load_enemy_texture(enemy_type)
 	if loaded_tex:
 		enemy_sprite.texture = loaded_tex
-		enemy_sprite.scale = Vector2(0.15, 0.15)  # 缩放到合适大小
+		# 2048x2048 -> 200x200 显示 (约1/10)
+		enemy_sprite.scale = Vector2(200.0/2048.0, 200.0/2048.0)
+		enemy_sprite.position = Vector2(100, 0)  # 居中偏左
 	else:
 		enemy_sprite.texture = _create_enemy_texture(current_enemy["color"])
 		enemy_sprite.scale = Vector2(1, 1)
+		enemy_sprite.position = Vector2(184, 20)  # 32x32居中
 	
-	enemy_sprite.position = Vector2(200, 100)
 	enemy_sprite_target = enemy_sprite.position
 	enemy_sprite_pos = enemy_sprite.position
 	enemy_panel.add_child(enemy_sprite)
