@@ -101,8 +101,9 @@ const BOSS_KILL_EXP := 50
 
 ## 📋 修复进度
 
-- [ ] P0: 修复 `_check_battle_end()` await 问题 (2277, 2366, 3982)
-- [ ] P1: 修复战斗UI内存泄漏
+- [x] P0: 修复 `_check_battle_end()` await 问题 ✅ (ce606d4)
+- [x] P1: map_bg/map_ground/grass_pattern 内存泄漏 ✅ (ce606d4)
+- [x] P1: battle_action_buttons 清理 ✅ (ce606d4)
 - [ ] P1: 修复 `_consume_spell_pierce()` 注释
 - [ ] P2: 拆分 game.gd 模块化改造
 - [ ] P2: Boss AI 函数重构
