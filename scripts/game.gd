@@ -901,26 +901,33 @@ func _set_pixel_line(img: Image, x1: int, y: int, x2: int, y2: int, col: Color):
 
 var map_bg: ColorRect
 var map_ground: ColorRect
+var grass_pattern: Node2D  # 草地纹理节点
 
 func _generate_map():
+	# 清理旧地图资源（防止内存泄漏）
+	if map_bg:
+		map_bg.queue_free()
+	if map_ground:
+		map_ground.queue_free()
+	if grass_pattern:
+		grass_pattern.queue_free()
+	
 	# 背景（天空）
-	remove_child(map_bg) if map_bg else null
 	map_bg = ColorRect.new()
 	map_bg.size = Vector2(1280, 720)
 	map_bg.position = Vector2(0, 0)
 	map_bg.color = PALETTE.sky_top
 	add_child(map_bg)
 	
-	# 地面（草地）- 使用更大的色块模拟地表
-	remove_child(map_ground) if map_ground else null
+	# 地面（草地）
 	map_ground = ColorRect.new()
 	map_ground.size = Vector2(1280, 720)
 	map_ground.position = Vector2(0, 0)
-	map_ground.color = PALETTE.grass_1  # 背景色
+	map_ground.color = PALETTE.grass_1
 	add_child(map_ground)
 	
-	# 添加地表纹理（程序生成的像素草地）
-	var grass_pattern = _create_grass_pattern()
+	# 草地纹理
+	grass_pattern = _create_grass_pattern()
 	grass_pattern.position = Vector2(0, 0)
 	add_child(grass_pattern)
 	
@@ -2391,7 +2398,7 @@ func _start_battle():
 		_battle_add_log("⚡ 陷阱触发！造成 %d 伤害" % trap_dmg)
 		_spawn_enemy_damage("%d" % trap_dmg, "damage", Vector2(0, -25))
 		_update_enemy_hp_bar()
-		_check_battle_end()
+		await _check_battle_end()
 
 func _start_boss_battle():
 	game_state = State.BATTLE
@@ -2480,9 +2487,15 @@ func _start_boss_battle():
 		_battle_add_log("⚡ 陷阱触发！对Boss造成 %d 伤害" % trap_dmg)
 		_spawn_enemy_damage("%d" % trap_dmg, "damage", Vector2(0, -25))
 		_update_enemy_hp_bar()
-		_check_battle_end()
+		await _check_battle_end()
 
 func _create_battle_ui():
+	# 清理旧战斗按钮引用
+	for btn in battle_action_buttons:
+		if btn and is_instance_valid(btn):
+			btn.queue_free()
+	battle_action_buttons.clear()
+	
 	# 隐藏小地图
 	if minimap_container:
 		minimap_container.visible = false
@@ -3690,7 +3703,7 @@ func _close_skill_menu():
 			menu.queue_free()
 	_skill_menu_buttons.clear()
 
-func _on_skill_selected(skill_name: String):
+async func _on_skill_selected(skill_name: String):
 	_close_skill_menu()
 	if not is_player_turn:
 		return

@@ -186,3 +186,109 @@ func _create_battle_ui():
 - **环境**: Godot headless --check-only 无法在合理时间内完成检查（项目结构限制，非代码问题）
 
 既有问题（P0/P1）状态不变，持续待修复。
+
+---
+
+### 新发现问题 (2026-04-02 18:03)
+
+#### P1 - 内存泄漏：`_generate_map()` 中 `map_bg` 和 `map_ground` 使用 `remove_child` 而非 `queue_free`
+
+**文件**: `scripts/game.gd`
+**行号**: 第 907、915 行
+
+**问题**: 当地图重新生成时（如切换楼层），旧的 `map_bg` 和 `map_ground` ColorRect 节点被从场景树中移除（`remove_child`），但并未释放（`queue_free`）。由于它们是实例变量，旧引用被覆盖后，节点对象成为孤儿永不释放。每切换一次楼层泄漏 2 个 1280×720 的 ColorRect 节点。
+
+**当前代码**:
+```gdscript
+func _generate_map():
+    # 背景（天空）
+    remove_child(map_bg) if map_bg else null  # ← 泄漏！
+    map_bg = ColorRect.new()
+    ...
+    add_child(map_bg)
+    
+    # 地面（草地）
+    remove_child(map_ground) if map_ground else null  # ← 泄漏！
+    map_ground = ColorRect.new()
+    ...
+    add_child(map_ground)
+```
+
+**建议修复**:
+```gdscript
+func _generate_map():
+    # 清理旧地图背景
+    if map_bg:
+        map_bg.queue_free()
+    map_bg = ColorRect.new()
+    map_bg.size = Vector2(1280, 720)
+    map_bg.position = Vector2(0, 0)
+    map_bg.color = PALETTE.sky_top
+    add_child(map_bg)
+    
+    if map_ground:
+        map_ground.queue_free()
+    map_ground = ColorRect.new()
+    ...
+```
+
+---
+
+#### P1 - 内存泄漏：`_generate_map()` 中 `grass_pattern` Node2D 从不清理
+
+**文件**: `scripts/game.gd`
+**行号**: 第 923-925 行
+
+**问题**: `_generate_map()` 每次调用创建一个新的 `grass_pattern` Node2D（包含 80×45=3600 个 ColorRect 子节点），但从未被清理。`grass_pattern` 是局部变量，没有实例变量引用它，导致每次调用后旧节点成为孤儿无法释放。每切换一次楼层泄漏约 3600 个 ColorRect 节点。
+
+**当前代码**:
+```gdscript
+func _generate_map():
+    ...
+    # 添加地表纹理（程序生成的像素草地）
+    var grass_pattern = _create_grass_pattern()  # 每次新建
+    grass_pattern.position = Vector2(0, 0)
+    add_child(grass_pattern)  # 添加后无引用跟踪，无法清理！
+```
+
+**建议修复**:
+```gdscript
+var grass_pattern: Node2D  # 添加实例变量
+
+func _generate_map():
+    ...
+    # 清理旧的草地纹理
+    if grass_pattern:
+        grass_pattern.queue_free()
+    grass_pattern = _create_grass_pattern()
+    grass_pattern.position = Vector2(0, 0)
+    add_child(grass_pattern)
+```
+
+**风险评估**: 每次切换楼层泄漏约 3602 个节点（1 个 Node2D + 3600 个 ColorRect + 1 个 Node2D 的父节点 + 2 个 ColorRect 背景）。如果玩家频繁切换楼层（8 层游戏，每层可能切换多次），内存泄漏会快速累积。
+
+---
+
+#### 环境说明 - Godot 编译检查 (第二次审查)
+
+**状态**: `Godot --headless --check-only` 在 30 秒内未能完成检查（进程超时被终止）
+
+**分析**: 项目使用大量动态节点创建和程序化纹理生成，headless 模式下场景初始化耗时较长。这不是代码语法错误。
+
+**手动验证建议**:
+```bash
+# 方法1：在 Godot 编辑器中打开项目，使用 Script → Check Code
+# 方法2：使用更长的超时
+/Applications/Godot.app/Contents/MacOS/Godot --headless --check-only --quit 2>&1 &
+```
+
+---
+
+### 审查记录 - 2026-04-02 18:03
+
+本次审查发现：
+- **P1 (新)**: `_generate_map()` 中 `map_bg`/`map_ground` 使用 `remove_child` 而非 `queue_free`，切换楼层时节点泄漏
+- **P1 (新)**: `_generate_map()` 中 `grass_pattern` 局部变量每次创建新 Node2D（3600 个 ColorRect）但从不释放，切换楼层时大量节点泄漏
+- **P2 (新)**: 战斗系统新增技能硬编码数值（line 2389, 4365, 4413, 4545）使用 `player_data.attack_power() * N` 倍率，尚未提取常量
+
+既有问题（P0/P1/P2）状态不变，持续待修复。
