@@ -136,8 +136,8 @@ var minimap_tiles: Array = []  # 2D array of ColorRects
 # 商店
 var shop_ui: Control
 var shop_items: Array = []
-var selected_shop_tab: int = 0  # 0=武器 1=防具 2=饰品 3=药水
-var shop_tabs: Array = ["⚔️ 武器", "🛡️ 防具", "💍 饰品", "🧪 药水"]
+var selected_shop_tab: int = 0  # 0=武器 1=防具 2=饰品 3=药水 4=强化
+var shop_tabs: Array = ["⚔️ 武器", "🛡️ 防具", "💍 饰品", "🧪 药水", "🔨 强化"]
 var shop_item_buttons: Array = []
 var shop_nearby: bool = false
 var shop_sign_pos: Vector2 = Vector2(0, 0)
@@ -174,7 +174,31 @@ const SHOP_POTIONS = [
 	{"name": "大血药",  "heal_hp": 80, "heal_mp": 0,  "price": 80,  "icon": "💗"},
 	{"name": "小蓝药",  "heal_hp": 0,  "heal_mp": 30, "price": 30,  "icon": "💙"},
 	{"name": "大蓝药",  "heal_hp": 0,  "heal_mp": 80, "price": 100, "icon": "💘"},
+	{"name": "普通强化石",  "material": "普通强化石", "price": 80,  "icon": "💎"},
+	{"name": "优秀强化石",  "material": "优秀强化石", "price": 200, "icon": "💠"},
+	{"name": "稀有强化石",  "material": "稀有强化石", "price": 500, "icon": "🔷"},
 ]
+
+# 装备强化系统
+# 强化成功率（+10开始有失败风险）
+const ENHANCE_SUCCESS_RATES = {
+	10: 80, 11: 65, 12: 50, 13: 35, 14: 20, 15: 10
+}
+# 强化费用（金币）
+const ENHANCE_COSTS = {
+	1: 100, 2: 100, 3: 100, 4: 300, 5: 300, 6: 300,
+	7: 600, 8: 600, 9: 600, 10: 1200, 11: 1800,
+	12: 2500, 13: 3500, 14: 5000, 15: 8000
+}
+# 强化所需材料（按装备品质grade）
+const ENHANCE_MATERIALS = {
+	# grade: [材料名称, 数量]
+	1: ["普通强化石", 1],
+	2: ["优秀强化石", 1],
+	3: ["稀有强化石", 1],
+	4: ["史诗强化石", 1],
+	5: ["传说强化石", 1],
+}
 
 # 音频管理器
 var audio_manager: Node
@@ -1719,6 +1743,7 @@ func _get_shop_items_by_tab(tab: int) -> Array:
 		1: return SHOP_ARMORS
 		2: return SHOP_ACCESSORIES
 		3: return SHOP_POTIONS
+		4: return []  # 强化面板自行处理
 	return []
 
 var shop_bg_sprite: Sprite2D  # 商店背景精灵
@@ -1844,7 +1869,7 @@ func _create_shop_ui():
 	tab_panel.self_modulate = Color(0, 0, 0, 0)
 	shop_panel.add_child(tab_panel)
 	
-	for i in range(4):
+	for i in range(5):
 		var tab_btn = _create_tab_button(shop_tabs[i], Vector2(i * 140, 0), i == selected_shop_tab)
 		tab_btn.pressed.connect(_on_shop_tab_selected.bind(i))
 		tab_panel.add_child(tab_btn)
@@ -1951,7 +1976,7 @@ func _on_shop_tab_selected(tab: int):
 	# 刷新 tab 样式
 	var tab_panel = shop_ui.get_node_or_null("ShopPanel/TabPanel")
 	if tab_panel:
-		for i in range(4):
+		for i in range(5):
 			var btn = tab_panel.get_child(i)
 			var is_sel = (i == tab)
 			var n_style = StyleBoxFlat.new()
@@ -1984,6 +2009,11 @@ func _draw_shop_items(shop_panel: Panel):
 			btn.queue_free()
 	shop_item_buttons.clear()
 	
+	# 强化面板自行处理
+	if selected_shop_tab == 4:
+		_draw_enhance_items(shop_panel)
+		return
+	
 	var items = _get_shop_items_by_tab(selected_shop_tab)
 	var start_x = 20
 	var start_y = 120
@@ -2015,6 +2045,9 @@ func _create_item_button(item: Dictionary, pos: Vector2) -> Button:
 		else:
 			stats_text = "恢复 %d MP" % item["heal_mp"]
 		stats_text += " | %d 金币" % item["price"]
+	elif item.has("material"):
+		# 强化材料
+		stats_text = "强化材料 | %d 金币" % item["price"]
 	else:
 		# 装备
 		var parts = []
@@ -2083,7 +2116,27 @@ func _on_shop_item_clicked(item: Dictionary):
 		show_message("购买了 %s ×1" % item["name"])
 		if audio_manager:
 			audio_manager.play_sfx("purchase")
-		# 更新商店UI
+		_update_shop_ui()
+		return
+	
+	# 强化材料购买
+	if item.has("material"):
+		if player_data.gold < item["price"]:
+			show_message("金钱不足！")
+			return
+		player_data.gold -= item["price"]
+		var mat_name = item["material"]
+		var found = false
+		for inv in player_data.inventory:
+			if inv.get("type") == mat_name:
+				inv["count"] += 1
+				found = true
+				break
+		if not found:
+			player_data.inventory.append({"type": mat_name, "count": 1})
+		show_message("购买了 %s ×1" % mat_name)
+		if audio_manager:
+			audio_manager.play_sfx("purchase")
 		_update_shop_ui()
 		return
 	
@@ -2289,6 +2342,217 @@ func _update_shop_ui():
 		if gold_disp:
 			gold_disp.text = "💰 %d 金币" % player_data.gold
 		_draw_shop_items(shop_panel)
+
+# ==================== 装备强化系统 ====================
+
+func _draw_enhance_items(shop_panel: Panel):
+	# 清除旧强化界面
+	for btn in shop_item_buttons:
+		if btn != null and is_instance_valid(btn):
+			btn.queue_free()
+	shop_item_buttons.clear()
+	
+	# 强化说明
+	var info_lbl = Label.new()
+	info_lbl.name = "EnhanceInfo"
+	info_lbl.position = Vector2(20, 120)
+	info_lbl.text = "🔨 装备强化\n\n强化可提升装备的基础属性\n+1~+9 强化成功率 100%%\n+10 开始有失败风险（失败不退级）\n所需材料由装备品质决定"
+	info_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.6))
+	info_lbl.add_theme_font_size_override("font_size", 13)
+	shop_panel.add_child(info_lbl)
+	shop_item_buttons.append(info_lbl)
+	
+	# 绘制三个装备的强化面板
+	var equip_slots = [
+		{"slot": "weapon", "data": player_data.weapon, "label": "⚔️ 武器", "enhance": player_data.weapon_enhance},
+		{"slot": "armor", "data": player_data.armor, "label": "🛡️ 防具", "enhance": player_data.armor_enhance},
+		{"slot": "accessory", "data": player_data.accessory, "label": "💍 饰品", "enhance": player_data.accessory_enhance},
+	]
+	
+	var start_y = 290
+	for i in range(equip_slots.size()):
+		var eq = equip_slots[i]
+		var eq_data = eq["data"]
+		var enhance_lvl = eq["enhance"]
+		var eq_y = start_y + i * 100
+		
+		if eq_data.size() == 0:
+			# 无装备时显示空槽
+			var empty_lbl = Label.new()
+			empty_lbl.position = Vector2(20, eq_y)
+			empty_lbl.text = "%s: 无装备" % eq["label"]
+			empty_lbl.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+			empty_lbl.add_theme_font_size_override("font_size", 13)
+			shop_panel.add_child(empty_lbl)
+			shop_item_buttons.append(empty_lbl)
+			continue
+		
+		var eq_name = eq_data.get("name", "???")
+		var eq_grade = eq_data.get("grade", 1)
+		var next_lvl = enhance_lvl + 1
+		var can_enhance = true
+		var reason = ""
+		
+		# 检查是否已达最大强化
+		if next_lvl > 15:
+			can_enhance = false
+			reason = "已达最大强化等级！"
+		else:
+			# 检查金币
+			var cost = ENHANCE_COSTS.get(next_lvl, 1000)
+			if player_data.gold < cost:
+				can_enhance = false
+				reason = "金币不足（需 %d）" % cost
+			# 检查材料
+			var mat_info = ENHANCE_MATERIALS.get(eq_grade, ["未知材料", 1])
+			var mat_name = mat_info[0]
+			var mat_count = _count_inventory(mat_name)
+			if mat_count < mat_info[1]:
+				can_enhance = false
+				reason = "缺少%s（持有 %d/%d）" % [mat_name, mat_count, mat_info[1]]
+		
+		# 成功率
+		var success_rate = 100
+		if next_lvl >= 10:
+			success_rate = ENHANCE_SUCCESS_RATES.get(next_lvl, 50)
+		
+		# 构建显示文本
+		var eq_lbl = Label.new()
+		eq_lbl.position = Vector2(20, eq_y)
+		eq_lbl.add_theme_font_size_override("font_size", 13)
+		
+		var mat_info = ENHANCE_MATERIALS.get(eq_grade, ["普通强化石", 1])
+		var cost = ENHANCE_COSTS.get(next_lvl, 1000)
+		
+		var text = "%s %s [+%d]\n  成功率: %d%% | 费用: %d金币 | 材料: %s×%d" % [
+			eq_data.get("icon", "📦"), eq_name, enhance_lvl,
+			success_rate, cost, mat_info[0], mat_info[1]
+		]
+		
+		if not can_enhance:
+			text += "\n  ⚠️ %s" % reason
+			eq_lbl.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+		else:
+			text += "\n  ➡️ 点击强化至 +%d" % next_lvl
+			eq_lbl.add_theme_color_override("font_color", PALETTE.gold)
+		
+		eq_lbl.text = text
+		shop_panel.add_child(eq_lbl)
+		shop_item_buttons.append(eq_lbl)
+		
+		# 强化按钮
+		if can_enhance:
+			var btn = Button.new()
+			btn.position = Vector2(700, eq_y - 5)
+			btn.size = Vector2(140, 50)
+			btn.text = "🔨 强化"
+			var btn_style = StyleBoxFlat.new()
+			btn_style.bg_color = Color(0.08, 0.2, 0.08, 0.95)
+			btn_style.border_color = PALETTE.gold
+			btn_style.border_width_left = 1; btn_style.border_width_top = 1
+			btn_style.border_width_right = 1; btn_style.border_width_bottom = 1
+			btn_style.corner_radius_top_left = 3; btn_style.corner_radius_top_right = 3
+			btn_style.corner_radius_bottom_right = 3; btn_style.corner_radius_bottom_left = 3
+			btn.add_theme_stylebox_override("normal", btn_style)
+			btn.add_theme_color_override("font_color", PALETTE.gold)
+			btn.add_theme_font_size_override("font_size", 13)
+			btn.pressed.connect(_on_enhance_clicked.bind(eq["slot"]))
+			shop_panel.add_child(btn)
+			shop_item_buttons.append(btn)
+
+func _on_enhance_clicked(slot: String):
+	# 获取当前强化等级
+	var enhance_lvl = 0
+	var eq_data: Dictionary
+	match slot:
+		"weapon":
+			eq_data = player_data.weapon
+			enhance_lvl = player_data.weapon_enhance
+		"armor":
+			eq_data = player_data.armor
+			enhance_lvl = player_data.armor_enhance
+		"accessory":
+			eq_data = player_data.accessory
+			enhance_lvl = player_data.accessory_enhance
+	
+	if eq_data.size() == 0:
+		show_message("该装备栏为空！")
+		return
+	
+	var next_lvl = enhance_lvl + 1
+	if next_lvl > 15:
+		show_message("已达最大强化等级！")
+		return
+	
+	var eq_grade = eq_data.get("grade", 1)
+	var cost = ENHANCE_COSTS.get(next_lvl, 1000)
+	var mat_info = ENHANCE_MATERIALS.get(eq_grade, ["普通强化石", 1])
+	var mat_name = mat_info[0]
+	
+	# 扣钱扣材料
+	player_data.gold -= cost
+	_remove_inventory_item(mat_name, mat_info[1])
+	
+	# 判定成功率
+	var success_rate = 100
+	if next_lvl >= 10:
+		success_rate = ENHANCE_SUCCESS_RATES.get(next_lvl, 50)
+	
+	var roll = randi() % 100
+	var success = roll < success_rate
+	
+	if success:
+		match slot:
+			"weapon": player_data.weapon_enhance = next_lvl
+			"armor": player_data.armor_enhance = next_lvl
+			"accessory": player_data.accessory_enhance = next_lvl
+		
+		# 计算强化后属性变化
+		var old_atk_def = 0
+		var new_atk_def = 0
+		if slot == "weapon":
+			old_atk_def = player_data.attack_power()
+			new_atk_def = player_data.atk + eq_data.get("atk", 0) + _calc_enhance_bonus(eq_grade, next_lvl)
+		elif slot == "armor":
+			old_atk_def = player_data.defense()
+			new_atk_def = player_data.def + eq_data.get("def", 0) + _calc_enhance_bonus(eq_grade, next_lvl)
+		
+		show_message("🎉 强化成功！%s → +%d" % [eq_data.get("name", "装备"), next_lvl])
+		if audio_manager:
+			audio_manager.play_sfx("enhance_success")
+	else:
+		show_message("💨 强化失败... %s 强化等级不变" % eq_data.get("name", "装备"))
+		if audio_manager:
+			audio_manager.play_sfx("enhance_fail")
+	
+	_update_shop_ui()
+	_update_ui()
+
+func _calc_enhance_bonus(grade: int, enhance_level: int) -> int:
+	# 复刻 player.gd 中的强化属性加成计算
+	var base = 20
+	if grade >= 5: base = 100
+	elif grade >= 3: base = 50
+	var bonus = 0
+	for i in range(1, enhance_level + 1):
+		if i <= 5: bonus += int(base * 0.03)
+		elif i <= 10: bonus += int(base * 0.05)
+		else: bonus += int(base * 0.08)
+	return bonus
+
+func _count_inventory(mat_name: String) -> int:
+	for item in player_data.inventory:
+		if item.get("type") == mat_name:
+			return item.get("count", 0)
+	return 0
+
+func _remove_inventory_item(mat_name: String, count: int):
+	for item in player_data.inventory:
+		if item.get("type") == mat_name:
+			item["count"] -= count
+			if item["count"] <= 0:
+				player_data.inventory.erase(item)
+			return
 
 # ==================== 战斗系统 ====================
 

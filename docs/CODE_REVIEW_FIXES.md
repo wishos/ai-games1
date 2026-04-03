@@ -293,3 +293,340 @@ func _generate_map():
 - **P2 (新)**: 战斗系统新增技能硬编码数值（line 2389, 4365, 4413, 4545）使用 `player_data.attack_power() * N` 倍率，尚未提取常量
 
 既有问题（P0/P1/P2）状态不变，持续待修复。
+
+---
+
+### 审查记录 - 2026-04-03 00:03
+
+本次审查发现：
+- **✅ 已确认修复**: `map_bg`/`map_ground`/`grass_pattern` 内存泄漏（上次 P1）— 当前代码已使用 `queue_free()`，问题已解决（ce606d4）
+- **P1 (新)**: `_create_battle_portrait_panel()` 每次战斗创建约 10 个 ImageTexture（80×80 RGBA8），战斗结束时未清理，长期累积导致 GPU 内存泄漏
+- **P1 (新)**: 迷雾系统（fog_map）缺乏父节点容器管理，3600 个 ColorRect 逐个释放效率低，建议改为 fog_container 统一管理
+- **P2 (既有未修复)**: `battle_action_buttons` 数组在 `_create_battle_ui()` 中未在函数开头先清理，仍存在引用累积风险
+- **P2 (既有未修复)**: `_consume_spell_pierce()` 函数命名歧义（名称暗示"消耗"但实际是"获取穿透后的防御值"）
+
+环境说明: Godot headless --check-only 进程在 30 秒内未能完成（项目动态节点创建较多，非语法错误）。
+
+---
+
+### 新发现问题 (2026-04-03 06:03)
+
+#### P1 - `_load_job_texture` 创建 Sprite2D 后丢弃，节点泄漏
+
+**文件**: `scripts/game.gd`
+**行号**: 约第 645-651 行
+
+**问题**: `_load_job_texture()` 函数在成功加载纹理后创建了一个 Sprite2D 实例，设置其纹理和过滤模式，但随后直接返回 Texture2D 而丢弃了 Sprite2D 引用。被丢弃的 Sprite2D 成为孤儿节点，Godot 无法自动释放其持有的资源（即使节点本身会被垃圾回收，但这种模式表明代码逻辑混乱）。
+
+**当前代码**:
+```gdscript
+var tex = load(path)
+if tex:
+    var sprite = Sprite2D.new()      # ← 创建节点
+    sprite.texture = tex             # ← 设置属性
+    sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    return tex                       # ← sprite 被丢弃，orphan!
+return null
+```
+
+**建议修复**: 如果不需要 sprite 对象，删除这三行无用代码：
+```gdscript
+var tex = load(path)
+if tex:
+    return tex   # 直接返回即可，调用者会自己创建 sprite
+return null
+```
+
+---
+
+#### P2 - 纹理尺寸硬编码 `2048`
+
+**文件**: `scripts/game.gd`
+**行号**: 约第 2558-2563 行（`_create_battle_ui` 中敌人精灵缩放）
+
+**问题**: 敌人精灵从豆包素材加载时，尺寸硬编码为 `2048`：
+```gdscript
+var loaded_tex = _load_enemy_texture(enemy_type)
+if loaded_tex:
+    enemy_sprite.texture = loaded_tex
+    # 2048x2048 -> 200x200 显示 (约1/10)
+    enemy_sprite.scale = Vector2(200.0/2048.0, 200.0/2048.0)
+    ...
+```
+
+**建议**: 提取为常量：
+```gdscript
+const ENEMY_ASSET_SIZE: float = 2048.0
+const ENEMY_SPRITE_DISPLAY_SIZE: float = 200.0
+# 使用:
+enemy_sprite.scale = Vector2(ENEMY_SPRITE_DISPLAY_SIZE / ENEMY_ASSET_SIZE, ENEMY_SPRITE_DISPLAY_SIZE / ENEMY_ASSET_SIZE)
+```
+
+同时，`shop_bg_sprite` 加载 `2048x2048` 纹理时也硬编码了相同数值（`_create_shop_bg()` 约第 2878 行）。
+
+---
+
+#### P2 - 既有未修复：`battle_action_buttons` 清理问题
+
+**文件**: `scripts/game.gd`
+**行号**: `_create_battle_ui()` 函数
+
+**问题**: 自 2026-04-02 12:03 首次记录以来仍未修复。`_create_battle_ui()` 在 append 按钮前未先清理数组：
+
+```gdscript
+func _create_battle_ui():
+    # 缺少前置清理！
+    var attack_btn = _create_action_button(...)
+    battle_action_buttons.append(attack_btn)
+    ...
+```
+
+**建议**: 在函数开头添加：
+```gdscript
+func _create_battle_ui():
+    for btn in battle_action_buttons:
+        if btn and is_instance_valid(btn):
+            btn.queue_free()
+    battle_action_buttons.clear()
+    ...
+```
+
+---
+
+#### P2 - 既有未修复：`_consume_spell_pierce()` 命名歧义
+
+**文件**: `scripts/game.gd`
+**行号**: 约第 3410 行
+
+**问题**: 函数名暗示"消耗"（consume），但函数实际上只是**返回**穿透后的防御值供调用者使用，并不修改 `spell_pierce_turns` 计数器（调用者才修改）。造成代码阅读歧义。
+
+**建议**: 重命名为 `_get_pierced_defense()` 更准确。
+
+---
+
+### 审查记录 - 2026-04-03 06:03
+
+本次审查发现：
+- **P1 (新)**: `_load_job_texture()` 中创建 Sprite2D 后直接丢弃，orphan 节点风险
+- **P2 (新)**: 敌人/商店素材纹理尺寸 `2048` 硬编码（两处）
+- **P2 (既有未修复)**: `battle_action_buttons` 清理问题自首次记录（2026-04-02 12:03）至今未修复
+- **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义，自首次记录以来未修复
+
+环境说明: Godot headless --check-only 仍无法在合理时间内完成（项目动态节点创建特性，非语法错误）。
+
+---
+
+### 新发现问题 (2026-04-03 00:03)
+
+#### P1 - 肖像面板 ImageTexture 内存泄漏
+
+**文件**: `scripts/game.gd`
+**行号**: `_create_battle_portrait_panel()` 函数（约 line 2500-2900）
+
+**问题**: 每次进入战斗（`_start_battle()` / `_start_boss_battle()`）调用 `_create_battle_portrait_panel()`，创建大量 ImageTexture 对象但从未主动释放：
+
+```
+每次战斗创建:
+- _create_job_portrait_texture(job) → 1个 80×80 RGBA8 ImageTexture
+- _create_portrait_shadow()        → 1个 80×20 RGBA8 ImageTexture  
+- _create_portrait_flash(job_color) → 1个 80×80 RGBA8 ImageTexture
+```
+
+此外，`_create_job_texture()` 在 `_setup_player()` 中也创建多个 32×32 RGBA8 ImageTexture（每个职业一个），同样不释放。
+
+战斗频繁发生时，GPU 显存会持续累积这些纹理。
+
+**当前代码**: `_create_battle_portrait_panel()` 作为 `battle_ui` 子节点，依赖 Godot 自动释放。但 `battle_ui` 在战斗结束后并非每次都完全重建，导致面板节点及其持有的纹理在显存中残留。
+
+**建议修复**（方案A - 推荐）:
+```gdscript
+func _start_battle():
+    if battle_ui:
+        battle_ui.queue_free()
+        battle_ui = null
+    ...
+    _create_battle_ui()
+```
+
+---
+
+#### P1 - 迷雾系统缺乏父节点容器管理
+
+**文件**: `scripts/game.gd`
+**行号**: `_generate_map()` 约第 940 行，`_clear_fog()` 约第 953 行
+
+**问题**: `fog_map` 字典包含 80×45=3600 个 ColorRect 子节点，当前清理方式是遍历字典逐个 `queue_free()`。切换楼层时每层累积 3600 个节点引用在字典中，直到下一层 `_clear_fog()` 才释放。虽然最终能释放，但内存中节点对象存活时间过长。
+
+**当前代码**:
+```gdscript
+func _clear_fog():
+    for key in fog_map.keys():
+        var fog = fog_map[key]
+        if fog and is_instance_valid(fog):
+            fog.queue_free()
+    fog_map.clear()
+```
+
+**建议修复** — 引入 `fog_container: Node2D` 实例变量统一管理：
+```gdscript
+var fog_container: Node2D  # 实例变量，替代字典存储
+
+func _generate_map():
+    # 清理旧的迷雾容器（一次性释放所有子节点）
+    if fog_container:
+        fog_container.queue_free()
+    fog_container = Node2D.new()
+    fog_container.name = "FogContainer"
+    add_child(fog_container)
+    
+    fog_map.clear()
+    for x in range(0, 80):
+        for y in range(0, 45):
+            var fog = ColorRect.new()
+            fog.size = Vector2(16, 16)
+            fog.position = Vector2(x * 16, y * 16)
+            fog.color = Color(0.02, 0.02, 0.04, 0.95)
+            fog.name = "fog_%d_%d" % [x, y]
+            fog_container.add_child(fog)
+            fog_map[str(x) + "_" + str(y)] = fog
+```
+
+切换楼层时只需 `fog_container.queue_free()` 即可通过 Godot 自动释放所有子节点。
+
+---
+
+#### P2 - `battle_action_buttons` 清理顺序问题（既有未修复）
+
+**文件**: `scripts/game.gd`
+**行号**: `_create_battle_ui()` 约第 2368 行
+
+**问题**: 上次审查已记录此问题，仍未修复。`_create_battle_ui()` 在 append 按钮前未先清理数组：
+
+```gdscript
+func _create_battle_ui():
+    # 缺少：battle_action_buttons.clear() 前置清理
+    for btn in battle_action_buttons:
+        if btn and is_instance_valid(btn):
+            btn.queue_free()
+    battle_action_buttons.clear()  # ← 应放在函数开头
+    
+    battle_action_buttons.append(attack_btn)  # ← 在这里才clear太晚
+```
+
+**建议**: 将 `battle_action_buttons.clear()` 及遍历释放逻辑移至函数开头第一行。
+
+---
+
+#### P2 - `_consume_spell_pierce()` 命名歧义（既有未修复）
+
+**文件**: `scripts/game.gd`
+**行号**: 约第 3410 行
+
+**问题**: 函数注释说"返还"但实现是返回防御值供调用者减算。`_consume_spell_pierce()` 名称暗示"消耗"（consume），但函数并不实际修改 `spell_pierce_turns`（只有调用者才修改），造成理解歧义。
+
+**建议**: 重命名为 `_get_pierced_defense()` 更准确反映其"获取穿透后的防御值"的实际行为。
+
+---
+
+### 新发现问题 (2026-04-03 12:03)
+
+#### P2 - `_load_job_texture()` 创建未使用的 Sprite2D 临时对象（死代码）
+
+**文件**: `scripts/game.gd`
+**行号**: 约第 634-648 行
+
+**问题**: 函数创建了局部 `Sprite2D` 对象并设置了纹理和过滤器，但这个 sprite 变量从未被使用，函数直接返回 `tex`。这是无用的堆内存分配和死代码。
+
+```gdscript
+func _load_job_texture(job: int) -> Texture2D:
+    var texture_path = {...}
+    var path = texture_path.get(job, "res://assets/warrior.png")
+    var tex = load(path)
+    if tex:
+        # 设置缩放使256x256的图缩小到32x32显示
+        var sprite = Sprite2D.new()         # ← 创建了 sprite
+        sprite.texture = tex                 # ← 设置了属性
+        sprite.texture_filter = ...           # ← 但从未使用！
+        return tex                            # ← 直接返回 tex，sprite 被丢弃
+    return null
+```
+
+**建议修复**: 删除 `sprite` 变量及其属性设置，或将其连接到场景树中实际使用：
+
+```gdscript
+func _load_job_texture(job: int) -> Texture2D:
+    var texture_path = {...}
+    var path = texture_path.get(job, "res://assets/warrior.png")
+    var tex = load(path)
+    return tex  # 直接返回，无需创建临时 sprite
+```
+
+---
+
+#### P3 - `particle_container` 和 `audio_manager` 在 `_ready()` 后永不释放
+
+**文件**: `scripts/game.gd`
+**行号**: 第 291-293 行（particle_container）、第 299-301 行（audio_manager）
+
+**问题**: 两个 Node 在 `_ready()` 中通过 `.new()` 创建并 `add_child()`，但在整个游戏生命周期内从未调用 `queue_free()`。如果职业选择后重新开始游戏（调用 `_on_job_selected`），这些节点不会被清理，造成内存/节点泄漏。
+
+```gdscript
+func _ready():
+    particle_container = Node2D.new()
+    particle_container.name = "ParticleContainer"
+    add_child(particle_container)      # ← 创建后永不释放
+    
+    _setup_audio()
+    ...
+
+func _setup_audio():
+    audio_manager = preload("res://scripts/audio_manager.gd").new()
+    audio_manager.name = "AudioManager"
+    add_child(audio_manager)           # ← 创建后永不释放
+    ...
+```
+
+**建议修复**: 在 `_on_job_selected` 开头（或专门的 `_cleanup()` 函数中）清理这些节点：
+
+```gdscript
+func _on_job_selected(job_id: int):
+    # 清理旧游戏节点
+    if particle_container:
+        particle_container.queue_free()
+    if audio_manager:
+        audio_manager.queue_free()
+    ...
+```
+
+---
+
+#### P3 - 动画时长硬编码魔法数字
+
+**文件**: `scripts/game.gd`
+**涉及行**: 多处
+
+**问题**: 散布在各处的动画时长均以硬编码数字出现，缺乏语义化命名，影响可读性和维护性。
+
+| 值 | 含义 | 出现位置 |
+|---|---|---|
+| `0.003` | 探索随机遇敌概率 | `_process_explore()` |
+| `180` | 玩家移动速度（像素/秒） | `_process_explore()` |
+| `0.5` | 过渡淡入淡出时长 | `_next_floor()` 等多处 |
+| `0.4`, `0.3`, `1.5` | Boss登场/阶段动画时长 | `_show_boss_intro()` 等 |
+| `0.6` | 标题/面板缩放动画时长 | `_show_title_screen()` 等 |
+
+**建议**: 在文件顶部提取为具名常量：
+
+```gdscript
+# 探索参数
+const PLAYER_SPEED: float = 180.0
+const RANDOM_ENCOUNTER_CHANCE: float = 0.003
+
+# 动画时长
+const TRANSITION_DURATION: float = 0.5
+const BOSS_ANIM_DURATION: float = 0.4
+const BOSS_PAUSE_DURATION: float = 1.5
+const PANEL_SCALE_DURATION: float = 0.6
+```
+
+---

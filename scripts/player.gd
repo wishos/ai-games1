@@ -27,6 +27,11 @@ var weapon: Dictionary = {}
 var armor: Dictionary = {}
 var accessory: Dictionary = {}
 
+# 装备强化等级
+var weapon_enhance: int = 0
+var armor_enhance: int = 0
+var accessory_enhance: int = 0
+
 # 背包
 var inventory: Array = [
 	{"type": "小血药", "count": 2, "heal_hp": 30, "heal_mp": 0},
@@ -60,11 +65,37 @@ func get_job_name() -> String:
 
 func attack_power() -> int:
 	var wpn_atk = weapon.get("atk", 0)
-	return atk + wpn_atk
+	var wpn_grade = weapon.get("grade", 1)
+	var enhance_bonus = _enhance_stat_bonus(wpn_grade, weapon_enhance)
+	return atk + wpn_atk + enhance_bonus
 
 func defense() -> int:
 	var arm_def = armor.get("def", 0)
-	return def + arm_def
+	var arm_grade = armor.get("grade", 1)
+	var enhance_bonus = _enhance_stat_bonus(arm_grade, armor_enhance)
+	return def + arm_def + enhance_bonus
+
+func _enhance_stat_bonus(grade: int, enhance_level: int) -> int:
+	# 每级强化根据等级提供不同加成
+	# +1~+5: 每级+3%基础属性; +6~+10: 每级+5%; +11~+15: 每级+8%
+	if enhance_level <= 0:
+		return 0
+	var base = 0
+	if grade >= 5:
+		base = 100  # 传说/神器基础值高
+	elif grade >= 3:
+		base = 50   # 稀有/史诗
+	else:
+		base = 20  # 普通/优秀
+	var bonus = 0
+	for i in range(1, enhance_level + 1):
+		if i <= 5:
+			bonus += int(base * 0.03)
+		elif i <= 10:
+			bonus += int(base * 0.05)
+		else:
+			bonus += int(base * 0.08)
+	return bonus
 
 func level_up_requirement() -> int:
 	return int(pow(level, 1.5) * 60)
