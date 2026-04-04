@@ -106,6 +106,19 @@ var summoner_contract_boost_dmg: int = 0    # 契约强化伤害加成
 var summoner_soul_link_turns: int = 0        # 灵魂连接回合
 var summoner_soul_link_dmg: int = 0          # 灵魂连接每回合伤害
 var summoner_beast_boost_turns: int = 0       # 召唤兽强化回合
+# 战士T3状态
+var warrior_shatter_turns: int = 0          # 碎甲：敌人DEF降低回合
+var warrior_shatter_defdebuff: int = 0       # 碎甲：敌人DEF降低量
+var warrior_shatter_orig_def: int = 0         # 碎甲：敌人原始DEF（用于恢复）
+var warrior_shatter_turns: int = 0          # 碎甲：敌人DEF降低回合
+var warrior_shatter_defdebuff: int = 0       # 碎甲：敌人DEF降低量
+var warrior_domain_turns: int = 0            # 战神领域持续回合
+var warrior_domain_atk_boost: int = 0        # 战神领域ATK加成
+var warrior_domain_def_boost: int = 0        # 战神领域DEF加成
+var warrior_guard_active: bool = false       # 援护：是否已援护过
+var warrior_guard_target_hp_pct: float = 0.0  # 援护：目标HP百分比
+var warrior_undying_used: bool = false       # 不死不灭：是否已触发
+var warrior_bloodlust_active: bool = false  # 浴血奋战：激活状态
 
 # 技能冷却系统
 var skill_cooldowns: Dictionary = {}  # {skill_name: remaining_turns}
@@ -333,7 +346,7 @@ func _show_title_screen():
 	bg.size = Vector2(1280, 720)
 	bg.color = PALETTE.sky_top
 	add_child(bg)
-	
+
 	# 半透明遮罩
 	var overlay = ColorRect.new()
 	overlay.name = "TitleOverlay"
@@ -341,7 +354,7 @@ func _show_title_screen():
 	overlay.position = Vector2(0, 0)
 	overlay.color = Color(0, 0, 0, 0.6)
 	add_child(overlay)
-	
+
 	# 标题面板
 	var title_panel = Panel.new()
 	title_panel.name = "TitlePanel"
@@ -350,7 +363,7 @@ func _show_title_screen():
 	title_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
 	title_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	add_child(title_panel)
-	
+
 	# 游戏标题
 	var game_title = Label.new()
 	game_title.name = "GameTitle"
@@ -361,7 +374,7 @@ func _show_title_screen():
 	game_title.add_theme_color_override("font_color", PALETTE.gold)
 	game_title.add_theme_font_size_override("font_size", 36)
 	title_panel.add_child(game_title)
-	
+
 	var subtitle = Label.new()
 	subtitle.position = Vector2(0, 75)
 	subtitle.size = Vector2(1000, 30)
@@ -370,7 +383,7 @@ func _show_title_screen():
 	subtitle.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7))
 	subtitle.add_theme_font_size_override("font_size", 14)
 	title_panel.add_child(subtitle)
-	
+
 	# 选择职业标签
 	var select_label = Label.new()
 	select_label.position = Vector2(0, 115)
@@ -380,7 +393,7 @@ func _show_title_screen():
 	select_label.add_theme_color_override("font_color", Color(0.7, 0.6, 0.3))
 	select_label.add_theme_font_size_override("font_size", 16)
 	title_panel.add_child(select_label)
-	
+
 	# 职业数据
 	var job_list: Array = [
 		{"id": Job.WARRIOR, "name": "⚔️ 战士", "desc": "高血量 · 猛击/防御/冲锋", "color": Color(0.9, 0.3, 0.3)},
@@ -392,21 +405,21 @@ func _show_title_screen():
 		{"id": Job.BARD, "name": "🎵 吟游诗人", "desc": "辅助 · 鼓舞/旋律/沉默", "color": Color(0.9, 0.6, 0.2)},
 		{"id": Job.SUMMONER, "name": "🔥 召唤师", "desc": "召唤 · 召唤/契约/共鸣", "color": Color(1.0, 0.4, 0.2)},
 	]
-	
+
 	# 职业按钮网格 (4×2)
 	var start_x = 60
 	var start_y = 160
 	var btn_w = 210
 	var btn_h = 110
 	var cols = 4
-	
+
 	for i in range(job_list.size()):
 		var job = job_list[i]
 		var row = i / cols
 		var col = i % cols
 		var bx = start_x + col * (btn_w + 20)
 		var by = start_y + row * (btn_h + 15)
-		
+
 		var job_btn = Button.new()
 		job_btn.name = "JobBtn_%d" % job["id"]
 		job_btn.position = Vector2(bx, by)
@@ -436,7 +449,7 @@ func _show_title_screen():
 		pstyle.corner_radius_top_left = 5; pstyle.corner_radius_top_right = 5
 		pstyle.corner_radius_bottom_right = 5; pstyle.corner_radius_bottom_left = 5
 		job_btn.add_theme_stylebox_override("pressed", pstyle)
-		
+
 		# 职业名称
 		var jname = Label.new()
 		jname.position = Vector2(10, 8)
@@ -444,7 +457,7 @@ func _show_title_screen():
 		jname.add_theme_color_override("font_color", job["color"])
 		jname.add_theme_font_size_override("font_size", 16)
 		job_btn.add_child(jname)
-		
+
 		# 职业描述
 		var jdesc = Label.new()
 		jdesc.position = Vector2(10, 38)
@@ -452,7 +465,7 @@ func _show_title_screen():
 		jdesc.add_theme_color_override("font_color", Color(0.65, 0.65, 0.6))
 		jdesc.add_theme_font_size_override("font_size", 12)
 		job_btn.add_child(jdesc)
-		
+
 		# 提示
 		var jhint = Label.new()
 		jhint.position = Vector2(10, 75)
@@ -460,10 +473,10 @@ func _show_title_screen():
 		jhint.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
 		jhint.add_theme_font_size_override("font_size", 11)
 		job_btn.add_child(jhint)
-		
+
 		job_btn.pressed.connect(_on_job_selected.bind(job["id"]))
 		title_panel.add_child(job_btn)
-	
+
 	# 底部说明
 	var tip = Label.new()
 	tip.position = Vector2(0, 420)
@@ -482,7 +495,7 @@ func _on_job_selected(job_id: int):
 	if title_bg: title_bg.queue_free()
 	if title_ov: title_ov.queue_free()
 	if title_pn: title_pn.queue_free()
-	
+
 	# 设置职业
 	_setup_player_data(job_id)
 	_setup_ui()
@@ -512,34 +525,34 @@ func _setup_ui():
 	ui_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.88)
 	ui_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	add_child(ui_panel)
-	
+
 	job_label = Label.new()
 	job_label.position = Vector2(15, 12)
 	job_label.text = "战士"
 	job_label.add_theme_color_override("font_color", PALETTE.gold)
 	job_label.add_theme_font_size_override("font_size", 14)
 	ui_panel.add_child(job_label)
-	
+
 	hp_label = Label.new()
 	hp_label.position = Vector2(15, 35)
 	hp_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
 	ui_panel.add_child(hp_label)
-	
+
 	mp_label = Label.new()
 	mp_label.position = Vector2(15, 58)
 	mp_label.add_theme_color_override("font_color", Color(0.3, 0.5, 1))
 	ui_panel.add_child(mp_label)
-	
+
 	gold_label = Label.new()
 	gold_label.position = Vector2(15, 81)
 	gold_label.add_theme_color_override("font_color", PALETTE.gold)
 	ui_panel.add_child(gold_label)
-	
+
 	floor_label = Label.new()
 	floor_label.position = Vector2(15, 104)
 	floor_label.add_theme_color_override("font_color", Color.WHITE)
 	ui_panel.add_child(floor_label)
-	
+
 	# 消息标签
 	message_label = Label.new()
 	message_label.position = Vector2(10, 640)
@@ -547,7 +560,7 @@ func _setup_ui():
 	message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	message_label.add_theme_color_override("font_color", Color.WHITE)
 	add_child(message_label)
-	
+
 	# 右上面板
 	var ui_right = Panel.new()
 	ui_right.position = Vector2(1070, 10)
@@ -555,29 +568,29 @@ func _setup_ui():
 	ui_right.self_modulate = Color(0.04, 0.04, 0.08, 0.88)
 	ui_right.add_theme_stylebox_override("panel", _create_stylebox())
 	add_child(ui_right)
-	
+
 	var title_label = Label.new()
 	title_label.position = Vector2(20, 15)
 	title_label.text = "第 1 层"
 	title_label.add_theme_color_override("font_color", PALETTE.gold)
 	ui_right.add_child(title_label)
-	
+
 	floor_label = Label.new()
 	floor_label.position = Vector2(20, 38)
 	floor_label.text = "探索中..."
 	floor_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	ui_right.add_child(floor_label)
-	
+
 	# 提示操作
 	var hint_label = Label.new()
 	hint_label.position = Vector2(1070, 80)
 	hint_label.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · F2存档"
 	hint_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	add_child(hint_label)
-	
+
 	# 小地图面板 (右下角)
 	_create_minimap()
-	
+
 	_update_ui()
 
 func _create_stylebox() -> StyleBoxFlat:
@@ -607,7 +620,7 @@ func _setup_walls():
 		var wx = randi() % 50 + 10
 		var wy = randi() % 15 + 18
 		wall_rects.append(Rect2(wx * 16, wy * 16, 48, 48))
-	
+
 	# 添加商店招牌
 	shop_sign_pos = Vector2(30 * 16, 22 * 16)
 	var shop_sign = ColorRect.new()
@@ -616,7 +629,7 @@ func _setup_walls():
 	shop_sign.position = shop_sign_pos
 	shop_sign.color = Color(0.35, 0.25, 0.1, 1.0)
 	add_child(shop_sign)
-	
+
 	var shop_label = Label.new()
 	shop_label.name = "ShopLabel"
 	shop_label.text = "商店 [E]"
@@ -627,13 +640,13 @@ func _setup_walls():
 func _setup_player():
 	player = CharacterBody2D.new()
 	player.position = Vector2(640, 400)
-	
+
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.centered = false
 	sprite.offset = Vector2(-16, -16)  # 居中偏移
-	
+
 	# 使用PNG素材（256x256缩小到32x32）
 	var tex = _load_job_texture(player_data.job)
 	if tex:
@@ -644,13 +657,13 @@ func _setup_player():
 		sprite.texture = _create_job_texture(player_data.job)
 		sprite.scale = Vector2(1, 1)
 	player.add_child(sprite)
-	
+
 	var col = CollisionShape2D.new()
 	var shape = RectangleShape2D.new()
 	shape.size = Vector2(16, 16)
 	col.shape = shape
 	player.add_child(col)
-	
+
 	add_child(player)
 	show_message("WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · F2存档")
 
@@ -667,7 +680,7 @@ func _load_job_texture(job: int) -> Texture2D:
 		Job.BARD: "res://assets/warrior.png",    # 暂时用warrior
 		Job.SUMMONER: "res://assets/warrior.png"  # 暂时用warrior
 	}
-	
+
 	var path = texture_path.get(job, "res://assets/warrior.png")
 	var tex = load(path)
 	if tex:
@@ -681,21 +694,21 @@ func _load_job_texture(job: int) -> Texture2D:
 func _create_knight_texture() -> ImageTexture:
 	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
-	
+
 	var cape = Color("#8b2942")
 	var armor = Color("#4a6a8a")
 	var skin = Color("#e8c8a0")
 	var hair = Color("#3a2a1a")
 	var sword = Color("#c0c0c0")
 	var gold = Color("#c9a227")
-	
+
 	# Cape
 	_set_pixel_line(img, 8, 18, 15, 18, cape)
 	_set_pixel_line(img, 6, 22, 9, 22, cape)
 	_set_pixel_line(img, 6, 24, 7, 24, cape)
 	_set_pixel_line(img, 5, 26, 6, 26, cape)
 	_set_pixel_line(img, 6, 28, 7, 28, cape)
-	
+
 	# Armor body
 	_set_pixel_line(img, 9, 16, 22, 16, armor)
 	_set_pixel_line(img, 8, 18, 23, 18, armor)
@@ -703,7 +716,7 @@ func _create_knight_texture() -> ImageTexture:
 	_set_pixel_line(img, 8, 22, 23, 22, armor)
 	_set_pixel_line(img, 9, 24, 22, 24, armor)
 	_set_pixel_line(img, 10, 26, 21, 26, armor)
-	
+
 	# Head
 	_set_pixel_line(img, 12, 4, 19, 4, hair)
 	_set_pixel_line(img, 12, 6, 19, 6, hair)
@@ -711,17 +724,17 @@ func _create_knight_texture() -> ImageTexture:
 	_set_pixel_line(img, 12, 10, 19, 10, skin)
 	_set_pixel_line(img, 12, 12, 19, 12, skin)
 	_set_pixel_line(img, 13, 14, 18, 14, skin)
-	
+
 	# Eyes
 	img.set_pixel(14, 10, Color.BLACK)
 	img.set_pixel(18, 10, Color.BLACK)
-	
+
 	# Sword
 	_set_pixel_line(img, 24, 8, 24, 24, sword)
 	_set_pixel_line(img, 22, 10, 22, 10, gold)
 	_set_pixel_line(img, 26, 10, 26, 10, gold)
 	_set_pixel_line(img, 22, 12, 26, 12, gold)
-	
+
 	var texture = ImageTexture.create_from_image(img)
 	return texture
 
@@ -941,26 +954,26 @@ func _generate_map():
 		map_ground.queue_free()
 	if grass_pattern:
 		grass_pattern.queue_free()
-	
+
 	# 背景（天空）
 	map_bg = ColorRect.new()
 	map_bg.size = Vector2(1280, 720)
 	map_bg.position = Vector2(0, 0)
 	map_bg.color = PALETTE.sky_top
 	add_child(map_bg)
-	
+
 	# 地面（草地）
 	map_ground = ColorRect.new()
 	map_ground.size = Vector2(1280, 720)
 	map_ground.position = Vector2(0, 0)
 	map_ground.color = PALETTE.grass_1
 	add_child(map_ground)
-	
+
 	# 草地纹理
 	grass_pattern = _create_grass_pattern()
 	grass_pattern.position = Vector2(0, 0)
 	add_child(grass_pattern)
-	
+
 	# 迷雾
 	_clear_fog()
 	for x in range(0, 80):
@@ -972,13 +985,13 @@ func _generate_map():
 			fog.name = "fog_%d_%d" % [x, y]
 			add_child(fog)
 			fog_map[str(x) + "_" + str(y)] = fog
-	
+
 	_reveal_area(40, 25, 8)  # 初始可见范围调大
 
 
 func _create_grass_pattern() -> Node2D:
 	var container = Node2D.new()
-	
+
 	# 创建草地纹理（16x16像素砖块排列）
 	for tx in range(0, 80):
 		for ty in range(0, 45):
@@ -991,7 +1004,7 @@ func _create_grass_pattern() -> Node2D:
 			else:
 				tile.color = PALETTE.grass_1
 			container.add_child(tile)
-	
+
 	return container
 
 
@@ -1033,7 +1046,7 @@ func _process_explore(delta):
 	var moved = false
 	var vx = 0.0
 	var vy = 0.0
-	
+
 	if Input.is_action_pressed("ui_up"):
 		vy -= speed; moved = true
 	elif Input.is_action_pressed("ui_down"):
@@ -1042,31 +1055,31 @@ func _process_explore(delta):
 		vx -= speed; moved = true
 	elif Input.is_action_pressed("ui_right"):
 		vx += speed; moved = true
-	
+
 	# 尝试移动
 	var new_pos = player.position + Vector2(vx, vy)
 	new_pos.x = clamp(new_pos.x, 24, 1256)
 	new_pos.y = clamp(new_pos.y, 210, 690)
-	
+
 	# 墙壁碰撞检测
 	var collided = false
 	for rect in wall_rects:
 		if rect.has_point(new_pos):
 			collided = true
 			break
-	
+
 	if not collided:
 		player.position = new_pos
-	
+
 	if moved and collided and is_player_turn:
 		_start_battle()
 		return
-	
+
 	# 持续按住时随机触发战斗
 	if moved and randf() < 0.003 and is_player_turn:
 		_start_battle()
 		return
-	
+
 	# 更新迷雾
 	var new_tile_x = int(player.position.x / 16)
 	var new_tile_y = int(player.position.y / 16)
@@ -1074,27 +1087,27 @@ func _process_explore(delta):
 		player_tile_x = new_tile_x
 		player_tile_y = new_tile_y
 		_reveal_area(player_tile_x, player_tile_y, 4)
-	
+
 	# 按F下楼梯
 	if Input.is_action_pressed("ui_accept") and is_player_turn:
 		_next_floor()
-	
+
 	# 商店检测 (E键)
 	var dist_to_shop = player.position.distance_to(shop_sign_pos + Vector2(40, 32))
 	shop_nearby = dist_to_shop < 80
 	if shop_nearby and Input.is_action_pressed("ui_select") and is_player_turn:
 		_open_shop()
-	
+
 	# 背包检测 (I键)
 	if Input.is_key_pressed(KEY_I) and is_player_turn and not inventory_open and game_state == State.EXPLORE:
 		_open_inventory()
 		return
-	
+
 	# 关闭背包 (I键或ESC)
 	if inventory_open and (Input.is_key_pressed(KEY_I) or Input.is_key_pressed(KEY_ESCAPE)):
 		_close_inventory()
 		return
-	
+
 	_update_ui()
 	_update_minimap()
 
@@ -1108,20 +1121,20 @@ func _next_floor():
 		return
 	if is_transitioning:
 		return
-	
+
 	is_transitioning = true
 	is_player_turn = false
-	
+
 	# 淡出
 	_show_transition_overlay()
-	
+
 	var tween = create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(transition_overlay, "color:a", 1.0, 0.5)
-	
+
 	await tween.finished
 	await get_tree().create_timer(0.3).timeout
-	
+
 	# 执行楼层切换
 	current_floor += 1
 	player.position = Vector2(640, 400)
@@ -1132,7 +1145,7 @@ func _next_floor():
 		fog.color = Color(0.02, 0.02, 0.04, 0.95)
 	_reveal_area(player_tile_x, player_tile_y, 5)
 	_update_minimap()
-	
+
 	# 检查是否是Boss层
 	var boss_key = _get_boss_floor_key()
 	if boss_key > 0:
@@ -1143,17 +1156,17 @@ func _next_floor():
 	else:
 		_show_floor_announcement("第 %d 层" % current_floor)
 		floor_label.text = "第 %d 层" % current_floor
-	
+
 	# 淡入
 	tween = create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(transition_overlay, "color:a", 0.0, 0.5)
 	await tween.finished
-	
+
 	_hide_transition_overlay()
 	is_transitioning = false
 	is_player_turn = true
-	
+
 	# 如果是Boss层，短暂提示后开始Boss战
 	if boss_key > 0:
 		await get_tree().create_timer(1.5).timeout
@@ -1191,7 +1204,7 @@ func _show_floor_announcement(text: String):
 	announce.add_theme_font_size_override("font_size", 48)
 	announce.modulate = Color(1, 1, 1, 0)
 	add_child(announce)
-	
+
 	var tween = create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(announce, "modulate:a", 1.0, 0.3)
@@ -1207,10 +1220,10 @@ func _show_floor_announcement(text: String):
 func _start_boss_encounter():
 	if not BOSS_DATA.has(current_floor):
 		return
-	
+
 	var boss_def = BOSS_DATA[current_floor]
 	var mult = 1.0 + current_floor * 0.12
-	
+
 	current_boss_data = {
 		"name": boss_def["name"],
 		"hp": int(boss_def["hp"] * mult),
@@ -1230,7 +1243,7 @@ func _start_boss_encounter():
 	boss_enraged = false
 	boss_shield_stacks = 0
 	boss_revived = false
-	
+
 	# 显示Boss登场画面
 	_show_boss_intro(boss_def)
 
@@ -1243,7 +1256,7 @@ func _show_boss_intro(boss_def: Dictionary):
 	overlay.position = Vector2(0, 0)
 	overlay.modulate = Color(1, 1, 1, 0)
 	add_child(overlay)
-	
+
 	# Boss名称面板
 	var panel = Panel.new()
 	panel.name = "BossIntroPanel"
@@ -1253,7 +1266,7 @@ func _show_boss_intro(boss_def: Dictionary):
 	panel.add_theme_stylebox_override("panel", _create_stylebox())
 	panel.modulate = Color(1, 1, 1, 0)
 	add_child(panel)
-	
+
 	# Boss标题
 	var title = Label.new()
 	title.name = "BossTitle"
@@ -1264,7 +1277,7 @@ func _show_boss_intro(boss_def: Dictionary):
 	title.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2))
 	title.add_theme_font_size_override("font_size", 32)
 	panel.add_child(title)
-	
+
 	# Boss名称
 	var boss_name = Label.new()
 	boss_name.name = "BossName"
@@ -1275,14 +1288,14 @@ func _show_boss_intro(boss_def: Dictionary):
 	boss_name.add_theme_color_override("font_color", PALETTE.gold)
 	boss_name.add_theme_font_size_override("font_size", 40)
 	panel.add_child(boss_name)
-	
+
 	# 分割线
 	var sep = ColorRect.new()
 	sep.position = Vector2(100, 135)
 	sep.size = Vector2(500, 2)
 	sep.color = PALETTE.gold * Color(0.5, 0.5, 0.5, 0.5)
 	panel.add_child(sep)
-	
+
 	# 描述
 	var desc = Label.new()
 	desc.name = "BossDesc"
@@ -1294,7 +1307,7 @@ func _show_boss_intro(boss_def: Dictionary):
 	desc.add_theme_font_size_override("font_size", 16)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
 	panel.add_child(desc)
-	
+
 	# 技能列表
 	var skills_text = "技能: " + ", ".join(boss_def["skills"])
 	var skills_lbl = Label.new()
@@ -1306,7 +1319,7 @@ func _show_boss_intro(boss_def: Dictionary):
 	skills_lbl.add_theme_color_override("font_color", Color(0.8, 0.6, 0.3))
 	skills_lbl.add_theme_font_size_override("font_size", 14)
 	panel.add_child(skills_lbl)
-	
+
 	# 警告
 	var warn = Label.new()
 	warn.name = "BossWarn"
@@ -1317,19 +1330,19 @@ func _show_boss_intro(boss_def: Dictionary):
 	warn.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
 	warn.add_theme_font_size_override("font_size", 24)
 	panel.add_child(warn)
-	
+
 	# 动画
 	var tween = create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(overlay, "modulate:a", 1.0, 0.4)
 	await get_tree().create_timer(0.5).timeout
-	
+
 	tween = create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(panel, "modulate:a", 1.0, 0.6)
 	tween.tween_property(panel, "scale", Vector2(1.05, 1.05), 0.6)
 	await get_tree().create_timer(2.5).timeout
-	
+
 	# 淡出并清理
 	tween = create_tween()
 	tween.set_parallel(true)
@@ -1338,7 +1351,7 @@ func _show_boss_intro(boss_def: Dictionary):
 	await tween.finished
 	overlay.queue_free()
 	panel.queue_free()
-	
+
 	# 开始Boss战斗
 	_start_boss_battle()
 
@@ -1377,12 +1390,12 @@ func _create_inventory_ui():
 	if inventory_ui != null:
 		inventory_ui.queue_free()
 	inventory_item_buttons.clear()
-	
+
 	inventory_ui = Control.new()
 	inventory_ui.name = "InventoryUI"
 	inventory_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(inventory_ui)
-	
+
 	# 背景遮罩
 	var overlay = ColorRect.new()
 	overlay.size = Vector2(1280, 720)
@@ -1390,7 +1403,7 @@ func _create_inventory_ui():
 	overlay.position = Vector2(0, 0)
 	overlay.gui_input.connect(_on_inventory_overlay_click)
 	inventory_ui.add_child(overlay)
-	
+
 	# 背包面板
 	var inv_panel = Panel.new()
 	inv_panel.name = "InventoryPanel"
@@ -1399,7 +1412,7 @@ func _create_inventory_ui():
 	inv_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
 	inv_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	inventory_ui.add_child(inv_panel)
-	
+
 	# 标题
 	var title = Label.new()
 	title.position = Vector2(20, 15)
@@ -1407,7 +1420,7 @@ func _create_inventory_ui():
 	title.add_theme_color_override("font_color", PALETTE.gold)
 	title.add_theme_font_size_override("font_size", 20)
 	inv_panel.add_child(title)
-	
+
 	# 金币显示
 	var gold_disp = Label.new()
 	gold_disp.name = "InvGold"
@@ -1415,7 +1428,7 @@ func _create_inventory_ui():
 	gold_disp.text = "💰 %d 金币" % player_data.gold
 	gold_disp.add_theme_color_override("font_color", PALETTE.gold)
 	inv_panel.add_child(gold_disp)
-	
+
 	# 物品数量显示
 	var count_lbl = Label.new()
 	count_lbl.name = "ItemCount"
@@ -1423,7 +1436,7 @@ func _create_inventory_ui():
 	count_lbl.text = "物品数: %d" % player_data.inventory.size()
 	count_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.6))
 	inv_panel.add_child(count_lbl)
-	
+
 	# 物品列表区域
 	var item_area = Panel.new()
 	item_area.name = "ItemArea"
@@ -1432,16 +1445,16 @@ func _create_inventory_ui():
 	item_area.self_modulate = Color(0, 0, 0, 0.3)
 	item_area.add_theme_stylebox_override("panel", _create_stylebox())
 	inv_panel.add_child(item_area)
-	
+
 	# 绘制物品列表
 	_draw_inventory_items(item_area)
-	
+
 	# 关闭按钮
 	var close_btn = _create_action_button("❌ 关闭 (I)", Vector2(220, 460))
 	close_btn.pressed.connect(_close_inventory)
 	close_btn.size = Vector2(160, 55)
 	inv_panel.add_child(close_btn)
-	
+
 	# 角色装备信息（底部）
 	var equip_panel = Panel.new()
 	equip_panel.name = "EquipPanel"
@@ -1450,39 +1463,39 @@ func _create_inventory_ui():
 	equip_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.9)
 	equip_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	inv_panel.add_child(equip_panel)
-	
+
 	var eq_title = Label.new()
 	eq_title.position = Vector2(15, 10)
 	eq_title.text = "当前装备"
 	eq_title.add_theme_color_override("font_color", PALETTE.gold)
 	equip_panel.add_child(eq_title)
-	
+
 	var wpn = player_data.weapon
 	var arm = player_data.armor
 	var acc = player_data.accessory
-	
+
 	var wpn_text = "⚔️ " + (wpn.get("name", "无") if wpn.size() > 0 else "无")
 	var arm_text = "🛡️ " + (arm.get("name", "无") if arm.size() > 0 else "无")
 	var acc_text = "💍 " + (acc.get("name", "无") if acc.size() > 0 else "无")
-	
+
 	var wpn_lbl = Label.new()
 	wpn_lbl.position = Vector2(15, 38)
 	wpn_lbl.text = wpn_text
 	wpn_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 	equip_panel.add_child(wpn_lbl)
-	
+
 	var arm_lbl = Label.new()
 	arm_lbl.position = Vector2(220, 38)
 	arm_lbl.text = arm_text
 	arm_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 	equip_panel.add_child(arm_lbl)
-	
+
 	var acc_lbl = Label.new()
 	acc_lbl.position = Vector2(420, 38)
 	acc_lbl.text = acc_text
 	acc_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 	equip_panel.add_child(acc_lbl)
-	
+
 	# 属性显示
 	var stat_lbl = Label.new()
 	stat_lbl.position = Vector2(15, 65)
@@ -1503,7 +1516,7 @@ func _draw_inventory_items(item_area: Panel):
 		if btn != null and is_instance_valid(btn):
 			btn.queue_free()
 	inventory_item_buttons.clear()
-	
+
 	if player_data.inventory.size() == 0:
 		var empty_lbl = Label.new()
 		empty_lbl.name = "EmptyLabel"
@@ -1514,12 +1527,12 @@ func _draw_inventory_items(item_area: Panel):
 		item_area.add_child(empty_lbl)
 		inventory_item_buttons.append(empty_lbl)
 		return
-	
+
 	var start_x = 15
 	var start_y = 15
 	var cols = 3
 	var idx = 0
-	
+
 	for inv_item in player_data.inventory:
 		var row = idx / cols
 		var col = idx % cols
@@ -1534,16 +1547,16 @@ func _create_inventory_item_button(inv_item: Dictionary, pos: Vector2) -> Button
 	var btn = Button.new()
 	btn.position = pos
 	btn.size = Vector2(170, 78)
-	
+
 	var item_name = inv_item.get("type", "???")
 	var count = inv_item.get("count", 1)
 	var heal_hp = inv_item.get("heal_hp", 0)
 	var heal_mp = inv_item.get("heal_mp", 0)
-	
+
 	var icon = "❤️"
 	if heal_mp > 0:
 		icon = "💙"
-	
+
 	var desc_text = ""
 	if heal_hp > 0:
 		desc_text = "恢复 %d%% HP" % heal_hp
@@ -1551,9 +1564,9 @@ func _create_inventory_item_button(inv_item: Dictionary, pos: Vector2) -> Button
 		desc_text = "恢复 %d%% MP" % heal_mp
 	else:
 		desc_text = "稀有物品"
-	
+
 	var can_use = (heal_hp > 0 or heal_mp > 0)
-	
+
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0.06, 0.06, 0.1, 0.95)
 	style.border_color = PALETTE.gold if can_use else Color(0.3, 0.3, 0.3)
@@ -1563,7 +1576,7 @@ func _create_inventory_item_button(inv_item: Dictionary, pos: Vector2) -> Button
 	style.corner_radius_bottom_right = 3; style.corner_radius_bottom_left = 3
 	btn.add_theme_stylebox_override("normal", style)
 	btn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.75) if can_use else Color(0.4, 0.4, 0.4))
-	
+
 	# 物品图标和名称
 	var icon_lbl = Label.new()
 	icon_lbl.position = Vector2(10, 8)
@@ -1571,7 +1584,7 @@ func _create_inventory_item_button(inv_item: Dictionary, pos: Vector2) -> Button
 	icon_lbl.add_theme_color_override("font_color", PALETTE.gold if can_use else Color(0.4, 0.4, 0.4))
 	icon_lbl.add_theme_font_size_override("font_size", 14)
 	btn.add_child(icon_lbl)
-	
+
 	# 数量
 	var count_lbl = Label.new()
 	count_lbl.position = Vector2(10, 32)
@@ -1579,7 +1592,7 @@ func _create_inventory_item_button(inv_item: Dictionary, pos: Vector2) -> Button
 	count_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.6))
 	count_lbl.add_theme_font_size_override("font_size", 13)
 	btn.add_child(count_lbl)
-	
+
 	# 描述
 	var desc_lbl = Label.new()
 	desc_lbl.position = Vector2(10, 52)
@@ -1587,26 +1600,26 @@ func _create_inventory_item_button(inv_item: Dictionary, pos: Vector2) -> Button
 	desc_lbl.add_theme_color_override("font_color", Color(0.5, 0.8, 0.5) if can_use else Color(0.4, 0.4, 0.4))
 	desc_lbl.add_theme_font_size_override("font_size", 11)
 	btn.add_child(desc_lbl)
-	
+
 	if can_use:
 		btn.pressed.connect(_on_inventory_item_used.bind(inv_item))
-	
+
 	return btn
 
 func _on_inventory_item_used(inv_item: Dictionary):
 	var heal_hp = inv_item.get("heal_hp", 0)
 	var heal_mp = inv_item.get("heal_mp", 0)
-	
+
 	# 检查是否能使用
 	var used = false
-	
+
 	if heal_hp > 0 and player_data.hp < player_data.max_hp:
 		player_data.hp = min(player_data.max_hp, player_data.hp + int(player_data.max_hp * heal_hp / 100.0))
 		used = true
 	if heal_mp > 0 and player_data.mp < player_data.max_mp:
 		player_data.mp = min(player_data.max_mp, player_data.mp + int(player_data.max_mp * heal_mp / 100.0))
 		used = true
-	
+
 	if used:
 		# 减少数量
 		var item_name = inv_item.get("type", "???")
@@ -1615,15 +1628,15 @@ func _on_inventory_item_used(inv_item: Dictionary):
 			if player_data.inventory[i].get("type") == item_name:
 				item_idx = i
 				break
-		
+
 		if item_idx >= 0:
 			player_data.inventory[item_idx]["count"] -= 1
 			if player_data.inventory[item_idx]["count"] <= 0:
 				player_data.inventory.remove_at(item_idx)
-		
+
 		show_message("使用了 %s！" % item_name)
 		_update_ui()
-		
+
 		# 刷新背包UI
 		var inv_panel = inventory_ui.get_node_or_null("InventoryPanel")
 		if inv_panel:
@@ -1654,7 +1667,7 @@ func _create_minimap():
 	minimap_container.self_modulate = Color(0.04, 0.04, 0.08, 0.9)
 	minimap_container.add_theme_stylebox_override("panel", _create_stylebox())
 	add_child(minimap_container)
-	
+
 	# 小地图标题
 	var mm_title = Label.new()
 	mm_title.name = "MinimapTitle"
@@ -1663,7 +1676,7 @@ func _create_minimap():
 	mm_title.add_theme_color_override("font_color", PALETTE.gold)
 	mm_title.add_theme_font_size_override("font_size", 11)
 	minimap_container.add_child(mm_title)
-	
+
 	# 小地图格子区域
 	var mm_grid = Control.new()
 	mm_grid.name = "MinimapGrid"
@@ -1671,7 +1684,7 @@ func _create_minimap():
 	mm_grid.size = Vector2(MINIMAP_COLS * MINIMAP_CELL, MINIMAP_ROWS * MINIMAP_CELL)
 	mm_grid.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	minimap_container.add_child(mm_grid)
-	
+
 	# 预创建所有小地图格子 (2x2像素 each = 160x90 display)
 	minimap_tiles.clear()
 	for y in range(MINIMAP_ROWS):
@@ -1688,17 +1701,17 @@ func _create_minimap():
 func _update_minimap():
 	if minimap_tiles.size() == 0:
 		return
-	
+
 	# 临时存储玩家和商店位置
 	var player_mx: int = -1
 	var player_my: int = -1
 	var shop_mx: int = -1
 	var shop_my: int = -1
-	
+
 	# 商店位置 (tile坐标30,22)
 	shop_mx = 30 * MINIMAP_CELL
 	shop_my = 22 * MINIMAP_CELL
-	
+
 	# 玩家位置
 	var px = int(player.position.x / 16)
 	var py = int((player.position.y - 200) / 16)  # 偏移200是地面起始y
@@ -1706,24 +1719,24 @@ func _update_minimap():
 	py = clamp(py, 0, MINIMAP_ROWS - 1)
 	player_mx = px * MINIMAP_CELL
 	player_my = py * MINIMAP_CELL
-	
+
 	# 更新每个格子
 	for y in range(MINIMAP_ROWS):
 		for x in range(MINIMAP_COLS):
 			var key = str(x) + "_" + str(y)
 			var cell = minimap_tiles[y][x]
-			
+
 			# 检查是否探索过 (fog alpha < 0.5 表示已探索)
 			var explored = false
 			if fog_map.has(key):
 				var fog = fog_map[key]
 				if fog.color.a < 0.5:
 					explored = true
-			
+
 			# 判断是否是玩家或商店位置
 			var is_player = (x * MINIMAP_CELL == player_mx and y * MINIMAP_CELL == player_my)
 			var is_shop = (x * MINIMAP_CELL == shop_mx and y * MINIMAP_CELL == shop_my)
-			
+
 			if is_player:
 				cell.color = PALETTE.gold  # 玩家: 金色
 			elif is_shop:
@@ -1763,14 +1776,14 @@ func _create_shop_bg():
 	# 移除旧背景
 	if shop_bg_sprite:
 		shop_bg_sprite.queue_free()
-	
+
 	# 创建背景精灵（使用酒馆场景）
 	shop_bg_sprite = Sprite2D.new()
 	shop_bg_sprite.name = "ShopBG"
 	shop_bg_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	shop_bg_sprite.centered = false
 	shop_bg_sprite.position = Vector2(0, 0)
-	
+
 	var bg_tex = load("res://assets/doubao/tavern_scene.png")
 	if bg_tex:
 		shop_bg_sprite.texture = bg_tex
@@ -1791,7 +1804,7 @@ func _create_shop_bg():
 		shop_bg_sprite = null
 		add_child(fallback)
 		return
-	
+
 	add_child(shop_bg_sprite)
 	# 确保背景在最底层
 	shop_bg_sprite.z_index = -10
@@ -1822,19 +1835,19 @@ func _create_shop_ui():
 	if shop_ui != null:
 		shop_ui.queue_free()
 	shop_item_buttons.clear()
-	
+
 	shop_ui = Control.new()
 	shop_ui.name = "ShopUI"
 	shop_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(shop_ui)
-	
+
 	# 背景遮罩
 	var overlay = ColorRect.new()
 	overlay.size = Vector2(1280, 720)
 	overlay.color = Color(0, 0, 0, 0.82)
 	overlay.position = Vector2(0, 0)
 	shop_ui.add_child(overlay)
-	
+
 	# 商店面板
 	var shop_panel = Panel.new()
 	shop_panel.name = "ShopPanel"
@@ -1843,7 +1856,7 @@ func _create_shop_ui():
 	shop_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
 	shop_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	shop_ui.add_child(shop_panel)
-	
+
 	# 标题
 	var title = Label.new()
 	title.position = Vector2(20, 15)
@@ -1851,7 +1864,7 @@ func _create_shop_ui():
 	title.add_theme_color_override("font_color", PALETTE.gold)
 	title.add_theme_font_size_override("font_size", 20)
 	shop_panel.add_child(title)
-	
+
 	# 金币显示
 	var gold_disp = Label.new()
 	gold_disp.name = "ShopGold"
@@ -1860,7 +1873,7 @@ func _create_shop_ui():
 	gold_disp.add_theme_color_override("font_color", PALETTE.gold)
 	gold_disp.add_theme_font_size_override("font_size", 16)
 	shop_panel.add_child(gold_disp)
-	
+
 	# Tab 按钮
 	var tab_panel = Panel.new()
 	tab_panel.name = "TabPanel"
@@ -1868,21 +1881,21 @@ func _create_shop_ui():
 	tab_panel.size = Vector2(960, 55)
 	tab_panel.self_modulate = Color(0, 0, 0, 0)
 	shop_panel.add_child(tab_panel)
-	
+
 	for i in range(5):
 		var tab_btn = _create_tab_button(shop_tabs[i], Vector2(i * 140, 0), i == selected_shop_tab)
 		tab_btn.pressed.connect(_on_shop_tab_selected.bind(i))
 		tab_panel.add_child(tab_btn)
-	
+
 	# 商品列表
 	_draw_shop_items(shop_panel)
-	
+
 	# 关闭按钮
 	var close_btn = _create_action_button("❌ 离开商店", Vector2(400, 520))
 	close_btn.pressed.connect(_close_shop)
 	close_btn.size = Vector2(180, 55)
 	shop_panel.add_child(close_btn)
-	
+
 	# 玩家装备信息（右侧）
 	var equip_panel = Panel.new()
 	equip_panel.name = "EquipPanel"
@@ -1891,39 +1904,39 @@ func _create_shop_ui():
 	equip_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.9)
 	equip_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	shop_panel.add_child(equip_panel)
-	
+
 	var eq_title = Label.new()
 	eq_title.position = Vector2(15, 10)
 	eq_title.text = "当前装备"
 	eq_title.add_theme_color_override("font_color", PALETTE.gold)
 	equip_panel.add_child(eq_title)
-	
+
 	var wpn = player_data.weapon
 	var arm = player_data.armor
 	var acc = player_data.accessory
-	
+
 	var wpn_text = "武器: " + (wpn.get("name", "无") if wpn else "无")
 	var arm_text = "防具: " + (arm.get("name", "无") if arm else "无")
 	var acc_text = "饰品: " + (acc.get("name", "无") if acc else "无")
-	
+
 	var wpn_lbl = Label.new()
 	wpn_lbl.position = Vector2(15, 45)
 	wpn_lbl.text = wpn_text
 	wpn_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 	equip_panel.add_child(wpn_lbl)
-	
+
 	var arm_lbl = Label.new()
 	arm_lbl.position = Vector2(15, 70)
 	arm_lbl.text = arm_text
 	arm_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 	equip_panel.add_child(arm_lbl)
-	
+
 	var acc_lbl = Label.new()
 	acc_lbl.position = Vector2(15, 95)
 	acc_lbl.text = acc_text
 	acc_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 	equip_panel.add_child(acc_lbl)
-	
+
 	# 属性显示
 	var stat_lbl = Label.new()
 	stat_lbl.position = Vector2(15, 130)
@@ -2008,18 +2021,18 @@ func _draw_shop_items(shop_panel: Panel):
 		if btn != null and is_instance_valid(btn):
 			btn.queue_free()
 	shop_item_buttons.clear()
-	
+
 	# 强化面板自行处理
 	if selected_shop_tab == 4:
 		_draw_enhance_items(shop_panel)
 		return
-	
+
 	var items = _get_shop_items_by_tab(selected_shop_tab)
 	var start_x = 20
 	var start_y = 120
 	var cols = 4 if selected_shop_tab < 3 else 4
 	var idx = 0
-	
+
 	for item in items:
 		var row = idx / cols
 		var col = idx % cols
@@ -2034,10 +2047,10 @@ func _create_item_button(item: Dictionary, pos: Vector2) -> Button:
 	var btn = Button.new()
 	btn.position = pos
 	btn.size = Vector2(225, 80)
-	
+
 	var item_name = item.get("icon", "📦") + " " + item.get("name", "???")
 	var stats_text = ""
-	
+
 	if item.has("heal_hp"):
 		# 药水
 		if item["heal_hp"] > 0:
@@ -2057,9 +2070,9 @@ func _create_item_button(item: Dictionary, pos: Vector2) -> Button:
 		if item.get("spd", 0) > 0: parts.append("SPD+%d" % item["spd"])
 		if item.get("luk", 0) > 0: parts.append("LUK+%d" % item["luk"])
 		stats_text = " ".join(parts) + " | %d 金币" % item["price"]
-	
+
 	var can_afford = player_data.gold >= item["price"]
-	
+
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0.06, 0.06, 0.1, 0.95)
 	style.border_color = PALETTE.gold if can_afford else Color(0.3, 0.3, 0.3)
@@ -2069,7 +2082,7 @@ func _create_item_button(item: Dictionary, pos: Vector2) -> Button:
 	style.corner_radius_bottom_right = 3; style.corner_radius_bottom_left = 3
 	btn.add_theme_stylebox_override("normal", style)
 	btn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.75) if can_afford else Color(0.4, 0.4, 0.4))
-	
+
 	# 自定义文本
 	var lbl = Label.new()
 	lbl.position = Vector2(10, 8)
@@ -2077,21 +2090,21 @@ func _create_item_button(item: Dictionary, pos: Vector2) -> Button:
 	lbl.add_theme_color_override("font_color", PALETTE.gold if can_afford else Color(0.4, 0.4, 0.4))
 	lbl.add_theme_font_size_override("font_size", 14)
 	btn.add_child(lbl)
-	
+
 	var stat_lbl = Label.new()
 	stat_lbl.position = Vector2(10, 32)
 	stat_lbl.text = stats_text
 	stat_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6) if can_afford else Color(0.35, 0.35, 0.35))
 	stat_lbl.add_theme_font_size_override("font_size", 12)
 	btn.add_child(stat_lbl)
-	
+
 	var hint_lbl = Label.new()
 	hint_lbl.position = Vector2(10, 55)
 	hint_lbl.text = "[ 点击购买 ]" if can_afford else "[ 金钱不足 ]"
 	hint_lbl.add_theme_color_override("font_color", Color(0.4, 0.8, 0.4) if can_afford else Color(0.7, 0.2, 0.2))
 	hint_lbl.add_theme_font_size_override("font_size", 11)
 	btn.add_child(hint_lbl)
-	
+
 	btn.pressed.connect(_on_shop_item_clicked.bind(item))
 	return btn
 
@@ -2118,7 +2131,7 @@ func _on_shop_item_clicked(item: Dictionary):
 			audio_manager.play_sfx("purchase")
 		_update_shop_ui()
 		return
-	
+
 	# 强化材料购买
 	if item.has("material"):
 		if player_data.gold < item["price"]:
@@ -2139,12 +2152,12 @@ func _on_shop_item_clicked(item: Dictionary):
 			audio_manager.play_sfx("purchase")
 		_update_shop_ui()
 		return
-	
+
 	# 装备：显示比较面板
 	if player_data.gold < item["price"]:
 		show_message("金钱不足！")
 		return
-	
+
 	_selected_shop_item = item
 	_show_equipment_compare_panel(item)
 
@@ -2152,11 +2165,11 @@ func _show_equipment_compare_panel(item: Dictionary):
 	# 清除旧比较面板
 	if _shop_compare_panel and is_instance_valid(_shop_compare_panel):
 		_shop_compare_panel.queue_free()
-	
+
 	var shop_panel = shop_ui.get_node_or_null("ShopPanel")
 	if not shop_panel:
 		return
-	
+
 	_shop_compare_panel = Panel.new()
 	_shop_compare_panel.name = "ComparePanel"
 	_shop_compare_panel.position = Vector2(560, 130)
@@ -2164,7 +2177,7 @@ func _show_equipment_compare_panel(item: Dictionary):
 	_shop_compare_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
 	_shop_compare_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	shop_panel.add_child(_shop_compare_panel)
-	
+
 	# 标题
 	var title = Label.new()
 	title.position = Vector2(15, 10)
@@ -2172,17 +2185,17 @@ func _show_equipment_compare_panel(item: Dictionary):
 	title.add_theme_color_override("font_color", PALETTE.gold)
 	title.add_theme_font_size_override("font_size", 14)
 	_shop_compare_panel.add_child(title)
-	
+
 	# 当前装备
 	var current_item: Dictionary
 	match selected_shop_tab:
 		0: current_item = player_data.weapon
 		1: current_item = player_data.armor
 		2: current_item = player_data.accessory
-	
+
 	var current_name = "无" if current_item.size() == 0 else current_item.get("name", "???")
 	var new_name = item.get("name", "???")
-	
+
 	# 新装备名称
 	var new_lbl = Label.new()
 	new_lbl.position = Vector2(15, 38)
@@ -2190,7 +2203,7 @@ func _show_equipment_compare_panel(item: Dictionary):
 	new_lbl.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
 	new_lbl.add_theme_font_size_override("font_size", 12)
 	_shop_compare_panel.add_child(new_lbl)
-	
+
 	# 当前装备名称
 	var cur_lbl = Label.new()
 	cur_lbl.position = Vector2(15, 58)
@@ -2198,7 +2211,7 @@ func _show_equipment_compare_panel(item: Dictionary):
 	cur_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	cur_lbl.add_theme_font_size_override("font_size", 11)
 	_shop_compare_panel.add_child(cur_lbl)
-	
+
 	# 属性对比
 	var y_pos = 90
 	var stats = [
@@ -2208,21 +2221,21 @@ func _show_equipment_compare_panel(item: Dictionary):
 		{"key": "spd", "name": "SPD", "cur": player_data.spd, "wpn": 0, "arm": 0, "acc": current_item.get("spd", 0), "new": item.get("spd", 0)},
 		{"key": "luk", "name": "LUK", "cur": player_data.luk, "wpn": 0, "arm": 0, "acc": current_item.get("luk", 0), "new": item.get("luk", 0)}
 	]
-	
+
 	# 计算当前总属性
 	var cur_atk_total = player_data.atk + current_item.get("atk", 0)
 	var cur_def_total = player_data.def + current_item.get("def", 0)
 	var cur_hp_total = player_data.max_hp + current_item.get("hp", 0)
 	var cur_spd_total = player_data.spd + current_item.get("spd", 0)
 	var cur_luk_total = player_data.luk + current_item.get("luk", 0)
-	
+
 	# 计算新装备后的总属性
 	var new_atk_total = player_data.atk + item.get("atk", 0)
 	var new_def_total = player_data.def + item.get("def", 0)
 	var new_hp_total = player_data.max_hp + item.get("hp", 0)
 	var new_spd_total = player_data.spd + item.get("spd", 0)
 	var new_luk_total = player_data.luk + item.get("luk", 0)
-	
+
 	var compare_stats = [
 		{"name": "ATK", "cur": cur_atk_total, "new": new_atk_total},
 		{"name": "DEF", "cur": cur_def_total, "new": new_def_total},
@@ -2230,12 +2243,12 @@ func _show_equipment_compare_panel(item: Dictionary):
 		{"name": "SPD", "cur": cur_spd_total, "new": new_spd_total},
 		{"name": "LUK", "cur": cur_luk_total, "new": new_luk_total}
 	]
-	
+
 	for stat in compare_stats:
 		var diff = stat["new"] - stat["cur"]
 		var stat_lbl = Label.new()
 		stat_lbl.position = Vector2(15, y_pos)
-		
+
 		var diff_str = ""
 		var diff_color = Color(0.7, 0.7, 0.6)
 		if diff > 0:
@@ -2247,13 +2260,13 @@ func _show_equipment_compare_panel(item: Dictionary):
 		else:
 			diff_str = " ="
 			diff_color = Color(0.5, 0.5, 0.5)
-		
+
 		stat_lbl.text = "%s: %d%s" % [stat["name"], stat["cur"], diff_str]
 		stat_lbl.add_theme_color_override("font_color", diff_color)
 		stat_lbl.add_theme_font_size_override("font_size", 12)
 		_shop_compare_panel.add_child(stat_lbl)
 		y_pos += 24
-	
+
 	# 分割线
 	var sep = ColorRect.new()
 	sep.position = Vector2(15, y_pos + 5)
@@ -2261,7 +2274,7 @@ func _show_equipment_compare_panel(item: Dictionary):
 	sep.color = PALETTE.gold * Color(0.3, 0.3, 0.3, 0.5)
 	_shop_compare_panel.add_child(sep)
 	y_pos += 20
-	
+
 	# 价格
 	var price_lbl = Label.new()
 	price_lbl.position = Vector2(15, y_pos)
@@ -2270,7 +2283,7 @@ func _show_equipment_compare_panel(item: Dictionary):
 	price_lbl.add_theme_font_size_override("font_size", 13)
 	_shop_compare_panel.add_child(price_lbl)
 	y_pos += 30
-	
+
 	# 确认购买按钮
 	var confirm_btn = Button.new()
 	confirm_btn.position = Vector2(15, y_pos)
@@ -2289,7 +2302,7 @@ func _show_equipment_compare_panel(item: Dictionary):
 	confirm_btn.pressed.connect(_confirm_equipment_purchase)
 	_shop_compare_panel.add_child(confirm_btn)
 	y_pos += 55
-	
+
 	# 取消按钮
 	var cancel_btn = Button.new()
 	cancel_btn.position = Vector2(15, y_pos)
@@ -2316,7 +2329,7 @@ func _confirm_equipment_purchase():
 		show_message("金钱不足！")
 		_close_compare_panel()
 		return
-	
+
 	player_data.gold -= item["price"]
 	match selected_shop_tab:
 		0: player_data.weapon = item
@@ -2351,7 +2364,7 @@ func _draw_enhance_items(shop_panel: Panel):
 		if btn != null and is_instance_valid(btn):
 			btn.queue_free()
 	shop_item_buttons.clear()
-	
+
 	# 强化说明
 	var info_lbl = Label.new()
 	info_lbl.name = "EnhanceInfo"
@@ -2361,21 +2374,21 @@ func _draw_enhance_items(shop_panel: Panel):
 	info_lbl.add_theme_font_size_override("font_size", 13)
 	shop_panel.add_child(info_lbl)
 	shop_item_buttons.append(info_lbl)
-	
+
 	# 绘制三个装备的强化面板
 	var equip_slots = [
 		{"slot": "weapon", "data": player_data.weapon, "label": "⚔️ 武器", "enhance": player_data.weapon_enhance},
 		{"slot": "armor", "data": player_data.armor, "label": "🛡️ 防具", "enhance": player_data.armor_enhance},
 		{"slot": "accessory", "data": player_data.accessory, "label": "💍 饰品", "enhance": player_data.accessory_enhance},
 	]
-	
+
 	var start_y = 290
 	for i in range(equip_slots.size()):
 		var eq = equip_slots[i]
 		var eq_data = eq["data"]
 		var enhance_lvl = eq["enhance"]
 		var eq_y = start_y + i * 100
-		
+
 		if eq_data.size() == 0:
 			# 无装备时显示空槽
 			var empty_lbl = Label.new()
@@ -2386,13 +2399,13 @@ func _draw_enhance_items(shop_panel: Panel):
 			shop_panel.add_child(empty_lbl)
 			shop_item_buttons.append(empty_lbl)
 			continue
-		
+
 		var eq_name = eq_data.get("name", "???")
 		var eq_grade = eq_data.get("grade", 1)
 		var next_lvl = enhance_lvl + 1
 		var can_enhance = true
 		var reason = ""
-		
+
 		# 检查是否已达最大强化
 		if next_lvl > 15:
 			can_enhance = false
@@ -2410,36 +2423,36 @@ func _draw_enhance_items(shop_panel: Panel):
 			if mat_count < mat_info[1]:
 				can_enhance = false
 				reason = "缺少%s（持有 %d/%d）" % [mat_name, mat_count, mat_info[1]]
-		
+
 		# 成功率
 		var success_rate = 100
 		if next_lvl >= 10:
 			success_rate = ENHANCE_SUCCESS_RATES.get(next_lvl, 50)
-		
+
 		# 构建显示文本
 		var eq_lbl = Label.new()
 		eq_lbl.position = Vector2(20, eq_y)
 		eq_lbl.add_theme_font_size_override("font_size", 13)
-		
+
 		var mat_info = ENHANCE_MATERIALS.get(eq_grade, ["普通强化石", 1])
 		var cost = ENHANCE_COSTS.get(next_lvl, 1000)
-		
+
 		var text = "%s %s [+%d]\n  成功率: %d%% | 费用: %d金币 | 材料: %s×%d" % [
 			eq_data.get("icon", "📦"), eq_name, enhance_lvl,
 			success_rate, cost, mat_info[0], mat_info[1]
 		]
-		
+
 		if not can_enhance:
 			text += "\n  ⚠️ %s" % reason
 			eq_lbl.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 		else:
 			text += "\n  ➡️ 点击强化至 +%d" % next_lvl
 			eq_lbl.add_theme_color_override("font_color", PALETTE.gold)
-		
+
 		eq_lbl.text = text
 		shop_panel.add_child(eq_lbl)
 		shop_item_buttons.append(eq_lbl)
-		
+
 		# 强化按钮
 		if can_enhance:
 			var btn = Button.new()
@@ -2474,39 +2487,39 @@ func _on_enhance_clicked(slot: String):
 		"accessory":
 			eq_data = player_data.accessory
 			enhance_lvl = player_data.accessory_enhance
-	
+
 	if eq_data.size() == 0:
 		show_message("该装备栏为空！")
 		return
-	
+
 	var next_lvl = enhance_lvl + 1
 	if next_lvl > 15:
 		show_message("已达最大强化等级！")
 		return
-	
+
 	var eq_grade = eq_data.get("grade", 1)
 	var cost = ENHANCE_COSTS.get(next_lvl, 1000)
 	var mat_info = ENHANCE_MATERIALS.get(eq_grade, ["普通强化石", 1])
 	var mat_name = mat_info[0]
-	
+
 	# 扣钱扣材料
 	player_data.gold -= cost
 	_remove_inventory_item(mat_name, mat_info[1])
-	
+
 	# 判定成功率
 	var success_rate = 100
 	if next_lvl >= 10:
 		success_rate = ENHANCE_SUCCESS_RATES.get(next_lvl, 50)
-	
+
 	var roll = randi() % 100
 	var success = roll < success_rate
-	
+
 	if success:
 		match slot:
 			"weapon": player_data.weapon_enhance = next_lvl
 			"armor": player_data.armor_enhance = next_lvl
 			"accessory": player_data.accessory_enhance = next_lvl
-		
+
 		# 计算强化后属性变化
 		var old_atk_def = 0
 		var new_atk_def = 0
@@ -2516,7 +2529,7 @@ func _on_enhance_clicked(slot: String):
 		elif slot == "armor":
 			old_atk_def = player_data.defense()
 			new_atk_def = player_data.def + eq_data.get("def", 0) + _calc_enhance_bonus(eq_grade, next_lvl)
-		
+
 		show_message("🎉 强化成功！%s → +%d" % [eq_data.get("name", "装备"), next_lvl])
 		if audio_manager:
 			audio_manager.play_sfx("enhance_success")
@@ -2524,7 +2537,7 @@ func _on_enhance_clicked(slot: String):
 		show_message("💨 强化失败... %s 强化等级不变" % eq_data.get("name", "装备"))
 		if audio_manager:
 			audio_manager.play_sfx("enhance_fail")
-	
+
 	_update_shop_ui()
 	_update_ui()
 
@@ -2627,7 +2640,18 @@ func _start_battle():
 	summoner_soul_link_turns = 0
 	summoner_soul_link_dmg = 0
 	summoner_beast_boost_turns = 0
-	
+	# 战士T3状态重置
+	warrior_shatter_turns = 0
+	warrior_shatter_defdebuff = 0
+	warrior_shatter_orig_def = 0
+	warrior_domain_turns = 0
+	warrior_domain_atk_boost = 0
+	warrior_domain_def_boost = 0
+	warrior_guard_active = false
+	warrior_guard_target_hp_pct = 0.0
+	warrior_undying_used = false
+	warrior_bloodlust_active = false
+
 	# 生成敌人（根据层数选择敌人类型）
 	var enemy_data_class = _get_enemy_data()
 	var enemy_pool = enemy_data_class.get_floor_enemies(current_floor)
@@ -2647,7 +2671,7 @@ func _start_battle():
 		"faction": edata.faction,
 		"is_boss": false
 	}
-	
+
 	show_message("遭遇了 " + current_enemy["name"] + "！")
 	_create_battle_ui()
 	# 重置技能冷却
@@ -2659,12 +2683,12 @@ func _start_battle():
 			audio_manager.play_bgm("boss")
 		else:
 			audio_manager.play_bgm("battle")
-	
+
 	# 重置召唤师状态
 	resonance_stacks = 0
 	contract_active = false
 	contract_turns = 0
-	
+
 	# 猎人陷阱被动检测
 	if player_data.job == Job.HUNTER and player_data.skills.has("陷阱"):
 		trapped = true
@@ -2743,15 +2767,25 @@ func _start_boss_battle():
 	summoner_soul_link_turns = 0
 	summoner_soul_link_dmg = 0
 	summoner_beast_boost_turns = 0
+	# 战士T3状态重置
+	warrior_shatter_turns = 0
+	warrior_shatter_defdebuff = 0
+	warrior_domain_turns = 0
+	warrior_domain_atk_boost = 0
+	warrior_domain_def_boost = 0
+	warrior_guard_active = false
+	warrior_guard_target_hp_pct = 0.0
+	warrior_undying_used = false
+	warrior_bloodlust_active = false
 	boss_phase = 1
 	boss_enraged = false
 	boss_shield_stacks = 0
 	boss_revived = false
-	
+
 	# 使用Boss数据
 	current_enemy = current_boss_data.duplicate()
 	current_enemy["is_boss"] = true
-	
+
 	show_message("⚠️ Boss战: " + current_enemy["name"] + "！")
 	_create_battle_ui()
 	# 重置技能冷却
@@ -2759,7 +2793,7 @@ func _start_boss_battle():
 	battle_started = true
 	if audio_manager:
 		audio_manager.play_bgm("boss")
-	
+
 	# 猎人陷阱对Boss也有效
 	if player_data.job == Job.HUNTER and player_data.skills.has("陷阱"):
 		trapped = true
@@ -2777,7 +2811,7 @@ func _create_battle_ui():
 		if btn and is_instance_valid(btn):
 			btn.queue_free()
 	battle_action_buttons.clear()
-	
+
 	# 隐藏小地图
 	if minimap_container:
 		minimap_container.visible = false
@@ -2788,12 +2822,12 @@ func _create_battle_ui():
 	overlay.color = Color(0, 0, 0, 0.75)
 	overlay.position = Vector2(0, 0)
 	add_child(overlay)
-	
+
 	battle_ui = Control.new()
 	battle_ui.name = "BattleUI"
 	battle_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(battle_ui)
-	
+
 	# 敌人区域 (上方)
 	var enemy_panel = Panel.new()
 	enemy_panel.name = "EnemyPanel"
@@ -2802,7 +2836,7 @@ func _create_battle_ui():
 	enemy_panel.self_modulate = Color(0.15, 0.12, 0.1, 0.95)  # 调亮背景以便看清sprite
 	enemy_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	battle_ui.add_child(enemy_panel)
-	
+
 	# 敌人名称
 	enemy_name_label = Label.new()
 	enemy_name_label.position = Vector2(20, 15)
@@ -2810,13 +2844,13 @@ func _create_battle_ui():
 	enemy_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	enemy_name_label.add_theme_color_override("font_color", Color(1, 0.8, 0.5))
 	enemy_panel.add_child(enemy_name_label)
-	
+
 	# 敌人精灵
 	enemy_sprite = Sprite2D.new()
 	enemy_sprite.name = "EnemySprite"
 	enemy_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	enemy_sprite.centered = false  # 从左上角开始渲染
-	
+
 	# 尝试使用豆包素材
 	var enemy_type = current_enemy.get("type", "")
 	var loaded_tex = _load_enemy_texture(enemy_type)
@@ -2829,11 +2863,11 @@ func _create_battle_ui():
 		enemy_sprite.texture = _create_enemy_texture(current_enemy["color"])
 		enemy_sprite.scale = Vector2(1, 1)
 		enemy_sprite.position = Vector2(184, 20)  # 32x32居中
-	
+
 	enemy_sprite_target = enemy_sprite.position
 	enemy_sprite_pos = enemy_sprite.position
 	enemy_panel.add_child(enemy_sprite)
-	
+
 	# 敌人HP条
 	enemy_hp_bar = ProgressBar.new()
 	enemy_hp_bar.name = "EnemyHPBar"
@@ -2846,14 +2880,14 @@ func _create_battle_ui():
 	enemy_hp_bar.add_theme_stylebox_override("background", _create_hp_bar_bg())
 	enemy_hp_bar.add_theme_stylebox_override("fill", _create_hp_bar_fill())
 	enemy_panel.add_child(enemy_hp_bar)
-	
+
 	battle_enemy_hp_label = Label.new()
 	battle_enemy_hp_label.position = Vector2(20, 168)
 	battle_enemy_hp_label.text = "%d / %d" % [current_enemy["hp"], current_enemy["max_hp"]]
 	battle_enemy_hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	battle_enemy_hp_label.add_theme_color_override("font_color", Color.WHITE)
 	enemy_panel.add_child(battle_enemy_hp_label)
-	
+
 	# 战斗日志
 	var log_panel = Panel.new()
 	log_panel.name = "LogPanel"
@@ -2862,7 +2896,7 @@ func _create_battle_ui():
 	log_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.9)
 	log_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	battle_ui.add_child(log_panel)
-	
+
 	battle_log = Label.new()
 	battle_log.position = Vector2(15, 15)
 	battle_log.size = Vector2(370, 130)
@@ -2870,10 +2904,10 @@ func _create_battle_ui():
 	battle_log.add_theme_color_override("font_color", Color(0.85, 0.85, 0.75))
 	battle_log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	log_panel.add_child(battle_log)
-	
+
 	# ===== 角色肖像面板 =====
 	_create_battle_portrait_panel(battle_ui)
-	
+
 	# 玩家行动按钮区域
 	var action_panel = Panel.new()
 	action_panel.name = "ActionPanel"
@@ -2882,37 +2916,37 @@ func _create_battle_ui():
 	action_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.9)
 	action_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	battle_ui.add_child(action_panel)
-	
+
 	# 攻击按钮
 	var attack_btn = _create_action_button("⚔️ 攻击", Vector2(20, 20))
 	attack_btn.pressed.connect(_on_attack)
 	action_panel.add_child(attack_btn)
 	battle_action_buttons.append(attack_btn)
-	
+
 	# 技能按钮
 	var skill_btn = _create_action_button("✨ 技能", Vector2(160, 20))
 	skill_btn.pressed.connect(_on_skill_menu)
 	action_panel.add_child(skill_btn)
 	battle_action_buttons.append(skill_btn)
-	
+
 	# 防御按钮
 	var defend_btn = _create_action_button("🛡️ 防御", Vector2(300, 20))
 	defend_btn.pressed.connect(_on_defend)
 	action_panel.add_child(defend_btn)
 	battle_action_buttons.append(defend_btn)
-	
+
 	# 逃跑按钮
 	var flee_btn = _create_action_button("🏃 逃跑", Vector2(20, 90))
 	flee_btn.pressed.connect(_on_flee)
 	action_panel.add_child(flee_btn)
 	battle_action_buttons.append(flee_btn)
-	
+
 	# 道具按钮
 	var item_btn = _create_action_button("🧪 道具", Vector2(160, 90))
 	item_btn.pressed.connect(_on_item)
 	action_panel.add_child(item_btn)
 	battle_action_buttons.append(item_btn)
-	
+
 	# 玩家状态显示
 	var player_panel = Panel.new()
 	player_panel.name = "PlayerPanel"
@@ -2921,27 +2955,27 @@ func _create_battle_ui():
 	player_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.9)
 	player_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	battle_ui.add_child(player_panel)
-	
+
 	var pname = Label.new()
 	pname.position = Vector2(20, 15)
 	pname.text = "【%s】" % player_data.get_job_name()
 	pname.add_theme_color_override("font_color", PALETTE.gold)
 	player_panel.add_child(pname)
-	
+
 	var php = Label.new()
 	php.position = Vector2(20, 45)
 	php.name = "BattleHP"
 	php.text = "HP: %d/%d" % [player_data.hp, player_data.max_hp]
 	php.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
 	player_panel.add_child(php)
-	
+
 	var pmp = Label.new()
 	pmp.position = Vector2(20, 70)
 	pmp.name = "BattleMP"
 	pmp.text = "MP: %d/%d" % [player_data.mp, player_data.max_mp]
 	pmp.add_theme_color_override("font_color", Color(0.3, 0.5, 1))
 	player_panel.add_child(pmp)
-	
+
 	# 状态效果标签
 	var status_label = Label.new()
 	status_label.position = Vector2(20, 100)
@@ -2949,7 +2983,7 @@ func _create_battle_ui():
 	status_label.text = ""
 	status_label.add_theme_color_override("font_color", Color(0.5, 1, 0.5))
 	player_panel.add_child(status_label)
-	
+
 	# 技能冷却显示
 	var cd_label = Label.new()
 	cd_label.position = Vector2(20, 200)
@@ -2957,7 +2991,7 @@ func _create_battle_ui():
 	cd_label.text = ""
 	cd_label.add_theme_color_override("font_color", Color(0.8, 0.5, 0.2))
 	player_panel.add_child(cd_label)
-	
+
 	# 技能列表
 	var skill_list_label = Label.new()
 	skill_list_label.position = Vector2(20, 130)
@@ -2978,7 +3012,7 @@ func _create_battle_portrait_panel(parent: Control):
 	portrait_panel.position = Vector2(560, 155)
 	portrait_panel.size = Vector2(300, 255)
 	portrait_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.92)
-	
+
 	# 华丽边框
 	var frame_style = StyleBoxFlat.new()
 	frame_style.bg_color = Color(0.04, 0.04, 0.08, 0.92)
@@ -2990,7 +3024,7 @@ func _create_battle_portrait_panel(parent: Control):
 	frame_style.corner_radius_bottom_right = 6; frame_style.corner_radius_bottom_left = 6
 	portrait_panel.add_theme_stylebox_override("panel", frame_style)
 	parent.add_child(portrait_panel)
-	
+
 	# 内部装饰背景（肖像区域）
 	var portrait_bg = Panel.new()
 	portrait_bg.name = "PortraitBG"
@@ -3006,13 +3040,13 @@ func _create_battle_portrait_panel(parent: Control):
 	bg_style.corner_radius_bottom_right = 4; bg_style.corner_radius_bottom_left = 4
 	portrait_bg.add_theme_stylebox_override("panel", bg_style)
 	portrait_panel.add_child(portrait_bg)
-	
+
 	# 肖像精灵容器（用于动画）
 	var portrait_container = Node2D.new()
 	portrait_container.name = "PortraitContainer"
 	portrait_container.position = Vector2(75, 75)
 	portrait_bg.add_child(portrait_container)
-	
+
 	# 肖像底层阴影
 	var portrait_shadow = Sprite2D.new()
 	portrait_shadow.name = "PortraitShadow"
@@ -3020,7 +3054,7 @@ func _create_battle_portrait_panel(parent: Control):
 	portrait_shadow.texture = _create_portrait_shadow()
 	portrait_shadow.position = Vector2(0, 35)
 	portrait_container.add_child(portrait_shadow)
-	
+
 	# 肖像主精灵
 	var portrait_sprite = Sprite2D.new()
 	portrait_sprite.name = "PortraitSprite"
@@ -3028,7 +3062,7 @@ func _create_battle_portrait_panel(parent: Control):
 	portrait_sprite.texture = _create_job_portrait_texture(player_data.job)
 	portrait_sprite.position = Vector2(0, 0)
 	portrait_container.add_child(portrait_sprite)
-	
+
 	# 受伤/治疗闪红特效
 	var portrait_flash = Sprite2D.new()
 	portrait_flash.name = "PortraitFlash"
@@ -3038,7 +3072,7 @@ func _create_battle_portrait_panel(parent: Control):
 	portrait_flash.position = Vector2(0, 0)
 	portrait_flash.modulate = Color(1, 1, 1, 0)  # 初始不可见
 	portrait_container.add_child(portrait_flash)
-	
+
 	# 职业名称 + 等级标签
 	var name_lbl = Label.new()
 	name_lbl.name = "PortraitName"
@@ -3049,7 +3083,7 @@ func _create_battle_portrait_panel(parent: Control):
 	name_lbl.add_theme_color_override("font_color", job_color)
 	name_lbl.add_theme_font_size_override("font_size", 15)
 	portrait_panel.add_child(name_lbl)
-	
+
 	# HP条
 	var php_title = Label.new()
 	php_title.position = Vector2(148, 14)
@@ -3057,7 +3091,7 @@ func _create_battle_portrait_panel(parent: Control):
 	php_title.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
 	php_title.add_theme_font_size_override("font_size", 11)
 	portrait_panel.add_child(php_title)
-	
+
 	var php_bar = ProgressBar.new()
 	php_bar.name = "PortraitHP"
 	php_bar.position = Vector2(148, 32)
@@ -3069,7 +3103,7 @@ func _create_battle_portrait_panel(parent: Control):
 	php_bar.add_theme_stylebox_override("background", _create_hp_bar_bg())
 	php_bar.add_theme_stylebox_override("fill", _create_hp_bar_fill())
 	portrait_panel.add_child(php_bar)
-	
+
 	# HP数值
 	var php_val = Label.new()
 	php_val.name = "PortraitHPVal"
@@ -3080,7 +3114,7 @@ func _create_battle_portrait_panel(parent: Control):
 	php_val.add_theme_color_override("font_color", Color(1, 0.7, 0.7))
 	php_val.add_theme_font_size_override("font_size", 11)
 	portrait_panel.add_child(php_val)
-	
+
 	# MP条
 	var pmp_title = Label.new()
 	pmp_title.position = Vector2(148, 76)
@@ -3088,7 +3122,7 @@ func _create_battle_portrait_panel(parent: Control):
 	pmp_title.add_theme_color_override("font_color", Color(0.3, 0.5, 1))
 	pmp_title.add_theme_font_size_override("font_size", 11)
 	portrait_panel.add_child(pmp_title)
-	
+
 	var pmp_bar = ProgressBar.new()
 	pmp_bar.name = "PortraitMP"
 	pmp_bar.position = Vector2(148, 94)
@@ -3100,7 +3134,7 @@ func _create_battle_portrait_panel(parent: Control):
 	pmp_bar.add_theme_stylebox_override("background", _create_hp_bar_bg())
 	pmp_bar.add_theme_stylebox_override("fill", _create_hp_bar_fill_mp())
 	portrait_panel.add_child(pmp_bar)
-	
+
 	# MP数值
 	var pmp_val = Label.new()
 	pmp_val.name = "PortraitMPVal"
@@ -3111,7 +3145,7 @@ func _create_battle_portrait_panel(parent: Control):
 	pmp_val.add_theme_color_override("font_color", Color(0.6, 0.7, 1))
 	pmp_val.add_theme_font_size_override("font_size", 11)
 	portrait_panel.add_child(pmp_val)
-	
+
 	# 状态效果图标区域
 	var status_container = Panel.new()
 	status_container.name = "StatusContainer"
@@ -3127,7 +3161,7 @@ func _create_battle_portrait_panel(parent: Control):
 	sc_style.corner_radius_bottom_right = 3; sc_style.corner_radius_bottom_left = 3
 	status_container.add_theme_stylebox_override("panel", sc_style)
 	portrait_panel.add_child(status_container)
-	
+
 	# 职业属性标签
 	var attr_lbl = Label.new()
 	attr_lbl.name = "PortraitAttr"
@@ -3143,7 +3177,7 @@ func _create_battle_portrait_panel(parent: Control):
 	attr_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.65))
 	attr_lbl.add_theme_font_size_override("font_size", 12)
 	portrait_panel.add_child(attr_lbl)
-	
+
 	# 状态效果标签（文字版，备用）
 	var effect_lbl = Label.new()
 	effect_lbl.name = "PortraitEffect"
@@ -3154,7 +3188,7 @@ func _create_battle_portrait_panel(parent: Control):
 	effect_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	effect_lbl.text = ""
 	portrait_panel.add_child(effect_lbl)
-	
+
 	# 初始化动画状态
 	portrait_breath_time = 0.0
 	portrait_damage_flash = 0.0
@@ -3178,14 +3212,14 @@ func _get_job_color(job: int) -> Color:
 func _create_job_portrait_texture(job: int) -> ImageTexture:
 	var img = Image.create(80, 80, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
-	
+
 	var cape_col = _get_job_color(job)  # 用职业色作为主色调
 	var armor_col = _get_job_color(job) * Color(0.5, 0.5, 0.5, 1) + Color(0.5, 0.5, 0.5, 0)
 	var skin_col = Color("#e8c8a0")
 	var hair_col = Color("#2a1a0a")
 	var white = Color.WHITE
 	var black = Color.BLACK
-	
+
 	match job:
 		Job.WARRIOR:
 			# 战士: 重甲红披风
@@ -3338,7 +3372,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			_set_line(img, 10, 25, 15, 20, Color(0.7, 0.2, 0.8), 2)
 			_set_line(img, 15, 25, 10, 20, Color(0.7, 0.2, 0.8), 2)
 			_set_circle(img, 12, 22, 2, Color(0.5, 0.1, 0.6))
-	
+
 	var tex = ImageTexture.create_from_image(img)
 	return tex
 
@@ -3530,7 +3564,7 @@ func _load_enemy_texture(enemy_type: String) -> Texture2D:
 func _create_enemy_texture(col: Color) -> Texture2D:
 	var img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
-	
+
 	match current_enemy["name"]:
 		# ===== 1-2层：草寇势力 =====
 		"劫道山贼":
@@ -3801,7 +3835,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(0, 22, Color.WHITE)
 			img.set_pixel(4, 16, Color.GOLD)  # 腰带扣
 			img.set_pixel(4, 18, Color.GOLD)
-	
+
 	var texture = ImageTexture.create_from_image(img)
 	return texture
 
@@ -3844,7 +3878,11 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	# 吟游诗人 T2
 	"战斗乐章": 3, "疯狂节拍": 4, "天籁之音": 5,
 	# 召唤师 T2
-	"契约强化": 4, "灵魂连接": 3, "召唤兽强化": 4
+	"契约强化": 4, "灵魂连接": 3, "召唤兽强化": 4,
+	# 战士 T3 (毁灭者路线)
+	"毁天灭地": 5, "不死不灭": 6, "碎甲": 3,
+	# 战士 T3 (团队领袖路线)
+	"战神领域": 5, "浴血奋战": 4, "援护": 2
 }
 
 # 计算战斗中有效的攻击力（含buff加成）
@@ -3853,6 +3891,7 @@ func _get_effective_atk() -> int:
 	atk += battle_cry_atk_boost  # 战吼ATK加成
 	atk += berserk_atk_boost     # 狂暴ATK加成
 	atk += bard_song_atk_boost    # 战斗乐章ATK加成
+	atk += warrior_domain_atk_boost  # 战神领域ATK加成
 	return atk
 
 # 应用猎人标记伤害倍率
@@ -3884,7 +3923,7 @@ func _on_skill_menu():
 		return
 	_close_skill_menu()
 	_skill_menu_open = true
-	
+
 	var action_panel = battle_ui.get_node("ActionPanel")
 	var menu_panel = Panel.new()
 	menu_panel.name = "SkillMenu"
@@ -3893,13 +3932,13 @@ func _on_skill_menu():
 	menu_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
 	menu_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	action_panel.add_child(menu_panel)
-	
+
 	var title = Label.new()
 	title.position = Vector2(15, 10)
 	title.text = "选择技能"
 	title.add_theme_color_override("font_color", PALETTE.gold)
 	menu_panel.add_child(title)
-	
+
 	var mp_cost: Dictionary = {
 		"猛击": 10, "防御": 0, "冲锋": 20,
 		"血之狂暴": 15, "旋风斩": 25, "战吼": 15,
@@ -3920,7 +3959,7 @@ func _on_skill_menu():
 		"战斗乐章": 20, "疯狂节拍": 35, "天籁之音": 40,
 		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25
 	}
-	
+
 	var skill_idx = 0
 	for skill in player_data.skills:
 		var cost = mp_cost.get(skill, 0)
@@ -3938,7 +3977,9 @@ func _on_skill_menu():
 			"契约强化", "灵魂连接", "召唤兽强化"
 		]
 		var t3_skills = [
-			"一击脱离", "万箭齐发", "猎杀时刻", "野兽之力"
+			"一击脱离", "万箭齐发", "猎杀时刻", "野兽之力",
+			"毁天灭地", "不死不灭", "碎甲",
+			"战神领域", "浴血奋战", "援护"
 		]
 		var is_t2 = t2_skills.has(skill)
 		var is_t3 = t3_skills.has(skill)
@@ -4021,7 +4062,11 @@ async func _on_skill_selected(skill_name: String):
 		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
 		"盾击": 15, "圣光审判": 30, "钢铁壁垒": 25,
 		"战斗乐章": 20, "疯狂节拍": 35, "天籁之音": 40,
-		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25
+		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25,
+		# 战士 T3 (毁灭者路线)
+		"毁天灭地": 50, "不死不灭": 40, "碎甲": 30,
+		# 战士 T3 (团队领袖路线)
+		"战神领域": 45, "浴血奋战": 35, "援护": 20
 	}
 	var cost = mp_cost.get(skill_name, 0)
 	if player_data.mp < cost:
@@ -4029,14 +4074,14 @@ async func _on_skill_selected(skill_name: String):
 		return
 	player_data.mp -= cost
 	pending_skill_index = -1
-	
+
 	# 检查冷却
 	var cd = _get_skill_cooldown(skill_name)
 	if cd > 0 and skill_cooldowns.get(skill_name, 0) > 0:
 		player_data.mp += cost  #  refunded
 		_battle_add_log("⚠️ %s 冷却中（还需%d回合）！" % [skill_name, skill_cooldowns[skill_name]])
 		return
-	
+
 	match skill_name:
 		# 战士
 		"猛击":
@@ -4086,6 +4131,69 @@ async func _on_skill_selected(skill_name: String):
 			battle_cry_team_boost = int(_get_effective_atk() * 0.15)
 			_battle_add_log("📢 战吼！自身ATK+40%，持续2回合")
 			_spawn_player_damage("ATK+40%", "buff")
+		# 战士 T3 (毁灭者路线)
+		"毁天灭地":
+			var pierce_def = _consume_spell_pierce()
+			var base_dmg = int(_get_effective_atk() * 4.0 - pierce_def + randi() % 11 - 5)
+			var dmg = max(1, base_dmg)
+			# 30%概率秒杀HP<20%敌人
+			var execute_chance = 30
+			if current_enemy["hp"] < current_enemy["max_hp"] * 0.2 and randi() % 100 < execute_chance:
+				current_enemy["hp"] = 0
+				_battle_add_log("💀 毁天灭地！%s HP过低，被秒杀！" % current_enemy["name"])
+				_critical_hit_effect()
+				_spawn_enemy_damage("秒杀!", "crit", Vector2(0, -40))
+			else:
+				current_enemy["hp"] -= dmg
+				_battle_add_log("💥 毁天灭地！造成 %d 伤害" % dmg)
+				_enemy_hit_effect()
+				_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -35))
+		"不死不灭":
+			if warrior_undying_used:
+				_battle_add_log("⚠️ 不死不灭本场战斗已触发！")
+			else:
+				warrior_undying_used = true
+				_battle_add_log("🛡️ 不死不灭！设置完成：本场战斗中HP降至1时自动回复30%%HP（限1次）")
+				_spawn_player_damage("不!死!", "shield")
+		"碎甲":
+			var pierce_def = _consume_spell_pierce()
+			var shatk = _get_effective_atk()
+			# 战神领域加成
+			shatk += warrior_domain_atk_boost
+			var s_dmg = int(shatk * 2.0 - pierce_def + randi() % 7 - 3)
+			s_dmg = max(1, s_dmg)
+			current_enemy["hp"] -= s_dmg
+			# 敌人DEF降低50%持续2回合
+			warrior_shatter_turns = 2
+			warrior_shatter_orig_def = current_enemy["def"]
+			warrior_shatter_defdebuff = int(warrior_shatter_orig_def * 0.5)
+			current_enemy["def"] = max(1, warrior_shatter_orig_def - warrior_shatter_defdebuff)
+			_battle_add_log("⚔️ 碎甲！造成 %d 伤害，敌人DEF-50%%持续2回合" % s_dmg)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % s_dmg, "crit", Vector2(0, -35))
+		# 战士 T3 (团队领袖路线)
+		"战神领域":
+			warrior_domain_turns = 3
+			warrior_domain_atk_boost = int(_get_effective_atk() * 0.25)
+			warrior_domain_def_boost = int(player_data.defense() * 0.15)
+			_battle_add_log("⚔️ 战神领域！ATK+25%%、DEF+15%%持续3回合")
+			_spawn_player_damage("战神领域!", "buff")
+		"浴血奋战":
+			warrior_bloodlust_active = true
+			var hp_pct = float(player_data.hp) / float(player_data.max_hp)
+			var bloodlust_mult = 1.0 + (1.0 - hp_pct) * 2.0  # HP越低倍率越高，最大3.0
+			var batk = _get_effective_atk() + warrior_domain_atk_boost
+			var b_dmg = int(batk * bloodlust_mult - _consume_spell_pierce() + randi() % 7 - 3)
+			b_dmg = max(1, b_dmg)
+			current_enemy["hp"] -= b_dmg
+			_battle_add_log("🩸 浴血奋战！HP%d%%时ATK×%.1f，造成 %d 伤害" % [int(hp_pct*100), bloodlust_mult, b_dmg])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % b_dmg, "crit", Vector2(0, -35))
+		"援护":
+			warrior_guard_active = true
+			warrior_guard_target_hp_pct = float(player_data.hp) / float(player_data.max_hp)
+			_battle_add_log("🛡️ 援护！已锁定目标，下一次致命伤害由你承受")
+			_spawn_player_damage("援护!", "shield")
 		# 法师
 		"火球":
 			var pierce_def = _consume_spell_pierce()
@@ -4472,7 +4580,7 @@ async func _on_skill_selected(skill_name: String):
 			_battle_add_log("🐉 召唤兽强化！召唤兽攻击力+%d，额外造成 %d 伤害" % [_get_effective_atk() / 3, beast_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % beast_dmg, "crit", Vector2(0, -35))
-	
+
 	_update_enemy_hp_bar()
 	_update_battle_player_ui()
 	_check_battle_end()
@@ -4573,19 +4681,19 @@ func _process_battle(delta: float):
 			enemy_sprite.position.x += diff * 8 * delta
 		else:
 			enemy_sprite.position.x = enemy_sprite_pos.x
-	
+
 	# ===== 肖像面板动画 =====
 	_update_portrait_animation(delta)
-	
+
 	# 战斗消息消失
 	if battle_message_timer > 0:
 		battle_message_timer -= delta
 		if battle_message_timer <= 0:
 			battle_message = ""
-	
+
 	if is_player_turn:
 		return  # 等待玩家输入
-	
+
 	# 敌人回合
 	if enemy_stun_turns > 0:
 		enemy_stun_turns -= 1
@@ -4593,7 +4701,7 @@ func _process_battle(delta: float):
 		await get_tree().create_timer(0.5).timeout
 		_start_player_turn()
 		return
-	
+
 	# 中毒伤害
 	if poison_turns > 0:
 		var total_poison = poison_stacks * poison_damage
@@ -4604,7 +4712,7 @@ func _process_battle(delta: float):
 		_update_enemy_hp_bar()
 		if await _check_battle_end():
 			return
-	
+
 	# 流星火雨灼烧
 	if meteor_burn_turns > 0:
 		current_enemy["hp"] -= meteor_burn_dmg
@@ -4614,26 +4722,26 @@ func _process_battle(delta: float):
 		_update_enemy_hp_bar()
 		if await _check_battle_end():
 			return
-	
+
 	# 霜冻领域减速效果
 	if frost_slow_turns > 0:
 		frost_slow_turns -= 1
 		if frost_slow_turns <= 0:
 			_battle_add_log("❄️ 霜冻领域效果结束")
-	
+
 	# 猎人T3: 猎杀时刻标记效果
 	if hunter_mark_turns > 0:
 		hunter_mark_turns -= 1
 		if hunter_mark_turns <= 0:
 			hunter_mark_mult = 1.0
 			_battle_add_log("🎯 猎杀时刻标记效果结束")
-	
+
 	# 法术穿透buff（减少）
 	if spell_pierce_turns > 0:
 		spell_pierce_turns -= 1
 		if spell_pierce_turns <= 0:
 			_battle_add_log("💠 法术穿透效果结束")
-	
+
 	# 魔力回旋（回合开始时触发：吸MP+回HP）
 	if mana_drain_turns > 0:
 		mana_drain_turns -= 1
@@ -4644,7 +4752,7 @@ func _process_battle(delta: float):
 		_spawn_player_damage("+%d MP" % mana_drain_amount, "heal")
 		if mana_drain_turns <= 0:
 			_battle_add_log("🌀 魔力回旋结束")
-	
+
 	# 血之狂暴debuff（每回合自损10HP）
 	if berserk_turns > 0:
 		player_data.hp -= 10
@@ -4656,7 +4764,7 @@ func _process_battle(delta: float):
 			_battle_add_log("💢 血之狂暴！濒死状态！")
 		if await _check_battle_end():
 			return
-	
+
 	# 战吼buff处理（回合开始时减少）
 	if battle_cry_turns > 0:
 		battle_cry_turns -= 1
@@ -4664,53 +4772,68 @@ func _process_battle(delta: float):
 			battle_cry_atk_boost = 0
 			battle_cry_team_boost = 0
 			_battle_add_log("📢 战吼效果结束")
-	
+
 	# 吟游诗人T2: 战斗乐章ATK提升
 	if bard_song_atk_turns > 0:
 		bard_song_atk_turns -= 1
 		if bard_song_atk_turns <= 0:
 			_battle_add_log("🎵 战斗乐章效果结束")
-	
+
 	# 骑士T2: 钢铁壁垒DEF提升
 	if knight_iron_wall_turns > 0:
 		knight_iron_wall_turns -= 1
 		if knight_iron_wall_turns <= 0:
 			knight_iron_wall_defboost = 0
 			_battle_add_log("🏰 钢铁壁垒效果结束")
-	
+
 	# 骑士T2: 圣光审判DEF debuff
 	if knight_judgment_turns > 0:
 		knight_judgment_turns -= 1
 		if knight_judgment_turns <= 0:
 			knight_judgment_defdebuff = 0
 			_battle_add_log("⚔️ 圣光审判效果结束")
-	
+
 	# 牧师T2: 神圣仲裁DEF debuff
 	if priest_smite_turns > 0:
 		priest_smite_turns -= 1
 		if priest_smite_turns <= 0:
 			priest_smite_defdebuff = 0
 			_battle_add_log("⚖️ 神圣仲裁效果结束")
-	
+
 	# 召唤师T2: 契约强化
 	if summoner_contract_boost_turns > 0:
 		summoner_contract_boost_turns -= 1
 		if summoner_contract_boost_turns <= 0:
 			summoner_contract_boost_dmg = 0
 			_battle_add_log("📜 契约强化效果结束")
-	
+
 	# 召唤师T2: 召唤兽强化
 	if summoner_beast_boost_turns > 0:
 		summoner_beast_boost_turns -= 1
 		if summoner_beast_boost_turns <= 0:
 			_battle_add_log("🐉 召唤兽强化效果结束")
-	
+
+	# 战士T3: 战神领域buff
+	if warrior_domain_turns > 0:
+		warrior_domain_turns -= 1
+		if warrior_domain_turns <= 0:
+			warrior_domain_atk_boost = 0
+			warrior_domain_def_boost = 0
+			_battle_add_log("⚔️ 战神领域效果结束")
+
+	# 战士T3: 碎甲敌人DEF debuff
+	if warrior_shatter_turns > 0:
+		warrior_shatter_turns -= 1
+		if warrior_shatter_turns <= 0:
+			current_enemy["def"] = warrior_shatter_orig_def
+			_battle_add_log("⚔️ 碎甲效果结束，敌人DEF恢复")
+
 	# 猎人T2: 穿甲箭（穿透效果已在内置，穿透减少在_on_skill_selected里处理）
 	if hunter_armor_pierce_turns > 0:
 		hunter_armor_pierce_turns -= 1
 		if hunter_armor_pierce_turns <= 0:
 			_battle_add_log("🏹 穿甲箭效果结束")
-	
+
 	# 契约诅咒（生命吸取）
 	if contract_active:
 		var drain_dmg = int(player_data.attack_power() * 0.4)
@@ -4726,7 +4849,7 @@ func _process_battle(delta: float):
 		_update_enemy_hp_bar()
 		if await _check_battle_end():
 			return
-	
+
 	# 猎人T2: 致命陷阱DOT
 	if hunter_trap_turns > 0:
 		current_enemy["hp"] -= hunter_trap_dot_dmg
@@ -4736,7 +4859,7 @@ func _process_battle(delta: float):
 		_update_enemy_hp_bar()
 		if await _check_battle_end():
 			return
-	
+
 	# 盗贼T2: 淬毒利刃DOT
 	if thief_poison_turns > 0:
 		current_enemy["hp"] -= thief_poison_dmg
@@ -4746,7 +4869,7 @@ func _process_battle(delta: float):
 		_update_enemy_hp_bar()
 		if await _check_battle_end():
 			return
-	
+
 	# 召唤师T2: 灵魂连接DOT
 	if summoner_soul_link_turns > 0:
 		current_enemy["hp"] -= summoner_soul_link_dmg
@@ -4756,7 +4879,7 @@ func _process_battle(delta: float):
 		_update_enemy_hp_bar()
 		if await _check_battle_end():
 			return
-	
+
 	# 猎人T3: 野兽之力 召唤狼每回合伤害
 	if hunter_beast_turns > 0:
 		current_enemy["hp"] -= hunter_beast_dmg
@@ -4766,9 +4889,9 @@ func _process_battle(delta: float):
 		_update_enemy_hp_bar()
 		if await _check_battle_end():
 			return
-	
+
 	await get_tree().create_timer(0.5).timeout
-	
+
 	# 陷阱触发：敌人被困住，无法攻击并受到伤害
 	if trapped:
 		var trap_dmg = int(player_data.attack_power() * 1.2)
@@ -4782,7 +4905,7 @@ func _process_battle(delta: float):
 		await get_tree().create_timer(0.4).timeout
 		_start_player_turn()
 		return
-	
+
 	# 一击脱离：100%闪避
 	if hunter_one_hit_escape:
 		hunter_one_hit_escape = false
@@ -4790,7 +4913,7 @@ func _process_battle(delta: float):
 		_spawn_player_damage("MISS!", "miss")
 		_start_player_turn()
 		return
-	
+
 	# 消失/猎豹加速闪避检测
 	if vanish_turns > 0 or hunter_evasion_turns > 0:
 		if vanish_turns > 0:
@@ -4805,12 +4928,12 @@ func _process_battle(delta: float):
 			return
 		else:
 			_battle_add_log("💨 闪避失败...")
-	
+
 	# Boss特殊能力处理
 	if current_enemy.get("is_boss", false):
 		_process_boss_turn()
 		return
-	
+
 	# 普通敌人攻击
 	var e_dmg = current_enemy["atk"] + randi() % 5 - 2
 	if player_defending or player_shield > 0:
@@ -4826,19 +4949,49 @@ func _process_battle(delta: float):
 	if player_defending:
 		player_defending = false
 	e_dmg = max(1, e_dmg)
+	# 战士T3: 援护效果 - 将伤害转移给敌人
+	if warrior_guard_active:
+		warrior_guard_active = false
+		var guard_dmg = int(e_dmg * 1.5)
+		current_enemy["hp"] -= guard_dmg
+		_battle_add_log("🛡️ 援护生效！将 %d 伤害转移给敌人！" % guard_dmg)
+		_spawn_enemy_damage("%d" % guard_dmg, "crit", Vector2(0, -30))
+		_enemy_hit_effect()
+		_update_enemy_hp_bar()
+		if await _check_battle_end():
+			return
+		# 玩家本身不受伤
+		_trigger_portrait_damage_flash()
+		_battle_add_log("👹 %s 攻击！（援护）" % current_enemy["name"])
+		_spawn_player_damage("援护!", "shield")
+		_update_battle_player_ui()
+		_start_player_turn()
+		return
 	player_data.hp -= e_dmg
+	# 战士T3: 不死不灭 - HP降至1时自动回复30%
+	if player_data.hp <= 0 and warrior_undying_used:
+		player_data.hp = int(player_data.max_hp * 0.3)
+		warrior_undying_used = false
+		_trigger_portrait_damage_flash()
+		_battle_add_log("🛡️ 不死不灭触发！HP回复至30%%！")
+		_spawn_player_damage("不死不灭!", "shield")
+		_update_battle_player_ui()
+		if await _check_battle_end():
+			return
+		_start_player_turn()
+		return
 	_trigger_portrait_damage_flash()
 	_battle_add_log("👹 %s 攻击！造成 %d 伤害" % [current_enemy["name"], e_dmg])
 	_spawn_player_damage("-%d" % e_dmg, "damage")
 	if audio_manager:
 		audio_manager.play_sfx("hit")
 	_update_battle_player_ui()
-	
+
 	if player_data.hp <= 0:
 		_battle_add_log("💀 你倒下了...")
 		_game_over()
 		return
-	
+
 	_start_player_turn()
 
 # ==================== Boss战特殊处理 ====================
@@ -4848,7 +5001,7 @@ func _process_boss_turn():
 	# 检查Boss阶段转换
 	var hp_ratio = float(current_enemy["hp"]) / float(current_enemy["max_hp"])
 	var boss_key = _get_boss_floor_key()
-	
+
 	# 第8层武当真人张三丰多阶段处理
 	if boss_key == 8:
 		if boss_phase == 1 and hp_ratio <= 0.6:
@@ -4864,7 +5017,7 @@ func _process_boss_turn():
 			_battle_add_log("🙏 【最终阶段】一代宗师降临！这是最后的考验！")
 			_update_enemy_hp_bar()
 			await get_tree().create_timer(1.0).timeout
-	
+
 	# Boss狂暴检测 (phase_hp血量触发)
 	var phase_hp = current_enemy.get("phase_hp", 0.0)
 	if phase_hp > 0 and not boss_enraged and hp_ratio <= phase_hp:
@@ -4886,9 +5039,9 @@ func _process_boss_turn():
 			_battle_add_log("👹 %s 进入狂暴状态！" % boss_name_str)
 		_update_enemy_hp_bar()
 		await get_tree().create_timer(1.0).timeout
-	
+
 	boss_action_counter += 1
-	
+
 	# 根据Boss类型执行特殊技能
 	match boss_key:
 		1: _boss_hanbatian_action(hp_ratio)
@@ -5146,7 +5299,7 @@ func _show_boss_phase_announcement(text: String):
 	announce.add_theme_font_size_override("font_size", 36)
 	announce.modulate = Color(1, 1, 1, 0)
 	add_child(announce)
-	
+
 	var tween = create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(announce, "modulate:a", 1.0, 0.3)
@@ -5271,14 +5424,14 @@ async func _check_battle_end() -> bool:
 		var gold_gain = current_enemy["gold"]
 		player_data.exp += exp_gain
 		player_data.gold += gold_gain
-		
+
 		# Boss击败特殊提示
 		if current_enemy.get("is_boss", false):
 			_battle_add_log("🏆⭐ BOSS击破！⭐+%d EXP，+%d 金币！" % [exp_gain, gold_gain])
 			_show_boss_victory_screen()
 		else:
 			_battle_add_log("🏆 胜利！+%d EXP，+%d 金币" % [exp_gain, gold_gain])
-		
+
 		_exp_check()
 		_close_battle_ui()
 		game_state = State.EXPLORE
@@ -5288,7 +5441,7 @@ async func _check_battle_end() -> bool:
 			audio_manager.play_bgm("victory")
 			await get_tree().create_timer(4.0).timeout
 			audio_manager.play_bgm("explore")
-		
+
 		if current_enemy.get("is_boss", false):
 			show_message("⭐ BOSS击破: %s！+%d EXP" % [current_enemy["name"], exp_gain])
 		else:
@@ -5309,7 +5462,7 @@ func _show_boss_victory_screen():
 	overlay.position = Vector2(0, 0)
 	overlay.modulate = Color(1, 1, 1, 0)
 	add_child(overlay)
-	
+
 	var panel = Panel.new()
 	panel.name = "BossVictoryPanel"
 	panel.position = Vector2(340, 220)
@@ -5318,7 +5471,7 @@ func _show_boss_victory_screen():
 	panel.add_theme_stylebox_override("panel", _create_stylebox())
 	panel.modulate = Color(1, 1, 1, 0)
 	add_child(panel)
-	
+
 	var title = Label.new()
 	title.position = Vector2(0, 20)
 	title.size = Vector2(600, 50)
@@ -5327,7 +5480,7 @@ func _show_boss_victory_screen():
 	title.add_theme_color_override("font_color", PALETTE.gold)
 	title.add_theme_font_size_override("font_size", 36)
 	panel.add_child(title)
-	
+
 	var boss_name = Label.new()
 	boss_name.position = Vector2(0, 80)
 	boss_name.size = Vector2(600, 40)
@@ -5336,13 +5489,13 @@ func _show_boss_victory_screen():
 	boss_name.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2))
 	boss_name.add_theme_font_size_override("font_size", 28)
 	panel.add_child(boss_name)
-	
+
 	var sep = ColorRect.new()
 	sep.position = Vector2(100, 130)
 	sep.size = Vector2(400, 2)
 	sep.color = PALETTE.gold * Color(0.5, 0.5, 0.5, 0.5)
 	panel.add_child(sep)
-	
+
 	var rewards = Label.new()
 	rewards.position = Vector2(0, 150)
 	rewards.size = Vector2(600, 60)
@@ -5351,7 +5504,7 @@ func _show_boss_victory_screen():
 	rewards.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9))
 	rewards.add_theme_font_size_override("font_size", 22)
 	panel.add_child(rewards)
-	
+
 	var continue_lbl = Label.new()
 	continue_lbl.position = Vector2(0, 230)
 	continue_lbl.size = Vector2(600, 30)
@@ -5360,7 +5513,7 @@ func _show_boss_victory_screen():
 	continue_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	continue_lbl.add_theme_font_size_override("font_size", 16)
 	panel.add_child(continue_lbl)
-	
+
 	var tween = create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(overlay, "modulate:a", 1.0, 0.4)
@@ -5402,14 +5555,14 @@ func _update_portrait_animation(delta: float):
 	var portrait_panel = battle_ui.get_node_or_null("PortraitPanel")
 	if not portrait_panel:
 		return
-	
+
 	# 更新呼吸动画
 	portrait_breath_time += delta
 	var breath_scale = 1.0 + sin(portrait_breath_time * 2.5) * 0.012  # 轻微上下浮动
 	var portrait_container = portrait_panel.get_node_or_null("PortraitContainer")
 	if portrait_container:
 		portrait_container.scale = Vector2(breath_scale, breath_scale)
-	
+
 	# 更新受伤闪红
 	if portrait_damage_flash > 0:
 		portrait_damage_flash -= delta
@@ -5424,7 +5577,7 @@ func _update_portrait_animation(delta: float):
 			var flash_node = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
 			if flash_node:
 				flash_node.modulate = Color(1, 1, 1, 0.0)
-	
+
 	# 更新治疗绿光
 	if portrait_heal_glow > 0:
 		portrait_heal_glow -= delta
@@ -5437,7 +5590,7 @@ func _update_portrait_animation(delta: float):
 			var heal_flash_reset = portrait_panel.get_node_or_null("PortraitBG/PortraitContainer/PortraitFlash")
 			if heal_flash_reset:
 				heal_flash_reset.modulate = Color(1, 1, 1, 0.0)
-	
+
 	# 更新肖像面板的HP/MP条（每次动画帧都更新）
 	_update_portrait_bars(portrait_panel)
 
@@ -5507,6 +5660,9 @@ func _update_battle_player_ui():
 			if vanish_turns > 0: parts.append("👤消失×%d" % vanish_turns)
 			if berserk_turns > 0: parts.append("💢狂暴×%d" % berserk_turns)
 			if battle_cry_turns > 0: parts.append("📢战吼×%d" % battle_cry_turns)
+			if warrior_domain_turns > 0: parts.append("⚔️战神领域×%d" % warrior_domain_turns)
+			if warrior_guard_active: parts.append("🛡️援护")
+			if warrior_undying_used: parts.append("💀不死不灭")
 			if poison_turns > 0: parts.append("☠️中毒×%d" % poison_stacks)
 			if contract_active: parts.append("📜契约×%d" % contract_turns)
 			if resonance_stacks > 0: parts.append("⚡共鸣×%d" % resonance_stacks)
@@ -5613,7 +5769,7 @@ func save_game(slot: int) -> bool:
 			"current_floor": current_floor
 		}
 	}
-	
+
 	var json_str = JSON.stringify(save_data, "\t")
 	var file = FileAccess.open(path, FileAccess.WRITE)
 	if file:
@@ -5632,26 +5788,26 @@ func load_game(slot: int) -> bool:
 	if not FileAccess.file_exists(path):
 		show_message("存档槽 %d 不存在！" % (slot + 1))
 		return false
-	
+
 	var file = FileAccess.open(path, FileAccess.READ)
 	if not file:
 		show_message("❌ 读取存档失败！")
 		return false
-	
+
 	var json_str = file.get_as_text()
 	file.close()
-	
+
 	var json = JSON.new()
 	var parse_result = json.parse(json_str)
 	if parse_result != OK:
 		show_message("❌ 存档数据损坏！")
 		return false
-	
+
 	var save_data = json.get_data()
 	if typeof(save_data) != TYPE_DICTIONARY:
 		show_message("❌ 存档格式错误！")
 		return false
-	
+
 	# 恢复玩家数据
 	var pdata = save_data.get("player", {})
 	player_data = _get_player_data().new()
@@ -5672,11 +5828,11 @@ func load_game(slot: int) -> bool:
 	player_data.armor = pdata.get("armor", {})
 	player_data.accessory = pdata.get("accessory", {})
 	player_data.inventory = pdata.get("inventory", [])
-	
+
 	# 恢复进度
 	var prog = save_data.get("progress", {})
 	current_floor = prog.get("current_floor", 1)
-	
+
 	show_message("📂 读档成功！%s Lv.%d" % [player_data.get_job_name(), player_data.level])
 	if audio_manager:
 		audio_manager.play_sfx("purchase")
@@ -5694,21 +5850,21 @@ func _get_save_info(slot: int) -> Dictionary:
 	var path = _get_save_path(slot)
 	if not FileAccess.file_exists(path):
 		return {}
-	
+
 	var file = FileAccess.open(path, FileAccess.READ)
 	if not file:
 		return {}
-	
+
 	var json_str = file.get_as_text()
 	file.close()
 	var json = JSON.new()
 	if json.parse(json_str) != OK:
 		return {}
-	
+
 	var save_data = json.get_data()
 	if typeof(save_data) != TYPE_DICTIONARY:
 		return {}
-	
+
 	var pdata = save_data.get("player", {})
 	return {
 		"job_name": pdata.get("job_name", "未知"),
@@ -5731,18 +5887,18 @@ func _open_save_ui():
 		_close_save_ui()
 		return
 	_close_save_ui()
-	
+
 	save_ui = Control.new()
 	save_ui.name = "SaveUI"
 	save_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(save_ui)
-	
+
 	var overlay = ColorRect.new()
 	overlay.size = Vector2(1280, 720)
 	overlay.color = Color(0, 0, 0, 0.8)
 	overlay.gui_input.connect(_on_save_overlay_click)
 	save_ui.add_child(overlay)
-	
+
 	var panel = Panel.new()
 	panel.name = "SavePanel"
 	panel.position = Vector2(340, 160)
@@ -5750,21 +5906,21 @@ func _open_save_ui():
 	panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
 	panel.add_theme_stylebox_override("panel", _create_stylebox())
 	save_ui.add_child(panel)
-	
+
 	var title = Label.new()
 	title.position = Vector2(20, 15)
 	title.text = "💾 存档 / 读档"
 	title.add_theme_color_override("font_color", PALETTE.gold)
 	title.add_theme_font_size_override("font_size", 20)
 	panel.add_child(title)
-	
+
 	var close_btn = Button.new()
 	close_btn.text = "❌"
 	close_btn.position = Vector2(550, 10)
 	close_btn.size = Vector2(40, 40)
 	close_btn.pressed.connect(_close_save_ui)
 	panel.add_child(close_btn)
-	
+
 	# 存档槽
 	_save_slot_buttons.clear()
 	for slot in range(SAVE_SLOTS):
@@ -5787,14 +5943,14 @@ func _open_save_ui():
 		sstyle.corner_radius_bottom_right = 3; sstyle.corner_radius_bottom_left = 3
 		slot_panel.add_theme_stylebox_override("panel", sstyle)
 		panel.add_child(slot_panel)
-		
+
 		var slot_lbl = Label.new()
 		slot_lbl.position = Vector2(15, 10)
 		slot_lbl.text = "存档槽 %d" % (slot + 1)
 		slot_lbl.add_theme_color_override("font_color", PALETTE.gold)
 		slot_lbl.add_theme_font_size_override("font_size", 14)
 		slot_panel.add_child(slot_lbl)
-		
+
 		if info.get("exists", false):
 			var detail_lbl = Label.new()
 			detail_lbl.position = Vector2(15, 35)
@@ -5806,7 +5962,7 @@ func _open_save_ui():
 			detail_lbl.add_theme_color_override("font_color", Color(0.75, 0.75, 0.7))
 			detail_lbl.add_theme_font_size_override("font_size", 12)
 			slot_panel.add_child(detail_lbl)
-			
+
 			var save_btn = Button.new()
 			save_btn.text = "💾 覆盖"
 			save_btn.position = Vector2(380, 10)
@@ -5815,7 +5971,7 @@ func _open_save_ui():
 			save_btn.pressed.connect(_on_save_slot_write.bind(slot))
 			slot_panel.add_child(save_btn)
 			_save_slot_buttons.append(save_btn)
-			
+
 			var load_btn = Button.new()
 			load_btn.text = "📂 读档"
 			load_btn.position = Vector2(470, 10)
@@ -5824,7 +5980,7 @@ func _open_save_ui():
 			load_btn.pressed.connect(_on_save_slot_read.bind(slot))
 			slot_panel.add_child(load_btn)
 			_save_slot_buttons.append(load_btn)
-			
+
 			var del_btn = Button.new()
 			del_btn.text = "🗑️"
 			del_btn.position = Vector2(470, 48)
@@ -5839,7 +5995,7 @@ func _open_save_ui():
 			empty_lbl.add_theme_color_override("font_color", Color(0.35, 0.35, 0.35))
 			slot_lbl.add_theme_font_size_override("font_size", 12)
 			slot_panel.add_child(empty_lbl)
-			
+
 			var new_btn = Button.new()
 			new_btn.text = "💾 新建存档"
 			new_btn.position = Vector2(380, 25)

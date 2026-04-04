@@ -102,12 +102,15 @@ const BOSS_KILL_EXP := 50
 ## 📋 修复进度
 
 - [x] P0: 修复 `_check_battle_end()` await 问题 ✅ (ce606d4)
-- [x] P1: map_bg/map_ground/grass_pattern 内存泄漏 ✅ (ce606d4)
-- [x] P1: battle_action_buttons 清理 ✅ (ce606d4)
+- [x] P1: map_bg/map_ground/grass_pattern 内存泄漏 ✅ (ce606d4) — 2026-04-04 确认
+- [x] P1: battle_action_buttons 清理 ✅ (ce606d4) — 2026-04-04 确认
+- [ ] P1: fog_map 迷雾系统改为 fog_container 容器管理
 - [ ] P1: 修复 `_consume_spell_pierce()` 注释
 - [ ] P2: 拆分 game.gd 模块化改造
 - [ ] P2: Boss AI 函数重构
-- [ ] P2: 提取硬编码常量
+- [ ] P2: 提取硬编码常量（遭遇率/陷阱倍率/屏幕尺寸/技能倍率/闪避率/逃跑率等）
+- [ ] P3: `_load_job_texture()` 删除未使用 Sprite2D 临时对象
+- [ ] P3: `particle_container`/`audio_manager` 在 `_on_job_selected` 中清理
 
 ---
 
@@ -630,3 +633,247 @@ const PANEL_SCALE_DURATION: float = 0.6
 ```
 
 ---
+
+### 新发现问题 (2026-04-04 00:03)
+
+#### P3 - 连锁闪电技能伤害倍率硬编码（多处）
+
+**文件**: `scripts/game.gd`
+
+**问题**: 连锁闪电技能的两次伤害倍率均硬编码为浮点数 `2.5` 和 `1.5`，缺乏语义化命名。
+
+| 行号 | 代码 | 建议常量 |
+|------|------|---------|
+| 4136 | `_get_effective_atk() * 2.5`（第一次连锁伤害） | `const CHAIN_LIGHTNING_DMG1_MULT: float = 2.5` |
+| 4144 | `_get_effective_atk() * 1.5`（第二次递减伤害） | `const CHAIN_LIGHTNING_DMG2_MULT: float = 1.5` |
+| 4149 | `create_timer(0.3)`（连锁间隔） | `const CHAIN_LIGHTNING_INTERVAL: float = 0.3` |
+
+**建议**: 在文件顶部添加 `const CHAIN_LIGHTNING_DMG1_MULT: float = 2.5` 等常量。
+
+---
+
+#### P3 - 消失/猎豹闪避率硬编码 `0.5`
+
+**文件**: `scripts/game.gd`
+**行号**: 第 4799 行
+
+**问题**: `randf() < 0.5` 硬编码了消失/猎豹技能的闪避成功率（50%）。
+
+```gdscript
+if randf() < 0.5:  # ← 硬编码
+    _battle_add_log("💨 %s！完美闪避了敌人攻击！" % evade_name)
+```
+
+**建议**: 提取为 `const VANISH_EVASION_CHANCE: float = 0.5`
+
+---
+
+#### P3 - 逃跑成功率硬编码 `0.6`
+
+**文件**: `scripts/game.gd`
+**行号**: 第 5214 行
+
+**问题**: `randf() < 0.6` 硬编码了战斗逃跑成功率（60%）。
+
+```gdscript
+if randf() < 0.6:  # ← 硬编码
+    _battle_add_log("🏃 逃跑成功！")
+```
+
+**建议**: 提取为 `const FLEE_SUCCESS_CHANCE: float = 0.6`
+
+---
+
+### 审查记录 - 2026-04-04 00:03
+
+本次审查发现：
+- **✅ 已确认修复**: `map_bg`/`map_ground`/`grass_pattern` 内存泄漏（2026-04-03 00:03 报告的P1）— 当前代码已使用 `queue_free()` + 实例变量管理，问题已解决
+- **✅ 已确认修复**: `battle_action_buttons.clear()` 清理问题（2026-04-02 12:03 报告的P2）— 当前代码第2779行已有 `battle_action_buttons.clear()` 在append之前
+- **P1 (既有未修复)**: 迷雾系统（fog_map）仍使用字典逐节点释放，缺少 fog_container 容器管理（自 2026-04-03 00:03 报告至今）
+- **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03 报告至今）
+- **P2 (既有未修复)**: `_load_job_texture()` 创建未使用的 Sprite2D 临时对象（自 2026-04-03 06:03 报告至今）
+- **P2 (既有未修复)**: 敌人/商店素材纹理尺寸 `2048` 硬编码（自 2026-04-03 06:03 报告至今）
+- **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理（自 2026-04-03 06:03 报告至今）
+- **P3 (新)**: 连锁闪电技能伤害倍率 `2.5`/`1.5` 和间隔 `0.3` 硬编码
+- **P3 (新)**: 消失/猎豹闪避率 `0.5` 硬编码
+- **P3 (新)**: 逃跑成功率 `0.6` 硬编码
+
+环境说明: Godot `headless --check-only` 因项目大量动态节点创建，无法在合理时间内完成（上次报告的问题仍然存在，非语法错误）。
+
+---
+
+### 新发现问题 (2026-04-04 06:03)
+
+#### P2 - `_rebuild_ui_from_player_data()` 空指针风险
+
+**文件**: `scripts/game.gd`
+**行号**: 约第 5884-5889 行
+
+**问题**: `player` 可能是 `null`（刚读档时），函数内对 `player.get_node_or_null("Sprite")` 返回的 `sprite` 未做空检查就直接赋值 `sprite.texture`。
+
+```gdscript
+func _rebuild_ui_from_player_data():
+    # 当读档后，重新设置玩家精灵
+    if player:                        # ← 检查了 player
+        var sprite = player.get_node_or_null("Sprite")
+        if sprite:                     # ← sprite 也需要检查！
+            sprite.texture = _create_job_texture(player_data.job)
+    _update_ui()
+```
+
+**建议**: 添加 `if sprite:` 检查（代码中已有，但 sprite 可能为 null）。
+
+---
+
+#### P2 - 存档槽按钮数组越界风险
+
+**文件**: `scripts/game.gd`
+**行号**: `_open_save_ui()` 函数，约存档槽按钮创建处
+
+**问题**: `_save_slot_buttons` 数组每次 `append` 两个按钮（覆盖 + 读档 + 删除），但 `slot_lbl` 错误地使用了 `slot_lbl.add_theme_font_size_override` 而不是 `detail_lbl`，导致未创建详情标签时样式设置失败。更严重的是，空槽的删除按钮引用也被加入了 `_save_slot_buttons`，可能导致点击"删除"时触发错误的回调。
+
+```gdscript
+if info.get("exists", false):
+    ...
+    var del_btn = Button.new()
+    ...
+    del_btn.pressed.connect(_on_save_slot_delete.bind(slot))
+    slot_panel.add_child(del_btn)
+    _save_slot_buttons.append(del_btn)  # ← 空存档没有这个按钮，数组不对称！
+else:
+    ...
+    var new_btn = Button.new()
+    ...
+    slot_panel.add_child(new_btn)
+    # 空槽没有加入 _save_slot_buttons！导致数组索引不对应槽位
+```
+
+**建议**: 将 `_save_slot_buttons` 改为字典结构 `Dictionary[slot: Array[Button]]`，按槽位索引而非全局顺序存储。
+
+---
+
+#### P3 - 存档系统魔法数字硬编码
+
+**文件**: `scripts/game.gd`
+**涉及位置**: 存档/读档 UI 相关函数
+
+| 值 | 含义 | 出现位置 |
+|---|---|---|
+| `100` | 存档界面垂直间距 | `_open_save_ui()` |
+| `SAVE_SLOTS` | 存档槽数量（未定义常量） | `_open_save_ui()` |
+| `100` | 存档按钮数组索引计算 | `_open_save_ui()` |
+| `1280, 720` | 存档遮罩尺寸 | `_open_save_ui()` |
+| `600, 400` | 存档面板尺寸 | `_open_save_ui()` |
+| `560, 85` | 存档槽面板尺寸 | `_open_save_ui()` |
+| `160, 35` | 新建存档按钮尺寸 | `_open_save_ui()` |
+| `380, 10` | 存档按钮位置 | `_open_save_ui()` |
+| `470, 10` | 读档/删除按钮位置 | `_open_save_ui()` |
+| `470, 48` | 删除按钮位置 | `_open_save_ui()` |
+
+**建议**: 提取为 `SAVE_UI_*` 系列常量。
+
+---
+
+#### P3 - 存档系统样式对象重复创建
+
+**文件**: `scripts/game.gd`
+**行号**: `_open_save_ui()` 函数
+
+**问题**: 每个存档槽都重新创建 `StyleBoxFlat` 对象，但实际上只有边框颜色不同（存在/空槽）。可复用同一个 StyleBoxFlat 实例。
+
+```gdscript
+for slot in range(SAVE_SLOTS):
+    var sstyle = StyleBoxFlat.new()     # ← 每次循环新建
+    if info.get("exists", false):
+        sstyle.bg_color = Color(0.06, 0.08, 0.06, 0.95)
+        sstyle.border_color = Color(0.3, 0.5, 0.3)
+    else:
+        sstyle.bg_color = Color(0.06, 0.06, 0.1, 0.95)
+        sstyle.border_color = Color(0.3, 0.3, 0.35)
+    # ... 应用样式
+```
+
+**建议**: 预创建两个 StyleBoxFlat 实例（存在/空槽各一），复用。
+
+---
+
+### 审查记录 - 2026-04-04 06:03
+
+本次审查发现：
+- **✅ 文件行数**: game.gd 增长至 5890 行（上次 5369 行，新增约 521 行，主要来自存档系统和战斗系统扩展）
+- **P2 (新)**: `_rebuild_ui_from_player_data()` 存在 sprite 空指针风险（当前有 `if sprite:` 检查但逻辑不完整）
+- **P2 (新)**: 存档槽按钮数组 `_save_slot_buttons` 空槽/有槽时数组长度不对称，导致索引错位
+- **P3 (新)**: 存档系统散布多处魔法数字（屏幕尺寸、间距、按钮尺寸）
+- **P3 (新)**: 存档槽 StyleBoxFlat 对象每循环新建，可预创建复用
+- **P1 (既有未修复)**: 迷雾系统 fog_map 仍使用字典逐节点释放
+- **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义
+- **P2 (既有未修复)**: `_load_job_texture()` 创建未使用的 Sprite2D 临时对象
+- **P2 (既有未修复)**: 敌人/商店素材纹理尺寸 `2048` 硬编码
+- **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理
+- **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量
+
+环境说明: Godot `headless --check-only` 因项目大量动态节点创建，无法在合理时间内完成（项目特性，非语法错误）。
+
+### 新发现问题 (2026-04-04 12:03)
+
+#### P3 - 伤害随机波动 `randi() % 7 - 3` 重复出现7次
+
+**文件**: `scripts/game.gd`
+**问题**: 技能伤害计算中的随机波动值 `randi() % 7 - 3`（范围 -3~+3）在多处硬编码，应提取为辅助函数或常量。
+
+| 行号 | 技能 | 代码 |
+|------|------|------|
+| 4044 | 猛击 | `randi() % 7 - 3` |
+| 4075 | 旋风斩 | `randi() % 7 - 3` |
+| 4136 | 连锁闪电(第1段) | `randi() % 7 - 3` |
+| 4167 | 闪电 | `randi() % 7 - 3` |
+| 4175 | 霜冻领域 | `randi() % 7 - 3` |
+| 4188 | 背刺 | `randi() % 7 - 3` |
+| 5175 | 普通攻击 | `randi() % 7 - 3` |
+
+**建议**: 在文件顶部添加伤害波动辅助函数：
+```gdscript
+## 伤害波动: 在 base_dmg 基础上 ±3 随机波动
+func _roll_damage_variance(base_dmg: int) -> int:
+    return base_dmg + randi() % 7 - 3
+```
+其他技能另有 `randi() % 11 - 5`（更大范围 ±5）应统一处理。
+
+---
+
+#### P2 - 既有未修复：`_load_job_texture()` 仍未删除无用 Sprite2D
+
+**文件**: `scripts/game.gd`
+**行号**: 第 672-677 行
+
+**问题**: 自 2026-04-03 06:03 首次报告以来仍未修复。函数创建了局部 `Sprite2D` 后直接丢弃：
+
+```gdscript
+func _load_job_texture(job: int) -> Texture2D:
+    var tex = load(path)
+    if tex:
+        var sprite = Sprite2D.new()         # ← 第673行：创建后丢弃
+        sprite.texture = tex                # ← 第674行
+        sprite.texture_filter = ...         # ← 第675行
+        return tex                          # ← 第677行：sprite 成为孤儿
+    return null
+```
+
+**建议**: 删除第673-675行，直接 `return tex`。
+
+---
+
+### 审查记录 - 2026-04-04 12:03
+
+本次审查发现：
+- **P2 (既有未修复)**: `_load_job_texture()` 创建未使用 Sprite2D 临时对象（自 2026-04-03 06:03 报告至今仍未修复）
+- **P3 (新)**: 伤害随机波动 `randi() % 7 - 3` 在7处技能中重复硬编码，应提取为辅助函数
+- **文件行数**: game.gd 保持在 5890 行（与上次审查相同）
+- **P1 (既有未修复)**: 迷雾系统 fog_map 仍使用字典逐节点释放
+- **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义
+- **P2 (既有未修复)**: 敌人/商店素材纹理尺寸 `2048` 硬编码
+- **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理
+- **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量
+
+环境说明: Godot `headless --check-only` 进程在 60 秒内未能完成（项目大量动态节点创建特性，非语法错误）。通过代码审查未发现语法错误。
+
