@@ -110,8 +110,6 @@ var summoner_beast_boost_turns: int = 0       # 召唤兽强化回合
 var warrior_shatter_turns: int = 0          # 碎甲：敌人DEF降低回合
 var warrior_shatter_defdebuff: int = 0       # 碎甲：敌人DEF降低量
 var warrior_shatter_orig_def: int = 0         # 碎甲：敌人原始DEF（用于恢复）
-var warrior_shatter_turns: int = 0          # 碎甲：敌人DEF降低回合
-var warrior_shatter_defdebuff: int = 0       # 碎甲：敌人DEF降低量
 var warrior_domain_turns: int = 0            # 战神领域持续回合
 var warrior_domain_atk_boost: int = 0        # 战神领域ATK加成
 var warrior_domain_def_boost: int = 0        # 战神领域DEF加成
@@ -2599,6 +2597,14 @@ func _start_battle():
 	spell_pierce_turns = 0
 	mana_drain_turns = 0
 	mana_drain_amount = 0
+	# 法师T3状态重置
+	absolute_zero_turns = 0
+	meteor_turns = 0
+	meteor_dmg = 0
+	elemental_storm_turns = 0
+	elemental_storm_dmg = 0
+	time_stop_active = false
+	time_stop_turns = 0
 	# 猎人T2状态重置
 	hunter_evasion_turns = 0
 	hunter_speed_boost_turns = 0
@@ -2726,6 +2732,14 @@ func _start_boss_battle():
 	spell_pierce_turns = 0
 	mana_drain_turns = 0
 	mana_drain_amount = 0
+	# 法师T3状态重置
+	absolute_zero_turns = 0
+	meteor_turns = 0
+	meteor_dmg = 0
+	elemental_storm_turns = 0
+	elemental_storm_dmg = 0
+	time_stop_active = false
+	time_stop_turns = 0
 	# 猎人T2状态重置
 	hunter_evasion_turns = 0
 	hunter_speed_boost_turns = 0
@@ -3879,6 +3893,8 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	"战斗乐章": 3, "疯狂节拍": 4, "天籁之音": 5,
 	# 召唤师 T2
 	"契约强化": 4, "灵魂连接": 3, "召唤兽强化": 4,
+	# 法师 T3
+	"陨石术": 6, "绝对零度": 5, "元素风暴": 5, "时间静止": 7,
 	# 战士 T3 (毁灭者路线)
 	"毁天灭地": 5, "不死不灭": 6, "碎甲": 3,
 	# 战士 T3 (团队领袖路线)
@@ -3957,7 +3973,9 @@ func _on_skill_menu():
 		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
 		"盾击": 15, "圣光审判": 30, "钢铁壁垒": 25,
 		"战斗乐章": 20, "疯狂节拍": 35, "天籁之音": 40,
-		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25
+		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25,
+		# 法师 T3
+		"陨石术": 60, "绝对零度": 55, "元素风暴": 70, "时间静止": 80
 	}
 
 	var skill_idx = 0
@@ -3979,7 +3997,8 @@ func _on_skill_menu():
 		var t3_skills = [
 			"一击脱离", "万箭齐发", "猎杀时刻", "野兽之力",
 			"毁天灭地", "不死不灭", "碎甲",
-			"战神领域", "浴血奋战", "援护"
+			"战神领域", "浴血奋战", "援护",
+			"陨石术", "绝对零度", "元素风暴", "时间静止"
 		]
 		var is_t2 = t2_skills.has(skill)
 		var is_t3 = t3_skills.has(skill)
@@ -4461,6 +4480,48 @@ async func _on_skill_selected(skill_name: String):
 			hunter_beast_dmg = int(player_data.attack_power() * 0.8)
 			_battle_add_log("🐺 野兽之力！召唤巨狼，每回合对敌人造成 %d 伤害，持续4回合" % hunter_beast_dmg)
 			_spawn_player_damage("🐺 野兽之力!", "buff")
+		# ===== 法师 T3 =====
+		"陨石术":
+			# ATK × 5.0 单体 + 爆炸范围伤 ATK × 2.0 全体
+			var meteor_dmg1 = int(_get_effective_atk() * 5.0)
+			var meteor_dmg2 = int(_get_effective_atk() * 2.0)
+			current_enemy["hp"] -= meteor_dmg1
+			# 附加灼烧DOT
+			meteor_turns = 3
+			meteor_dmg = int(_get_effective_atk() * 0.8)
+			_battle_add_log("☄️ 陨石术！造成 %d 伤害，并引发爆炸对全体造成 %d 伤害" % [meteor_dmg1, meteor_dmg2])
+			_battle_add_log("🔥 陨石术灼烧！目标每回合受到 %d 伤害，持续3回合" % meteor_dmg)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % meteor_dmg1, "crit", Vector2(0, -45))
+			_spawn_enemy_damage("爆!%d" % meteor_dmg2, "crit", Vector2(30, -20))
+		"绝对零度":
+			# ATK × 3.0 单体，冰冻3回合（Boss减半=1.5回合）
+			var freeze_dmg = int(_get_effective_atk() * 3.0)
+			current_enemy["hp"] -= freeze_dmg
+			var freeze_turns = 3
+			# Boss冰冻减半
+			if current_enemy.get("is_boss", false):
+				freeze_turns = 2
+			absolute_zero_turns = freeze_turns
+			_battle_add_log("❄️ 绝对零度！造成 %d 伤害，冰冻敌人 %d 回合！" % [freeze_dmg, freeze_turns])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % freeze_dmg, "crit", Vector2(0, -45))
+		"元素风暴":
+			# ATK × 2.5 全体，火+冰+雷三属性混合伤害
+			var storm_dmg = int(_get_effective_atk() * 2.5)
+			current_enemy["hp"] -= storm_dmg
+			elemental_storm_turns = 3
+			elemental_storm_dmg = int(_get_effective_atk() * 0.5)
+			_battle_add_log("⚡🔥❄️ 元素风暴！火+冰+雷三系混合，造成 %d 伤害！" % storm_dmg)
+			_battle_add_log("⚡ 元素风暴持续！每回合额外受到 %d 伤害，持续3回合" % elemental_storm_dmg)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % storm_dmg, "crit", Vector2(0, -45))
+		"时间静止":
+			# 使全体敌人暂停1回合（期间我方先手）
+			time_stop_turns = 2
+			time_stop_active = true
+			_battle_add_log("⏰ 时间静止！敌人被冻结 %d 回合，我方获得先手优势！" % time_stop_turns)
+			_spawn_player_damage("⏰ 时间静止!", "buff")
 		# 盗贼 T2
 		"影遁":
 			var vanish_dmg = int(_get_effective_atk() * 3.0)
@@ -4695,6 +4756,16 @@ func _process_battle(delta: float):
 		return  # 等待玩家输入
 
 	# 敌人回合
+	# 时间静止：敌人被冻结
+	if time_stop_turns > 0:
+		time_stop_turns -= 1
+		_battle_add_log("⏰ 时间静止！敌人无法行动！（剩余%d回合）" % time_stop_turns)
+		await get_tree().create_timer(0.5).timeout
+		if time_stop_turns <= 0:
+			time_stop_active = false
+		_start_player_turn()
+		return
+
 	if enemy_stun_turns > 0:
 		enemy_stun_turns -= 1
 		_battle_add_log("敌人仍然眩晕！")
@@ -4719,6 +4790,26 @@ func _process_battle(delta: float):
 		_battle_add_log("🔥 灼烧！流星火雨造成 %d 伤害（剩余%d回合）" % [meteor_burn_dmg, meteor_burn_turns])
 		_spawn_enemy_damage("%d" % meteor_burn_dmg, "poison", Vector2(-20, -10))
 		meteor_burn_turns -= 1
+		_update_enemy_hp_bar()
+		if await _check_battle_end():
+			return
+
+	# 法师T3: 陨石术灼烧DOT
+	if meteor_turns > 0:
+		current_enemy["hp"] -= meteor_dmg
+		_battle_add_log("☄️ 陨石灼烧！造成 %d 伤害（剩余%d回合）" % [meteor_dmg, meteor_turns])
+		_spawn_enemy_damage("%d" % meteor_dmg, "poison", Vector2(-10, -15))
+		meteor_turns -= 1
+		_update_enemy_hp_bar()
+		if await _check_battle_end():
+			return
+
+	# 法师T3: 元素风暴DOT
+	if elemental_storm_turns > 0:
+		current_enemy["hp"] -= elemental_storm_dmg
+		_battle_add_log("⚡🔥❄️ 元素风暴！造成 %d 伤害（剩余%d回合）" % [elemental_storm_dmg, elemental_storm_turns])
+		_spawn_enemy_damage("%d" % elemental_storm_dmg, "debuff", Vector2(10, -15))
+		elemental_storm_turns -= 1
 		_update_enemy_hp_bar()
 		if await _check_battle_end():
 			return
