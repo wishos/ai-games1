@@ -30,6 +30,7 @@ var battle_message: String = ""
 var battle_message_timer: float = 0.0
 var pending_skill_index: int = -1
 var enemy_stun_turns: int = 0
+var player_stun_turns: int = 0  # 玩家被眩晕回合数
 var player_defending: bool = false
 var player_shield: int = 0  # 护盾值
 var poison_stacks: int = 0   # 中毒层数
@@ -282,6 +283,41 @@ const BOSS_DATA = {
 		"skills": ["太极拳", "太极剑", "梯云纵", "纯阳无极功", "武当九阳功", "一代宗师"],
 		"description": "武当派开山祖师，百年修为已臻化境，一套太极拳法无敌于天下。今日亲临，是考验也是收徒。"
 	}
+}
+
+# ============================================================
+# 普通敌人技能系统
+# ============================================================
+
+# 敌人原型 -> 战斗风格映射
+const ENEMY_ARCHETYPE = {
+	# 草寇势力 - 粗暴型
+	"bandit": "brute",
+	"bandit_elite": "brute",
+	"deserter": "guardian",
+	# 邪派势力 - 阴狠型
+	"blood_sect_disciple": "rogue",
+	"riyue_follower": "mystic",
+	"wudu_disciple": "rogue",
+	"skeleton_warrior": "guardian",
+	"demon_red": "brute",
+	# 散人势力 - 敏捷型
+	"assassin": "rogue",
+	"bounty_hunter": "guardian",
+	"arena_champion": "brute",
+	"hidden_master": "mystic",
+	# 正派势力 - 均衡型
+	"shaolin_disciple": "guardian",
+	"wudang_disciple": "mystic"
+}
+
+# 各风格敌人的特殊技能列表
+const ENEMY_SKILLS = {
+	"brute": ["重击", "碎骨"],      # 高伤害+眩晕
+	"rogue": ["淬毒", "锁喉"],      # 毒伤+眩晕
+	"mystic": ["吸血", "噬魂"],     # 吸血+偷MP
+	"guardian": ["盾击", "铁壁"],   # 眩晕+自护盾
+	"beast": ["撕咬", "利爪"]        # 流血+连击
 }
 
 # 转换状态
@@ -2583,6 +2619,7 @@ func _start_battle():
 	poison_turns = 0
 	trapped = false
 	enemy_stun_turns = 0
+	player_stun_turns = 0
 	vanish_turns = 0
 	berserk_turns = 0
 	berserk_atk_boost = 0
@@ -2715,6 +2752,7 @@ func _start_boss_battle():
 	poison_turns = 0
 	trapped = false
 	enemy_stun_turns = 0
+	player_stun_turns = 0
 	vanish_turns = 0
 	berserk_turns = 0
 	berserk_atk_boost = 0
@@ -5140,7 +5178,324 @@ func _process_boss_turn():
 		5: _boss_sima_action(hp_ratio)
 		7: _boss_yue_action(hp_ratio)
 		8: _boss_zhang_action(hp_ratio)
-		_: _boss_default_attack()
+		_: _enemy_execute_action()
+
+func _enemy_execute_action():
+	# 普通敌人技能系统：60%普攻，40%特殊技能
+	var roll = randi() % 100
+	if roll < 60:
+		_boss_default_attack("普通攻击")
+		return
+	
+	var enemy_type = current_enemy.get("type", "")
+	var archetype = ENEMY_ARCHETYPE.get(enemy_type, "brute")
+	var skills = ENEMY_SKILLS.get(archetype, ["重击"])
+	var chosen_skill = skills[randi() % skills.size()]
+	
+	match chosen_skill:
+		"重击": _enemy_skill_heavy_strike()
+		"碎骨": _enemy_skill_bone_crusher()
+		"淬毒": _enemy_skill_poison_thrust()
+		"锁喉": _enemy_skill_strangle()
+		"吸血": _enemy_skill_life_drain()
+		"噬魂": _enemy_skill_soul_drain()
+		"盾击": _enemy_skill_shield_bash()
+		"铁壁": _enemy_skill_iron_wall()
+		"撕咬": _enemy_skill_bite()
+		"利爪": _enemy_skill_claw()
+		_: _boss_default_attack(chosen_skill)
+
+func _enemy_skill_heavy_strike():
+	# 重击：2x伤害，降低玩家防御2点，持续2回合
+	var dmg = int(current_enemy["atk"] * 2.0) + randi() % 3
+	if player_defending or player_shield > 0:
+		dmg = int(dmg * 0.5)
+	if player_shield > 0:
+		if player_shield >= dmg:
+			player_shield -= dmg
+			dmg = 0
+		else:
+			dmg -= player_shield
+			player_shield = 0
+	if player_defending:
+		player_defending = false
+	dmg = max(1, dmg)
+	player_data.hp -= dmg
+	# 降低玩家防御2点（简化：下2回合受伤+20%）
+	battle_cry_team_boost = max(battle_cry_team_boost, 2)  # 复用变量记录回合
+	_battle_add_log("💥 【重击】！%s 发动重击，造成 %d 伤害，碎甲效果！" % [current_enemy["name"], dmg])
+	_spawn_player_damage("-%d" % dmg, "damage")
+	_trigger_portrait_damage_flash()
+	if audio_manager:
+		audio_manager.play_sfx("hit")
+	_update_battle_player_ui()
+	if player_data.hp <= 0:
+		_battle_add_log("💀 你倒下了...")
+		_game_over()
+		return
+	_start_player_turn()
+
+func _enemy_skill_bone_crusher():
+	# 碎骨：1.5x伤害，30%几率眩晕玩家1回合
+	var dmg = int(current_enemy["atk"] * 1.5) + randi() % 5
+	if player_defending or player_shield > 0:
+		dmg = int(dmg * 0.5)
+	if player_shield > 0:
+		if player_shield >= dmg:
+			player_shield -= dmg
+			dmg = 0
+		else:
+			dmg -= player_shield
+			player_shield = 0
+	if player_defending:
+		player_defending = false
+	dmg = max(1, dmg)
+	player_data.hp -= dmg
+	var stun_chance = randi() % 100 < 30
+	if stun_chance:
+		player_stun_turns = max(player_stun_turns, 1)
+		_battle_add_log("💀 【碎骨】！%s 发动碎骨，造成 %d 伤害，30%%几率眩晕！★眩晕成功！" % [current_enemy["name"], dmg])
+	else:
+		_battle_add_log("💀 【碎骨】！%s 发动碎骨，造成 %d 伤害！（眩晕未中）" % [current_enemy["name"], dmg])
+	_spawn_player_damage("-%d" % dmg, "damage")
+	_trigger_portrait_damage_flash()
+	if audio_manager:
+		audio_manager.play_sfx("hit")
+	_update_battle_player_ui()
+	if player_data.hp <= 0:
+		_battle_add_log("💀 你倒下了...")
+		_game_over()
+		return
+	_start_player_turn()
+
+func _enemy_skill_poison_thrust():
+	# 淬毒：正常伤害 + 附加3层中毒（每层3伤害，持续3回合）
+	var dmg = int(current_enemy["atk"]) + randi() % 5 - 2
+	if player_defending or player_shield > 0:
+		dmg = int(dmg * 0.5)
+	if player_shield > 0:
+		if player_shield >= dmg:
+			player_shield -= dmg
+			dmg = 0
+		else:
+			dmg -= player_shield
+			player_shield = 0
+	if player_defending:
+		player_defending = false
+	dmg = max(1, dmg)
+	player_data.hp -= dmg
+	poison_stacks += 3
+	poison_damage = max(poison_damage, 3)
+	poison_turns = max(poison_turns, 3)
+	_battle_add_log("🗡️ 【淬毒】！%s 刺出淬毒一击，造成 %d 伤害并附加中毒！" % [current_enemy["name"], dmg])
+	_spawn_player_damage("-%d" % dmg, "poison")
+	_trigger_portrait_damage_flash()
+	if audio_manager:
+		audio_manager.play_sfx("hit")
+	_update_battle_player_ui()
+	if player_data.hp <= 0:
+		_battle_add_log("💀 你倒下了...")
+		_game_over()
+		return
+	_start_player_turn()
+
+func _enemy_skill_strangle():
+	# 锁喉：0.8x伤害 + 必定眩晕1回合
+	var dmg = int(current_enemy["atk"] * 0.8) + randi() % 3
+	if player_defending or player_shield > 0:
+		dmg = int(dmg * 0.5)
+	if player_shield > 0:
+		if player_shield >= dmg:
+			player_shield -= dmg
+			dmg = 0
+		else:
+			dmg -= player_shield
+			player_shield = 0
+	if player_defending:
+		player_defending = false
+	dmg = max(1, dmg)
+	player_data.hp -= dmg
+	player_stun_turns = max(player_stun_turns, 1)
+	_battle_add_log("🤏 【锁喉】！%s 锁住咽喉，造成 %d 伤害，玩家眩晕1回合！" % [current_enemy["name"], dmg])
+	_spawn_player_damage("-%d" % dmg, "damage")
+	_trigger_portrait_damage_flash()
+	if audio_manager:
+		audio_manager.play_sfx("hit")
+	_update_battle_player_ui()
+	if player_data.hp <= 0:
+		_battle_add_log("💀 你倒下了...")
+		_game_over()
+		return
+	_start_player_turn()
+
+func _enemy_skill_life_drain():
+	# 吸血：0.7x伤害，回复自身50%伤害量的HP
+	var dmg = int(current_enemy["atk"] * 0.7) + randi() % 3
+	if player_defending or player_shield > 0:
+		dmg = int(dmg * 0.5)
+	if player_shield > 0:
+		if player_shield >= dmg:
+			player_shield -= dmg
+			dmg = 0
+		else:
+			dmg -= player_shield
+			player_shield = 0
+	if player_defending:
+		player_defending = false
+	dmg = max(1, dmg)
+	player_data.hp -= dmg
+	var heal = int(dmg * 0.5)
+	current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
+	_battle_add_log("🩸 【吸血】！%s 吸取生命，造成 %d 伤害，回复 %d HP！" % [current_enemy["name"], dmg, heal])
+	_spawn_player_damage("-%d" % dmg, "damage")
+	_spawn_enemy_damage("+%d" % heal, "heal", Vector2(0, -30))
+	_trigger_portrait_damage_flash()
+	if audio_manager:
+		audio_manager.play_sfx("hit")
+	_update_battle_player_ui()
+	_update_enemy_hp_bar()
+	if player_data.hp <= 0:
+		_battle_add_log("💀 你倒下了...")
+		_game_over()
+		return
+	_start_player_turn()
+
+func _enemy_skill_soul_drain():
+	# 噬魂：0.6x伤害 + 偷取3点MP
+	var dmg = int(current_enemy["atk"] * 0.6) + randi() % 3
+	if player_defending or player_shield > 0:
+		dmg = int(dmg * 0.5)
+	if player_shield > 0:
+		if player_shield >= dmg:
+			player_shield -= dmg
+			dmg = 0
+		else:
+			dmg -= player_shield
+			player_shield = 0
+	if player_defending:
+		player_defending = false
+	dmg = max(1, dmg)
+	player_data.hp -= dmg
+	var mp_steal = min(3, player_data.mp)
+	player_data.mp -= mp_steal
+	_battle_add_log("👻 【噬魂】！%s 吞噬灵魂，造成 %d 伤害，偷取 %d MP！" % [current_enemy["name"], dmg, mp_steal])
+	_spawn_player_damage("-%d" % dmg, "damage")
+	_trigger_portrait_damage_flash()
+	if audio_manager:
+		audio_manager.play_sfx("hit")
+	_update_battle_player_ui()
+	if player_data.hp <= 0:
+		_battle_add_log("💀 你倒下了...")
+		_game_over()
+		return
+	_start_player_turn()
+
+func _enemy_skill_shield_bash():
+	# 盾击：1.5x伤害，50%几率眩晕1回合
+	var dmg = int(current_enemy["atk"] * 1.5) + randi() % 3
+	if player_defending or player_shield > 0:
+		dmg = int(dmg * 0.5)
+	if player_shield > 0:
+		if player_shield >= dmg:
+			player_shield -= dmg
+			dmg = 0
+		else:
+			dmg -= player_shield
+			player_shield = 0
+	if player_defending:
+		player_defending = false
+	dmg = max(1, dmg)
+	player_data.hp -= dmg
+	var stun_chance = randi() % 100 < 50
+	if stun_chance:
+		player_stun_turns = max(player_stun_turns, 1)
+		_battle_add_log("🛡️ 【盾击】！%s 盾牌重击，造成 %d 伤害！★眩晕成功！" % [current_enemy["name"], dmg])
+	else:
+		_battle_add_log("🛡️ 【盾击】！%s 盾牌重击，造成 %d 伤害！（眩晕未中）" % [current_enemy["name"], dmg])
+	_spawn_player_damage("-%d" % dmg, "damage")
+	_trigger_portrait_damage_flash()
+	if audio_manager:
+		audio_manager.play_sfx("hit")
+	_update_battle_player_ui()
+	if player_data.hp <= 0:
+		_battle_add_log("💀 你倒下了...")
+		_game_over()
+		return
+	_start_player_turn()
+
+func _enemy_skill_iron_wall():
+	# 铁壁：给自己加护盾（30%最大HP），然后普攻
+	var shield_gain = int(current_enemy["max_hp"] * 0.3)
+	current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + shield_gain)
+	_update_enemy_hp_bar()
+	_battle_add_log("🛡️ 【铁壁】！%s 进入防御姿态，回复 %d HP！" % [current_enemy["name"], shield_gain])
+	_spawn_enemy_damage("+%d" % shield_gain, "heal", Vector2(0, -30))
+	await get_tree().create_timer(0.4).timeout
+	_boss_default_attack("铁壁反击")
+
+func _enemy_skill_bite():
+	# 撕咬：1.2x伤害，附加2层流血（每回合3伤害，持续2回合）
+	var dmg = int(current_enemy["atk"] * 1.2) + randi() % 3
+	if player_defending or player_shield > 0:
+		dmg = int(dmg * 0.5)
+	if player_shield > 0:
+		if player_shield >= dmg:
+			player_shield -= dmg
+			dmg = 0
+		else:
+			dmg -= player_shield
+			player_shield = 0
+	if player_defending:
+		player_defending = false
+	dmg = max(1, dmg)
+	player_data.hp -= dmg
+	poison_stacks += 2
+	poison_damage = max(poison_damage, 3)
+	poison_turns = max(poison_turns, 2)
+	_battle_add_log("🐺 【撕咬】！%s 撕咬攻击，造成 %d 伤害，附加流血！" % [current_enemy["name"], dmg])
+	_spawn_player_damage("-%d" % dmg, "poison")
+	_trigger_portrait_damage_flash()
+	if audio_manager:
+		audio_manager.play_sfx("hit")
+	_update_battle_player_ui()
+	if player_data.hp <= 0:
+		_battle_add_log("💀 你倒下了...")
+		_game_over()
+		return
+	_start_player_turn()
+
+func _enemy_skill_claw():
+	# 利爪：1.3x伤害，连续攻击2次（各0.7x），但第二次必中
+	var total_dmg = 0
+	for i in range(2):
+		var d = int(current_enemy["atk"] * (1.3 if i == 0 else 0.7)) + randi() % 3
+		if player_defending or player_shield > 0:
+			d = int(d * 0.5)
+		if player_shield > 0:
+			if player_shield >= d:
+				player_shield -= d
+				d = 0
+			else:
+				d -= player_shield
+				player_shield = 0
+		if player_defending:
+			player_defending = false
+		d = max(1, d)
+		player_data.hp -= d
+		total_dmg += d
+		_battle_add_log("🦴 【利爪%d】！%s 爪击，造成 %d 伤害" % [i+1, current_enemy["name"], d])
+		_spawn_player_damage("-%d" % d, "damage")
+		_trigger_portrait_damage_flash()
+		if audio_manager:
+			audio_manager.play_sfx("hit")
+		_update_battle_player_ui()
+		if player_data.hp <= 0:
+			_battle_add_log("💀 你倒下了...")
+			_game_over()
+			return
+		await get_tree().create_timer(0.3).timeout
+	_battle_add_log("🦴 【利爪】！%s 共造成 %d 伤害！" % [current_enemy["name"], total_dmg])
+	_start_player_turn()
 
 func _boss_hanbatian_action(hp_ratio: float):
 	# 山贼王·韩霸天: 普通攻击/战吼/召集喽啰/狂暴化
@@ -5402,6 +5757,14 @@ func _show_boss_phase_announcement(text: String):
 	announce.queue_free()
 
 func _start_player_turn():
+	# 检查玩家是否被眩晕
+	if player_stun_turns > 0:
+		player_stun_turns -= 1
+		_battle_add_log("⏰ 玩家被眩晕！无法行动！（剩余%d回合）" % player_stun_turns)
+		await get_tree().create_timer(0.5).timeout
+		is_player_turn = false
+		_process_battle(0)
+		return
 	is_player_turn = true
 	# 递减所有技能冷却
 	for skill in skill_cooldowns.keys():
@@ -5788,6 +6151,7 @@ func _close_battle_ui():
 	poison_stacks = 0
 	poison_turns = 0
 	enemy_stun_turns = 0
+	player_stun_turns = 0
 	poison_damage = 0
 	trapped = false
 	_update_ui()
