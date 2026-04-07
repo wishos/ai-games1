@@ -104,7 +104,7 @@ const BOSS_KILL_EXP := 50
 - [x] P0: 修复 `_check_battle_end()` await 问题 ✅ (ce606d4)
 - [x] P1: map_bg/map_ground/grass_pattern 内存泄漏 ✅ (ce606d4) — 2026-04-04 确认
 - [x] P1: battle_action_buttons 清理 ✅ (ce606d4) — 2026-04-04 确认
-- [ ] P1: fog_map 迷雾系统改为 fog_container 容器管理
+- [x] P1: fog_map 迷雾系统改为 fog_container 容器管理 ✅ (2026-04-08) — 新增 `fog_container: Node2D` 实例变量，`_clear_fog()` 改为单次 `queue_free()` 替代逐节点释放
 - [ ] P1: 修复 `_consume_spell_pierce()` 注释
 - [ ] P2: 拆分 game.gd 模块化改造
 - [ ] P2: Boss AI 函数重构
@@ -1189,7 +1189,7 @@ func _roll_damage_variance_large(base_dmg: int) -> int:
 - **✅ 编译通过**: Godot `--headless --check-only --quit` exit code 0，无语法错误
 - **文件行数**: game.gd 当前 **6501 行**（上次 6501 行，新增约 0 行）
 - **无新问题**: 本次审查未发现新的语法错误、内存泄漏或逻辑问题
-- **P1 (既有未修复)**: 迷雾系统 fog_map 仍使用字典逐节点释放（自 2026-04-03 00:03 报告至今）
+- **✅ P1 (已修复)**: fog_map 迷雾系统 — 2026-04-08 引入 `fog_container: Node2D` 统一管理，`_clear_fog()` 改为单次 `queue_free()`
 - **P2 (既有未修复)**: `_load_job_texture()` 创建未使用 Sprite2D 临时对象（自 2026-04-03 06:03 报告至今未修复）
 - **P2 (既有未修复)**: 敌人/商店素材纹理尺寸 `2048` 硬编码（自 2026-04-03 06:03 报告至今未修复）
 - **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03 报告至今未修复）
@@ -1208,12 +1208,12 @@ func _roll_damage_variance_large(base_dmg: int) -> int:
 **本次新增检查项**：
 - ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 确认仅有一处声明（行111-112），重复已清除
 - ✅ `_load_job_texture()` 第720-722行 `Sprite2D.new()` 仍为游离节点（P2，既有问题，尚未修复）
-- ✅ `fog_map` 迷雾系统仍用字典管理（P1，既有问题，尚未修复）
+- ✅ `fog_map` 迷雾系统改为 fog_container 容器管理（P1，2026-04-08 已修复）
 - ✅ `_save_slot_buttons` 数组不对称（空槽无按钮入数组）仍存在（P2，既有问题）
 - ✅ 硬编码常量（2048/0.003/0.5/0.6等）均未提取（均为P2/P3，既有问题）
 
 **既有未修复问题状态**（持续待修复）：
-- **P1 (既有未修复)**: 迷雾系统 fog_map 仍使用字典逐节点释放（自 2026-04-03 00:03）
+- **✅ P1 (已修复)**: 迷雾系统 fog_map — 2026-04-08 引入 `fog_container: Node2D` 统一管理
 - **P2 (既有未修复)**: `_load_job_texture()` 第720-722行创建未使用 Sprite2D 临时对象（自 2026-04-03 06:03）
 - **P2 (既有未修复)**: 敌人/商店素材纹理尺寸 `2048` 硬编码（自 2026-04-03 06:03）
 - **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03）
@@ -1241,7 +1241,21 @@ func _roll_damage_variance_large(base_dmg: int) -> int:
 - ✅ `transition_overlay` (ColorRect) 在 `_next_floor()` 中复用而非重建，高效无泄漏
 
 **既有未修复问题状态**（持续待修复）：
-- **P1 (既有未修复)**: 迷雾系统 fog_map 仍使用字典逐节点释放，缺少 fog_container 容器管理（自 2026-04-03 00:03 报告至今）
+- **✅ P1 (已修复)**: 迷雾系统 fog_map — 2026-04-08 引入 `fog_container: Node2D` 统一管理
+- **P2 (既有未修复)**: `_load_job_texture()` 第684-687行创建未使用 Sprite2D 临时对象（自 2026-04-03 06:03 报告至今未修复）
+- **P2 (既有未修复)**: 敌人/商店素材纹理尺寸 `2048` 硬编码（自 2026-04-03 06:03 报告至今未修复）
+- **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03 报告至今未修复）
+- **P2 (既有未修复)**: `_save_slot_buttons` 数组不对称（自 2026-04-04 06:03 报告至今未修复）
+- **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理（自 2026-04-03 06:03 报告至今）
+- **P3 (既有未修复)**: 伤害方差三种变体（±2/±3/±5）散落在 20+ 处未提取为辅助函数（自 2026-04-04 12:03 报告至今）
+- **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量
+
+### 审查记录 - 2026-04-08 23:19
+
+本次审查发现：
+- **✅ 编译通过**: Godot `--headless --check-only --quit` exit code 0，无语法错误
+- **文件行数**: game.gd 当前 **6511 行**（+10行 fog_container 相关修改）
+- **✅ P1 (已修复)**: fog_map 迷雾系统 — 引入 `fog_container: Node2D` 实例变量统一管理所有迷雾节点，`_clear_fog()` 改为单次 `queue_free()`，避免逐节点释放的低效和潜在泄漏
 - **P2 (既有未修复)**: `_load_job_texture()` 第684-687行创建未使用 Sprite2D 临时对象（自 2026-04-03 06:03 报告至今未修复）
 - **P2 (既有未修复)**: 敌人/商店素材纹理尺寸 `2048` 硬编码（自 2026-04-03 06:03 报告至今未修复）
 - **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03 报告至今未修复）

@@ -19,6 +19,7 @@ var player: CharacterBody2D
 var tile_map: TileMap
 var current_floor: int = 1
 var fog_map: Dictionary = {}
+var fog_container: Node2D  # 迷雾容器，统一管理所有迷雾节点，避免逐个queue_free
 
 # 战斗
 var current_enemy: Dictionary = {}
@@ -1013,8 +1014,11 @@ func _generate_map():
 	grass_pattern.position = Vector2(0, 0)
 	add_child(grass_pattern)
 
-	# 迷雾
+	# 迷雾（使用fog_container统一管理，一次queue_free即可释放所有子节点）
 	_clear_fog()
+	fog_container = Node2D.new()
+	fog_container.name = "FogContainer"
+	add_child(fog_container)
 	for x in range(0, 80):
 		for y in range(0, 45):
 			var fog = ColorRect.new()
@@ -1022,7 +1026,7 @@ func _generate_map():
 			fog.position = Vector2(x * 16, y * 16)
 			fog.color = Color(0.02, 0.02, 0.04, 0.95)
 			fog.name = "fog_%d_%d" % [x, y]
-			add_child(fog)
+			fog_container.add_child(fog)
 			fog_map[str(x) + "_" + str(y)] = fog
 
 	_reveal_area(40, 25, 8)  # 初始可见范围调大
@@ -1048,10 +1052,10 @@ func _create_grass_pattern() -> Node2D:
 
 
 func _clear_fog():
-	for key in fog_map.keys():
-		var fog = fog_map[key]
-		if fog and is_instance_valid(fog):
-			fog.queue_free()
+	# 使用fog_container统一释放，一次queue_free即可释放所有子节点
+	if fog_container and is_instance_valid(fog_container):
+		fog_container.queue_free()
+	fog_container = null
 	fog_map.clear()
 
 
