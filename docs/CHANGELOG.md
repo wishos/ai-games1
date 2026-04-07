@@ -3,6 +3,15 @@
 ## [Unreleased] - v0.6
 
 ### Added
+- **战士T4觉醒技能**（v0.6 迭代 - 2026-04-07）:
+  - 战神之力 (60MP/6CD): ATK×6.0，附带「战神印记」使目标受伤+30%持续3回合
+  - 绝对防御 (50MP/8CD): 5回合内免疫所有伤害，但无法行动
+  - 征服者怒吼 (40MP/5CD): ATK×2.5全体攻击，附带恐惧效果(敌人ATK-30%持续3回合)
+  - 新增状态变量: warrior_wargod_mark_turns, warrior_absolute_def_turns, warrior_conqueror_fear_turns
+  - 绝对防御实现玩家免疫机制和跳过回合机制
+  - 战神印记在普攻、毁天灭地、碎甲、浴血奋战、征服者怒吼中均触发+30%伤害
+  - 更新 player.gd 战士技能列表，包含T1-T4全部15个技能
+
 - **普通敌人技能系统**（v0.6 迭代 - 2026-04-06）:
   - 新增敌人原型→战斗风格映射（brute/rogue/mystic/guardian/beast）
   - 新增10种敌人特殊技能：

@@ -118,6 +118,11 @@ var warrior_guard_active: bool = false       # 援护：是否已援护过
 var warrior_guard_target_hp_pct: float = 0.0  # 援护：目标HP百分比
 var warrior_undying_used: bool = false       # 不死不灭：是否已触发
 var warrior_bloodlust_active: bool = false  # 浴血奋战：激活状态
+var warrior_wargod_mark_turns: int = 0      # 战神之力：战神印记持续回合
+var warrior_wargod_mark_dmg_boost: int = 0   # 战神之力：受伤加成量
+var warrior_absolute_def_turns: int = 0      # 绝对防御：持续回合
+var warrior_conqueror_fear_turns: int = 0   # 征服者怒吼：恐惧持续回合
+var warrior_conqueror_fear_atkdebuff: int = 0  # 征服者怒吼：ATK降低量
 
 # 技能冷却系统
 var skill_cooldowns: Dictionary = {}  # {skill_name: remaining_turns}
@@ -2694,6 +2699,12 @@ func _start_battle():
 	warrior_guard_target_hp_pct = 0.0
 	warrior_undying_used = false
 	warrior_bloodlust_active = false
+	# 战士T4状态重置
+	warrior_wargod_mark_turns = 0
+	warrior_wargod_mark_dmg_boost = 0
+	warrior_absolute_def_turns = 0
+	warrior_conqueror_fear_turns = 0
+	warrior_conqueror_fear_atkdebuff = 0
 
 	# 生成敌人（根据层数选择敌人类型）
 	var enemy_data_class = _get_enemy_data()
@@ -2829,6 +2840,12 @@ func _start_boss_battle():
 	warrior_guard_target_hp_pct = 0.0
 	warrior_undying_used = false
 	warrior_bloodlust_active = false
+	# 战士T4状态重置
+	warrior_wargod_mark_turns = 0
+	warrior_wargod_mark_dmg_boost = 0
+	warrior_absolute_def_turns = 0
+	warrior_conqueror_fear_turns = 0
+	warrior_conqueror_fear_atkdebuff = 0
 	boss_phase = 1
 	boss_enraged = false
 	boss_shield_stacks = 0
@@ -3936,7 +3953,9 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	# 战士 T3 (毁灭者路线)
 	"毁天灭地": 5, "不死不灭": 6, "碎甲": 3,
 	# 战士 T3 (团队领袖路线)
-	"战神领域": 5, "浴血奋战": 4, "援护": 2
+	"战神领域": 5, "浴血奋战": 4, "援护": 2,
+	# 战士 T4 (觉醒技能)
+	"战神之力": 6, "绝对防御": 8, "征服者怒吼": 5
 }
 
 # 计算战斗中有效的攻击力（含buff加成）
@@ -4038,9 +4057,11 @@ func _on_skill_menu():
 			"战神领域", "浴血奋战", "援护",
 			"陨石术", "绝对零度", "元素风暴", "时间静止"
 		]
+		var t4_skills = ["战神之力", "绝对防御", "征服者怒吼"]
 		var is_t2 = t2_skills.has(skill)
 		var is_t3 = t3_skills.has(skill)
-		var level_locked = (is_t2 and player_data.level < 10) or (is_t3 and player_data.level < 25)
+		var is_t4 = t4_skills.has(skill)
+		var level_locked = (is_t2 and player_data.level < 10) or (is_t3 and player_data.level < 25) or (is_t4 and player_data.level < 40)
 		var can_use = player_data.mp >= cost and cd_remaining <= 0 and not level_locked
 		var row = skill_idx / 2
 		var col = skill_idx % 2
@@ -4053,7 +4074,7 @@ func _on_skill_menu():
 				cd_text = " [CD:%d]" % cd_remaining
 			else:
 				cd_text = " [OK]"
-		var level_text = "Lv25" if is_t3 else (" Lv10" if is_t2 else "")
+		var level_text = "Lv40" if is_t4 else ("Lv25" if is_t3 else (" Lv10" if is_t2 else ""))
 		sbtn.text = skill + level_text + " (MP:" + str(cost) + ")" + cd_text
 		sbtn.position = Vector2(sx, sy)
 		sbtn.size = Vector2(130, 48)
@@ -4123,7 +4144,9 @@ async func _on_skill_selected(skill_name: String):
 		# 战士 T3 (毁灭者路线)
 		"毁天灭地": 50, "不死不灭": 40, "碎甲": 30,
 		# 战士 T3 (团队领袖路线)
-		"战神领域": 45, "浴血奋战": 35, "援护": 20
+		"战神领域": 45, "浴血奋战": 35, "援护": 20,
+		# 战士 T4 (觉醒技能)
+		"战神之力": 60, "绝对防御": 50, "征服者怒吼": 40
 	}
 	var cost = mp_cost.get(skill_name, 0)
 	if player_data.mp < cost:
@@ -4192,6 +4215,9 @@ async func _on_skill_selected(skill_name: String):
 		"毁天灭地":
 			var pierce_def = _consume_spell_pierce()
 			var base_dmg = int(_get_effective_atk() * 4.0 - pierce_def + randi() % 11 - 5)
+			# 战神T4: 战神印记 - 目标受伤+30%
+			if warrior_wargod_mark_turns > 0:
+				base_dmg = int(base_dmg * 1.3)
 			var dmg = max(1, base_dmg)
 			# 30%概率秒杀HP<20%敌人
 			var execute_chance = 30
@@ -4217,6 +4243,9 @@ async func _on_skill_selected(skill_name: String):
 			var shatk = _get_effective_atk()
 			# 战神领域加成
 			shatk += warrior_domain_atk_boost
+			# 战神T4: 战神印记 - 目标受伤+30%
+			if warrior_wargod_mark_turns > 0:
+				shatk = int(shatk * 1.3)
 			var s_dmg = int(shatk * 2.0 - pierce_def + randi() % 7 - 3)
 			s_dmg = max(1, s_dmg)
 			current_enemy["hp"] -= s_dmg
@@ -4240,6 +4269,9 @@ async func _on_skill_selected(skill_name: String):
 			var hp_pct = float(player_data.hp) / float(player_data.max_hp)
 			var bloodlust_mult = 1.0 + (1.0 - hp_pct) * 2.0  # HP越低倍率越高，最大3.0
 			var batk = _get_effective_atk() + warrior_domain_atk_boost
+			# 战神T4: 战神印记 - 目标受伤+30%
+			if warrior_wargod_mark_turns > 0:
+				batk = int(batk * 1.3)
 			var b_dmg = int(batk * bloodlust_mult - _consume_spell_pierce() + randi() % 7 - 3)
 			b_dmg = max(1, b_dmg)
 			current_enemy["hp"] -= b_dmg
@@ -4251,6 +4283,40 @@ async func _on_skill_selected(skill_name: String):
 			warrior_guard_target_hp_pct = float(player_data.hp) / float(player_data.max_hp)
 			_battle_add_log("🛡️ 援护！已锁定目标，下一次致命伤害由你承受")
 			_spawn_player_damage("援护!", "shield")
+		# ===== 战士 T4 (觉醒技能·Lv40解锁) =====
+		"战神之力":
+			# ATK × 6.0，附带"战神印记"（使目标受伤+30%持续3回合）
+			var wg_dmg = int(_get_effective_atk() * 6.0 - _consume_spell_pierce() + randi() % 11 - 5)
+			wg_dmg = max(1, wg_dmg)
+			# 战神印记在受到伤害时额外加成，这里首次打击也附带标记
+			current_enemy["hp"] -= wg_dmg
+			warrior_wargod_mark_turns = 3
+			warrior_wargod_mark_dmg_boost = int(wg_dmg * 0.3)
+			_battle_add_log("⚔️💥 战神之力！造成 %d 伤害，敌人获得「战神印记」受伤+30%%持续3回合" % wg_dmg)
+			_enemy_hit_effect()
+			_critical_hit_effect()
+			_spawn_enemy_damage("%d" % wg_dmg, "crit", Vector2(0, -55))
+		"绝对防御":
+			# 5回合内免疫所有伤害，但无法行动
+			warrior_absolute_def_turns = 5
+			player_data.hp = max(1, player_data.hp)  # 确保HP不为0
+			_battle_add_log("🏰⚔️ 绝对防御！5回合内免疫所有伤害，但无法行动")
+			_spawn_player_damage("绝对防御!", "shield")
+		"征服者怒吼":
+			# ATK × 2.5 全体，恐惧效果：敌人-30%ATK持续3回合
+			var conqueror_dmg = int(_get_effective_atk() * 2.5 - _consume_spell_pierce() + randi() % 11 - 5)
+			# 战神T4: 战神印记 - 目标受伤+30%
+			if warrior_wargod_mark_turns > 0:
+				conqueror_dmg = int(conqueror_dmg * 1.3)
+			conqueror_dmg = max(1, conqueror_dmg)
+			current_enemy["hp"] -= conqueror_dmg
+			warrior_conqueror_fear_turns = 3
+			warrior_conqueror_fear_atkdebuff = int(current_enemy["atk"] * 0.3)
+			current_enemy["atk"] = max(1, current_enemy["atk"] - warrior_conqueror_fear_atkdebuff)
+			_battle_add_log("😱⚔️ 征服者怒吼！造成 %d 伤害，敌人ATK-%d持续3回合，陷入恐惧！" % [conqueror_dmg, warrior_conqueror_fear_atkdebuff])
+			_enemy_hit_effect()
+			_critical_hit_effect()
+			_spawn_enemy_damage("%d" % conqueror_dmg, "crit", Vector2(0, -50))
 		# 法师
 		"火球":
 			var pierce_def = _consume_spell_pierce()
@@ -4950,6 +5016,19 @@ func _process_battle(delta: float):
 			warrior_domain_def_boost = 0
 			_battle_add_log("⚔️ 战神领域效果结束")
 
+	# 战士T4: 战神印记 - 目标受伤+30%持续3回合
+	if warrior_wargod_mark_turns > 0:
+		warrior_wargod_mark_turns -= 1
+		if warrior_wargod_mark_turns <= 0:
+			warrior_wargod_mark_dmg_boost = 0
+			_battle_add_log("⚔️ 战神印记消退！")
+
+	# 战士T4: 征服者怒吼 - 敌人ATK降低恐惧效果
+	if warrior_conqueror_fear_turns > 0:
+		warrior_conqueror_fear_turns -= 1
+		if warrior_conqueror_fear_turns <= 0:
+			_battle_add_log("😨 征服者怒吼的恐惧效果结束！")
+
 	# 战士T3: 碎甲敌人DEF debuff
 	if warrior_shatter_turns > 0:
 		warrior_shatter_turns -= 1
@@ -5095,6 +5174,14 @@ func _process_battle(delta: float):
 		_spawn_player_damage("援护!", "shield")
 		_update_battle_player_ui()
 		_start_player_turn()
+		return
+	# 战士T4: 绝对防御 - 免疫所有伤害
+	if warrior_absolute_def_turns > 0:
+		_battle_add_log("🏰⚔️ 绝对防御！免疫了 %s 的攻击！" % current_enemy["name"])
+		_spawn_player_damage("免疫!", "shield")
+		_update_battle_player_ui()
+		await get_tree().create_timer(0.4).timeout
+		_end_enemy_turn()
 		return
 	player_data.hp -= e_dmg
 	# 战士T3: 不死不灭 - HP降至1时自动回复30%
@@ -5696,6 +5783,14 @@ func _boss_default_attack(skill_name: String = "攻击"):
 	if player_defending:
 		player_defending = false
 	e_dmg = max(1, e_dmg)
+	# 战士T4: 绝对防御 - 免疫Boss伤害
+	if warrior_absolute_def_turns > 0:
+		_battle_add_log("🏰⚔️ 绝对防御！免疫了 %s 的【%s】！" % [current_enemy["name"], skill_name])
+		_spawn_player_damage("免疫!", "shield")
+		_update_battle_player_ui()
+		await get_tree().create_timer(0.4).timeout
+		_start_player_turn()
+		return
 	player_data.hp -= e_dmg
 	_battle_add_log("👹 %s 使用【%s】！造成 %d 伤害" % [current_enemy["name"], skill_name, e_dmg])
 	_spawn_player_damage("-%d" % e_dmg, "damage")
@@ -5757,6 +5852,19 @@ func _show_boss_phase_announcement(text: String):
 	announce.queue_free()
 
 func _start_player_turn():
+	# 战士T4: 绝对防御 - 无法行动但免疫伤害
+	if warrior_absolute_def_turns > 0:
+		warrior_absolute_def_turns -= 1
+		_battle_add_log("🏰⚔️ 绝对防御！本回合免疫所有伤害！（剩余%d回合）" % warrior_absolute_def_turns)
+		_spawn_player_damage("免疫!", "shield")
+		# 绝对防御期间仍然触发敌人回合，但不扣血
+		await get_tree().create_timer(0.3).timeout
+		is_player_turn = false
+		if warrior_absolute_def_turns > 0:
+			_process_battle(0)
+		else:
+			_battle_add_log("🏰 绝对防御结束！")
+		return
 	# 检查玩家是否被眩晕
 	if player_stun_turns > 0:
 		player_stun_turns -= 1
@@ -5780,9 +5888,14 @@ func _on_attack():
 	var is_crit = randi() % 100 < player_data.luk * 2
 	var pierce_def = _consume_spell_pierce()
 	var base_dmg = player_data.attack_power() - pierce_def + randi() % 7 - 3
+	# 战神T4: 战神印记 - 目标受伤+30%
+	if warrior_wargod_mark_turns > 0:
+		base_dmg = int(base_dmg * 1.3)
 	var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 	current_enemy["hp"] -= dmg
 	var attack_msg = "暴击！" if is_crit else ""
+	if warrior_wargod_mark_turns > 0:
+		attack_msg += "【战神印记+30%】"
 	_battle_add_log("⚔️ 攻击！" + attack_msg + "造成 %d 伤害" % dmg)
 	var attack_dmg_type = "crit" if is_crit else "damage"
 	var attack_offset_x = (randi() % 15) - 7
