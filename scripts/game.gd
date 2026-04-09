@@ -1710,6 +1710,10 @@ const MINIMAP_COLS: int = 80
 const MINIMAP_ROWS: int = 45
 const MINIMAP_CELL: int = 2  # 每个小地图格子的像素大小
 
+# 素材纹理尺寸常量
+const ASSET_TEX_SIZE: float = 2048.0  # 敌人/商店等素材纹理尺寸
+const ENEMY_SPRITE_DISPLAY_SIZE: float = 200.0  # 敌人精灵显示尺寸
+
 func _create_minimap():
 	minimap_container = Control.new()
 	minimap_container.name = "MinimapContainer"
@@ -1838,14 +1842,14 @@ func _create_shop_bg():
 	var bg_tex = load("res://assets/doubao/tavern_scene.png")
 	if bg_tex:
 		shop_bg_sprite.texture = bg_tex
-		# 缩放到屏幕尺寸 (2048x2048 -> 1280x720 保持比例裁切)
-		var scale_x = 1280.0 / 2048.0
-		var scale_y = 720.0 / 2048.0
+		# 缩放到屏幕尺寸 (ASSET_TEX_SIZE -> 1280x720 保持比例裁切)
+		var scale_x = 1280.0 / ASSET_TEX_SIZE
+		var scale_y = 720.0 / ASSET_TEX_SIZE
 		var scale = max(scale_x, scale_y)  # 用更大的缩放保证覆盖
 		shop_bg_sprite.scale = Vector2(scale, scale)
 		# 居中
-		var scaled_w = 2048 * scale
-		var scaled_h = 2048 * scale
+		var scaled_w = ASSET_TEX_SIZE * scale
+		var scaled_h = ASSET_TEX_SIZE * scale
 		shop_bg_sprite.position = Vector2((1280 - scaled_w) / 2, (720 - scaled_h) / 2)
 	else:
 		# 回退到纯色背景
@@ -2955,8 +2959,8 @@ func _create_battle_ui():
 	var loaded_tex = _load_enemy_texture(enemy_type)
 	if loaded_tex:
 		enemy_sprite.texture = loaded_tex
-		# 2048x2048 -> 200x200 显示 (约1/10)
-		enemy_sprite.scale = Vector2(200.0/2048.0, 200.0/2048.0)
+		# ASSET_TEX_SIZE -> ENEMY_SPRITE_DISPLAY_SIZE 显示 (约1/10)
+		enemy_sprite.scale = Vector2(ENEMY_SPRITE_DISPLAY_SIZE/ASSET_TEX_SIZE, ENEMY_SPRITE_DISPLAY_SIZE/ASSET_TEX_SIZE)
 		enemy_sprite.position = Vector2(100, 0)  # 居中偏左
 	else:
 		enemy_sprite.texture = _create_enemy_texture(current_enemy["color"])
