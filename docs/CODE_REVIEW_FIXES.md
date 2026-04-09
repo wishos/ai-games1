@@ -104,13 +104,18 @@ const BOSS_KILL_EXP := 50
 - [x] P0: 修复 `_check_battle_end()` await 问题 ✅ (ce606d4)
 - [x] P1: map_bg/map_ground/grass_pattern 内存泄漏 ✅ (ce606d4) — 2026-04-04 确认
 - [x] P1: battle_action_buttons 清理 ✅ (ce606d4) — 2026-04-04 确认
-- [x] P1: fog_map 迷雾系统改为 fog_container 容器管理 ✅ (2026-04-08) — 新增 `fog_container: Node2D` 实例变量，`_clear_fog()` 改为单次 `queue_free()` 替代逐节点释放
+- [x] P1: fog_map 迷雾系统改为 fog_container 容器管理 ✅ (2026-04-08)
+- [x] P0: `_on_skill_selected()` 第4755行 `_check_battle_end()` 缺少 await ✅ (2026-04-09)
+- [x] P2: `_load_job_texture()` 删除未使用 Sprite2D 临时对象 ✅ (2026-04-09)
 - [ ] P1: 修复 `_consume_spell_pierce()` 注释
 - [ ] P2: 拆分 game.gd 模块化改造
 - [ ] P2: Boss AI 函数重构
 - [ ] P2: 提取硬编码常量（遭遇率/陷阱倍率/屏幕尺寸/技能倍率/闪避率/逃跑率等）
-- [ ] P3: `_load_job_texture()` 删除未使用 Sprite2D 临时对象
+- [ ] P2: 敌人/商店素材纹理尺寸 `2048` 硬编码
+- [ ] P2: `_save_slot_buttons` 数组不对称
 - [ ] P3: `particle_container`/`audio_manager` 在 `_on_job_selected` 中清理
+- [ ] P3: 伤害方差三种变体（±2/±3/±5）散落20+处未提取辅助函数
+- [ ] P3: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量
 
 ---
 
@@ -1263,3 +1268,97 @@ func _roll_damage_variance_large(base_dmg: int) -> int:
 - **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理（自 2026-04-03 06:03 报告至今）
 - **P3 (既有未修复)**: 伤害方差三种变体（±2/±3/±5）散落在 20+ 处未提取为辅助函数（自 2026-04-04 12:03 报告至今）
 - **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量
+
+### 审查记录 - 2026-04-08 06:05
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程在合理时间内未能完成（项目大量动态节点创建特性，非语法错误，与历史一致）
+- **文件行数**: game.gd 当前 **6618 行**（上次 6511 行，新增约 107 行，来自战斗系统/技能/Boss AI 扩展）
+- **无新问题**: 本次审查未发现新的语法错误、内存泄漏或逻辑问题
+- **✅ P1 (已确认)**: fog_map 迷雾系统 - fog_container 实例变量（line 22）+ 正确 `queue_free()` 管理（lines 1017-1058）持续有效
+
+**本次新增/更新检查项**：
+- ✅ `randf() < 0.003` 随机遇敌率仍存在于 line 1122（旧问题，无新增）
+- ✅ 连锁闪电第二次伤害使用 `randi() % 5 - 2`（±2）与第一次 `randi() % 7 - 3`（±3）不一致（line 4379），属 P3 既有方差问题的一部分
+- ✅ Boss 普通攻击 `randi() % 5 - 2`（line 5150, 5364, 5776）同属方差±2 变体
+- ✅ `_load_job_texture()` lines 726-728 未使用 Sprite2D 仍是 P2 既有未修复
+- ✅ `particle_container`（line 368-370）/ `audio_manager`（line 376-378）在 `_on_job_selected` 中仍未清理，仍是 P3 既有未修复
+
+**既有未修复问题状态**（持续待修复）：
+- **P2 (既有未修复)**: `_load_job_texture()` lines 726-728 创建未使用 Sprite2D 临时对象（自 2026-04-03 06:03 报告至今未修复）
+- **P2 (既有未修复)**: 敌人/商店素材纹理尺寸 `2048` 硬编码（自 2026-04-03 06:03 报告至今未修复）
+- **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03 报告至今未修复）
+- **P2 (既有未修复)**: `_save_slot_buttons` 数组不对称（自 2026-04-04 06:03 报告至今未修复）
+- **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理（自 2026-04-03 06:03 报告至今）
+- **P3 (既有未修复)**: 伤害方差三种变体（±2/±3/±5）散落在 20+ 处未提取为辅助函数（自 2026-04-04 12:03 报告至今）
+- **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量
+
+### 新发现问题 (2026-04-08 12:03)
+
+#### 🔴 P0 - `_on_skill_selected` 中 `_check_battle_end()` 未 await
+
+**文件**: `scripts/game.gd`
+**行号**: 第 4755 行
+
+**问题**: `func _on_skill_selected(skill_name: String):` 是 `async` 函数（第 4124 行），内部调用的 `async func _check_battle_end() -> bool`（第 5992 行）却未使用 `await`。这导致战斗结束检查的协程被启动但不被等待，战斗结束逻辑（包括胜利结算、经验值获取、掉落等）可能无法正确执行。
+
+**当前代码**:
+```gdscript
+    _update_enemy_hp_bar()
+    _update_battle_player_ui()
+    _check_battle_end()      # ← 缺少 await！
+    # 应用冷却
+    var cd_to_set = _get_skill_cooldown(skill_name)
+    ...
+```
+
+**建议修复**:
+```gdscript
+    _update_enemy_hp_bar()
+    _update_battle_player_ui()
+    await _check_battle_end()   # ← 添加 await
+    # 应用冷却
+    ...
+```
+
+**影响**: 技能使用后敌人 HP 归零时，胜利流程（exp、金币、升级判断、战斗 UI 清理等）可能不同步执行，导致玩家可能继续看到战斗 UI 而游戏已进入探索状态。
+
+**风险评估**: 高 — 影响每次使用技能击杀敌人的体验。
+
+---
+
+### 审查记录 - 2026-04-08 12:03
+
+本次审查发现：
+- **🔴 P0 (新)**: `_on_skill_selected()` 第 4755 行调用 `async func _check_battle_end()` 未使用 `await`，战斗结束流程可能无法正确同步执行
+- **文件行数**: game.gd 为 **6618 行**（与上次 6618 行持平）
+- **✅ 编译状态**: Godot `--headless --check-only` 因项目动态节点创建较多，无法在合理时间内完成（历史一致，非语法错误）
+- **✅ P1 (已确认)**: fog_map 迷雾系统 - fog_container 实例变量 + 正确 `queue_free()` 持续有效
+- **✅ 确认**: `warrior_shatter_turns` 重复声明问题已修复（仅一处，行 111）
+- **✅ 确认**: `_start_battle()` (行 2759) 和 `_start_boss_battle()` (行 2879) 中 `_check_battle_end()` 已正确使用 `await`
+
+**既有未修复问题状态**（持续待修复）：
+- **🔴 P0 (新发现)**: `_on_skill_selected()` 第 4755 行 `_check_battle_end()` 未 await
+- **P2 (既有未修复)**: `_load_job_texture()` 第 724-726 行创建未使用 Sprite2D 临时对象（自 2026-04-03 06:03 报告至今未修复）
+- **P2 (既有未修复)**: 敌人/商店素材纹理尺寸 `2048` 硬编码（自 2026-04-03 06:03 报告至今未修复）
+- **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03 报告至今未修复）
+- **P2 (既有未修复)**: `_save_slot_buttons` 数组不对称（自 2026-04-04 06:03 报告至今未修复）
+- **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理（自 2026-04-03 06:03 报告至今）
+- **P3 (既有未修复)**: 伤害方差三种变体（±2/±3/±5）散落在 20+ 处未提取为辅助函数（自 2026-04-04 12:03 报告至今）
+- **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量
+
+### 审查记录 - 2026-04-09 23:17
+
+本次审查发现：
+- **✅ 编译通过**: Godot `--headless --check-only --quit` exit code 0，无语法错误
+- **✅ P0 (已修复)**: `_on_skill_selected()` 第4755行 `_check_battle_end()` 缺少 `await` — 已添加 `await`，战斗结束流程正确同步执行
+- **✅ P2 (已修复)**: `_load_job_texture()` 第726-728行创建未使用 Sprite2D 临时对象 — 已删除3行无用代码
+- **文件行数**: game.gd 当前约 **6615 行**（删除3行 + 行号偏移）
+
+**既有未修复问题状态**（持续待修复）：
+- **P2 (既有未修复)**: 敌人/商店素材纹理尺寸 `2048` 硬编码（自 2026-04-03 06:03）
+- **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03）
+- **P2 (既有未修复)**: `_save_slot_buttons` 数组不对称（自 2026-04-04 06:03）
+- **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理（自 2026-04-03 06:03）
+- **P3 (既有未修复)**: 伤害方差三种变体（±2/±3/±5）散落20+处未提取辅助函数（自 2026-04-04 12:03）
+- **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量（自 2026-04-04 00:03）

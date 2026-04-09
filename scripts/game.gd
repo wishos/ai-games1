@@ -724,10 +724,6 @@ func _load_job_texture(job: int) -> Texture2D:
 	var path = texture_path.get(job, "res://assets/warrior.png")
 	var tex = load(path)
 	if tex:
-		# 设置缩放使256x256的图缩小到32x32显示
-		var sprite = Sprite2D.new()
-		sprite.texture = tex
-		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		return tex
 	return null
 
@@ -4752,7 +4748,7 @@ async func _on_skill_selected(skill_name: String):
 
 	_update_enemy_hp_bar()
 	_update_battle_player_ui()
-	_check_battle_end()
+	await _check_battle_end()
 	# 应用冷却
 	var cd_to_set = _get_skill_cooldown(skill_name)
 	if cd_to_set > 0:
