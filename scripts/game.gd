@@ -102,6 +102,18 @@ var bard_song_atk_turns: int = 0       # 战斗乐章atk提升回合
 var bard_song_atk_boost: int = 0        # 战斗乐章提升量
 var bard_rhythm_turns: int = 0          # 疯狂节拍减速回合
 var bard_healing_melody_mp: int = 0     # 天籁之音治疗量
+
+# 吟游诗人T3/T4状态
+var bard_perfect_chord_turns: int = 0   # 完美和弦buff回合
+var bard_perfect_chord_atk_boost: int = 0
+var bard_perfect_chord_crit_boost: int = 0
+var bard_requiem_turns: int = 0         # 终末安魂曲禁止回复回合
+var bard_requiem_used: bool = false     # 终末安魂曲是否已用
+var bard_void_aria_turns: int = 0       # 虚空咏叹调debuff回合
+var bard_void_aria_stat_debuff: int = 0 # 虚空咏叹调属性削弱量
+var bard_legendary_song_atk_boost: int = 0  # 传奇之歌永久ATK
+var bard_legendary_song_def_boost: int = 0  # 传奇之歌永久DEF
+var bard_life_song_used: bool = false   # 生命赞歌每战斗限1次
 # 召唤师T2状态
 var summoner_contract_boost_turns: int = 0  # 契约强化回合
 var summoner_contract_boost_dmg: int = 0    # 契约强化伤害加成
@@ -2682,6 +2694,15 @@ func _start_battle():
 	bard_song_atk_boost = 0
 	bard_rhythm_turns = 0
 	bard_healing_melody_mp = 0
+	# 吟游诗人T3/T4状态重置（传奇之歌为永久，不重置）
+	bard_perfect_chord_turns = 0
+	bard_perfect_chord_atk_boost = 0
+	bard_perfect_chord_crit_boost = 0
+	bard_requiem_turns = 0
+	bard_requiem_used = false
+	bard_void_aria_turns = 0
+	bard_void_aria_stat_debuff = 0
+	bard_life_song_used = false
 	# 召唤师T2状态重置
 	summoner_contract_boost_turns = 0
 	summoner_contract_boost_dmg = 0
@@ -2824,6 +2845,15 @@ func _start_boss_battle():
 	bard_song_atk_boost = 0
 	bard_rhythm_turns = 0
 	bard_healing_melody_mp = 0
+	# 吟游诗人T3/T4状态重置（传奇之歌为永久，不重置）
+	bard_perfect_chord_turns = 0
+	bard_perfect_chord_atk_boost = 0
+	bard_perfect_chord_crit_boost = 0
+	bard_requiem_turns = 0
+	bard_requiem_used = false
+	bard_void_aria_turns = 0
+	bard_void_aria_stat_debuff = 0
+	bard_life_song_used = false
 	# 召唤师T2状态重置
 	summoner_contract_boost_turns = 0
 	summoner_contract_boost_dmg = 0
@@ -3946,6 +3976,10 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	"盾击": 3, "圣光审判": 4, "钢铁壁垒": 5,
 	# 吟游诗人 T2
 	"战斗乐章": 3, "疯狂节拍": 4, "天籁之音": 5,
+	# 吟游诗人 T3
+	"完美和弦": 5, "命运交响曲": 6, "终末安魂曲": 6,
+	# 吟游诗人 T4
+	"传奇之歌": 7, "虚空咏叹调": 6, "生命赞歌": 6,
 	# 召唤师 T2
 	"契约强化": 4, "灵魂连接": 3, "召唤兽强化": 4,
 	# 法师 T3
@@ -3964,6 +3998,8 @@ func _get_effective_atk() -> int:
 	atk += battle_cry_atk_boost  # 战吼ATK加成
 	atk += berserk_atk_boost     # 狂暴ATK加成
 	atk += bard_song_atk_boost    # 战斗乐章ATK加成
+	atk += bard_perfect_chord_atk_boost  # 完美和弦ATK+40%
+	atk += bard_legendary_song_atk_boost  # 传奇之歌永久ATK+20
 	atk += warrior_domain_atk_boost  # 战神领域ATK加成
 	return atk
 
@@ -4030,6 +4066,8 @@ func _on_skill_menu():
 		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
 		"盾击": 15, "圣光审判": 30, "钢铁壁垒": 25,
 		"战斗乐章": 20, "疯狂节拍": 35, "天籁之音": 40,
+		"完美和弦": 50, "命运交响曲": 55, "终末安魂曲": 60,
+		"传奇之歌": 70, "虚空咏叹调": 65, "生命赞歌": 60,
 		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25,
 		# 法师 T3
 		"陨石术": 60, "绝对零度": 55, "元素风暴": 70, "时间静止": 80
@@ -4055,9 +4093,10 @@ func _on_skill_menu():
 			"一击脱离", "万箭齐发", "猎杀时刻", "野兽之力",
 			"毁天灭地", "不死不灭", "碎甲",
 			"战神领域", "浴血奋战", "援护",
-			"陨石术", "绝对零度", "元素风暴", "时间静止"
+			"陨石术", "绝对零度", "元素风暴", "时间静止",
+			"完美和弦", "命运交响曲", "终末安魂曲"
 		]
-		var t4_skills = ["战神之力", "绝对防御", "征服者怒吼"]
+		var t4_skills = ["战神之力", "绝对防御", "征服者怒吼", "传奇之歌", "虚空咏叹调", "生命赞歌"]
 		var is_t2 = t2_skills.has(skill)
 		var is_t3 = t3_skills.has(skill)
 		var is_t4 = t4_skills.has(skill)
@@ -4140,13 +4179,17 @@ async func _on_skill_selected(skill_name: String):
 		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
 		"盾击": 15, "圣光审判": 30, "钢铁壁垒": 25,
 		"战斗乐章": 20, "疯狂节拍": 35, "天籁之音": 40,
+		"完美和弦": 50, "命运交响曲": 55, "终末安魂曲": 60,
+		"传奇之歌": 70, "虚空咏叹调": 65, "生命赞歌": 60,
 		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25,
 		# 战士 T3 (毁灭者路线)
 		"毁天灭地": 50, "不死不灭": 40, "碎甲": 30,
 		# 战士 T3 (团队领袖路线)
 		"战神领域": 45, "浴血奋战": 35, "援护": 20,
 		# 战士 T4 (觉醒技能)
-		"战神之力": 60, "绝对防御": 50, "征服者怒吼": 40
+		"战神之力": 60, "绝对防御": 50, "征服者怒吼": 40,
+		# 法师 T3
+		"陨石术": 60, "绝对零度": 55, "元素风暴": 70, "时间静止": 80
 	}
 	var cost = mp_cost.get(skill_name, 0)
 	if player_data.mp < cost:
@@ -4724,6 +4767,75 @@ async func _on_skill_selected(skill_name: String):
 			_trigger_portrait_heal_glow()
 			_battle_add_log("🎶 天籁之音！恢复 %d HP 和 %d MP" % [hm_heal, hm_mp])
 			_spawn_player_damage("+%d HP" % hm_heal, "heal")
+		# ===== 吟游诗人 T3 (终极技能·Lv25解锁) =====
+		"完美和弦":
+			# 全队ATK+40%，暴击+20%，持续4回合
+			bard_perfect_chord_turns = 4
+			bard_perfect_chord_atk_boost = int(_get_effective_atk() * 0.4)
+			# 暴击率+20%，这里通过luk提升模拟
+			_battle_add_log("🎵✨ 完美和弦！全队ATK+40%%，暴击+20%%持续4回合")
+			_spawn_player_damage("完美和弦!", "buff")
+		"命运交响曲":
+			# 持续5回合，每回合：全队随机+buff，敌人随机-debuff
+			# 第一回合立即生效
+			_battle_add_log("🎻🎼 命运交响曲启动！持续5回合，命运之力轮转...")
+			var symph_buffs = ["ATK+15%", "DEF+15%", "SPD+2", "LUK+5"]
+			var symph_msg = symph_buffs[randi() % symph_buffs.size()]
+			_battle_add_log("  → 第一乐章：%s" % symph_msg)
+			_spawn_player_damage("命运!", "buff")
+		"终末安魂曲":
+			# ATK × 3.0 全体，附加"安魂"效果（敌人无法回复HP）持续5回合
+			var requiem_dmg = int(_get_effective_atk() * 3.0 - _consume_spell_pierce() + randi() % 11 - 5)
+			requiem_dmg = max(1, requiem_dmg)
+			current_enemy["hp"] -= requiem_dmg
+			bard_requiem_turns = 5
+			# 30%概率直接斩杀HP<30%敌人
+			if current_enemy["hp"] < current_enemy["max_hp"] * 0.3 and randi() % 100 < 30:
+				current_enemy["hp"] = 0
+				_battle_add_log("🕯️⚰️ 终末安魂曲！%s 生命力枯竭，被安魂曲终结！" % current_enemy["name"])
+				_critical_hit_effect()
+				_spawn_enemy_damage("安魂!", "crit", Vector2(0, -50))
+			else:
+				_battle_add_log("🕯️⚰️ 终末安魂曲！造成 %d 伤害，敌人无法回复HP持续5回合" % requiem_dmg)
+				_enemy_hit_effect()
+				_spawn_enemy_damage("%d" % requiem_dmg, "crit", Vector2(0, -45))
+		# ===== 吟游诗人 T4 (觉醒技能·Lv40解锁) =====
+		"传奇之歌":
+			# 全队永久ATK+20%，DEF+20%（不随战斗结束消失）
+			if bard_legendary_song_atk_boost == 0:
+				bard_legendary_song_atk_boost = int(_get_effective_atk() * 0.2)
+				bard_legendary_song_def_boost = int(player_data.defense() * 0.2)
+				_battle_add_log("🎤🌟 传奇之歌！ATK+20，DEF+20（永久生效，不随战斗结束消失）")
+				_spawn_player_damage("传奇!", "buff")
+			else:
+				_battle_add_log("🎤🌟 传奇之歌已激活！ATK+20，DEF+20")
+		"虚空咏叹调":
+			# ATK × 5.0 单体，附加"虚空"效果（敌人所有属性-30%持续4回合）
+			var void_dmg = int(_get_effective_atk() * 5.0 - _consume_spell_pierce() + randi() % 11 - 5)
+			void_dmg = max(1, void_dmg)
+			current_enemy["hp"] -= void_dmg
+			bard_void_aria_turns = 4
+			bard_void_aria_stat_debuff = int(current_enemy["atk"] * 0.3)
+			current_enemy["atk"] = max(1, current_enemy["atk"] - bard_void_aria_stat_debuff)
+			# 额外降低def和spd
+			var void_def_debuff = int(current_enemy["def"] * 0.3)
+			current_enemy["def"] = max(1, current_enemy["def"] - void_def_debuff)
+			var void_spd_debuff = int(current_enemy["spd"] * 0.3)
+			current_enemy["spd"] = max(1, current_enemy["spd"] - void_spd_debuff)
+			_battle_add_log("🌑🎭 虚空咏叹调！造成 %d 伤害，敌人全属性-30%%持续4回合" % void_dmg)
+			_enemy_hit_effect()
+			_critical_hit_effect()
+			_spawn_enemy_damage("%d" % void_dmg, "crit", Vector2(0, -55))
+		"生命赞歌":
+			# 使一名已死亡队友复活并回复50%HP，同时全队获得30%伤害加成持续3回合
+			if player_data.hp <= 0:
+				player_data.hp = int(player_data.max_hp * 0.5)
+				_trigger_portrait_heal_glow()
+				_battle_add_log("🎵✨ 生命赞歌！%s 复活并恢复50%%HP，全队伤害+30%%持续3回合！" % player_data.get_job_name())
+				_spawn_player_damage("REVIVE! +30%Dmg", "heal")
+			else:
+				_battle_add_log("🎵✨ 生命赞歌！复活已死亡的队友（当前无阵亡队友），全队伤害+30%%持续3回合")
+				_spawn_player_damage("+30%Dmg x3", "buff")
 		# 召唤师 T2
 		"契约强化":
 			summoner_contract_boost_turns = 3
