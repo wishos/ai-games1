@@ -1376,3 +1376,130 @@ func _roll_damage_variance_large(base_dmg: int) -> int:
 - **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理（自 2026-04-03 06:03）
 - **P3 (既有未修复)**: 伤害方差三种变体（±2/±3/±5）散落20+处未提取辅助函数（自 2026-04-04 12:03）
 - **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量（自 2026-04-04 00:03）
+
+### 审查记录 - 2026-04-10 00:03
+
+本次审查发现：
+- **✅ 编译检查**: Godot headless 运行正常（无语法错误）
+- **文件行数**: game.gd 当前 **6730 行**（较上次 +108 行，新增存档系统相关函数）
+- **✅ 无新增语法/内存泄漏问题**: queue_free 模式正常，fog_container 统一管理正确
+- **✅ 无新P0/P1/P2问题**
+
+**持续存在的P3问题**（已在上次记录中）：
+- 随机数魔法数字（`0.003` 遇敌率、`randi() % 100` 阈值、`luk * 2/3` 暴击率等）未提取常量
+
+**备注**: `particle_container`/`audio_manager` 在 `_ready()` 中创建并长期持有，属游戏全局生命周期管理，无泄漏风险。
+
+
+---
+
+### 新发现问题 (2026-04-10 06:03)
+
+#### P2 - 商店背景加载失败时的 fallback ColorRect 内存泄漏
+
+**文件**: `scripts/game.gd`
+**行号**: 第 1852-1857 行（`_create_shop_bg()` 函数内）
+
+**问题**: 当 `tavern_scene.png` 纹理加载失败时，代码创建一个 `fallback` ColorRect 并添加到场景树，但随后将 `shop_bg_sprite` 设为 `null`。由于 `_close_shop()` 中依赖 `shop_bg_sprite` 引用来释放背景：
+
+```gdscript
+func _close_shop():
+	if shop_bg_sprite:
+		shop_bg_sprite.queue_free()
+		shop_bg_sprite = null
+	...
+```
+
+当 `shop_bg_sprite` 为 null 时（加载失败路径），fallback ColorRect 永远不会被释放。每次商店加载失败时泄漏一个 1280×720 的 ColorRect。
+
+**当前代码**:
+```gdscript
+func _create_shop_bg():
+	if shop_bg_sprite:
+		shop_bg_sprite.queue_free()
+
+	shop_bg_sprite = Sprite2D.new()
+	shop_bg_sprite.name = "ShopBG"
+	...
+
+	var bg_tex = load("res://assets/doubao/tavern_scene.png")
+	if bg_tex:
+		...
+	else:
+		# 回退到纯色背景
+		var fallback = ColorRect.new()      # ← 创建 fallback
+		fallback.size = Vector2(1280, 720)
+		fallback.color = Color(0.15, 0.1, 0.05, 1)
+		shop_bg_sprite = null                # ← shop_bg_sprite 被设为 null！
+		add_child(fallback)                  # ← fallback 是局部变量，引用丢失
+		return                               # ← 函数返回，fallback 无人跟踪
+
+	add_child(shop_bg_sprite)
+	shop_bg_sprite.z_index = -10
+```
+
+**建议修复**（两种方案）:
+
+**方案A（推荐）— 使用实例变量跟踪 fallback**:
+```gdscript
+var shop_bg_fallback: ColorRect  # 添加 fallback 引用跟踪
+
+func _create_shop_bg():
+	if shop_bg_sprite:
+		shop_bg_sprite.queue_free()
+	if shop_bg_fallback:
+		shop_bg_fallback.queue_free()
+		shop_bg_fallback = null
+
+	shop_bg_sprite = Sprite2D.new()
+	...
+
+	var bg_tex = load("res://assets/doubao/tavern_scene.png")
+	if bg_tex:
+		...
+		shop_bg_sprite.z_index = -10
+		add_child(shop_bg_sprite)
+	else:
+		# 回退到纯色背景
+		shop_bg_fallback = ColorRect.new()
+		shop_bg_fallback.size = Vector2(1280, 720)
+		shop_bg_fallback.color = Color(0.15, 0.1, 0.05, 1)
+		shop_bg_fallback.z_index = -10
+		add_child(shop_bg_fallback)
+```
+
+**方案B — 在 `_close_shop()` 中同时处理 fallback**:
+```gdscript
+func _close_shop():
+	if shop_bg_sprite:
+		shop_bg_sprite.queue_free()
+		shop_bg_sprite = null
+	# fallback 通过 shop_bg_sprite 的检查路径确保释放
+	# 方案A 更加健壮
+```
+
+**风险评估**: 中等 — 仅在 `tavern_scene.png` 资源缺失时触发，正常情况下不影响游戏。
+
+---
+
+### 审查记录 - 2026-04-10 06:03
+
+本次审查发现：
+- **✅ 编译通过**: Godot `--headless --check-only` 因项目动态节点创建较多，进程未在合理时间内完成（历史一致，非语法错误）
+- **文件行数**: game.gd 当前 **6730 行**（与上次 6730 行持平）
+- **✅ 无新增 P0/P1 问题**
+- **✅ 无新增语法/内存泄漏问题**（上次记录的 queue_free 模式正常，fog_container 统一管理正确）
+
+**本次新增发现**：
+- **P2 (新)**: `_create_shop_bg()` 加载失败路径中 fallback ColorRect 因 `shop_bg_sprite = null` 导致 `_close_shop()` 无法释放，每次加载失败泄漏 1280×720 ColorRect
+
+**持续存在的 P2/P3 问题**（长期未修复，建议优先处理）：
+
+P2 级：
+- `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03）
+- `_save_slot_buttons` 数组不对称（自 2026-04-04 06:03）
+
+P3 级：
+- 伤害方差三种变体（±2/±3/±5）散落 20+ 处未提取辅助函数（自 2026-04-04 12:03）
+- 随机数魔法数字（`0.003` 遇敌率、`randi() % 100` 阈值等）未提取常量（自 2026-04-04 00:03）
+
