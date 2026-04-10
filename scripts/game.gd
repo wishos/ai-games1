@@ -543,6 +543,16 @@ func _show_title_screen():
 	title_panel.add_child(tip)
 
 func _on_job_selected(job_id: int):
+	# 清理旧游戏节点（重新开始时防止节点/资源泄漏）
+	if particle_container:
+		particle_container.queue_free()
+	if audio_manager:
+		audio_manager.queue_free()
+	# 重新初始化（_ready只执行一次，需在每次开始新游戏时重建）
+	particle_container = Node2D.new()
+	particle_container.name = "ParticleContainer"
+	add_child(particle_container)
+	_setup_audio()
 	# 清理标题画面
 	var title_bg = get_node_or_null("TitleBG")
 	var title_ov = get_node_or_null("TitleOverlay")
@@ -560,8 +570,7 @@ func _on_job_selected(job_id: int):
 	game_state = State.EXPLORE
 	_update_minimap()  # 初始化小地图
 	# 切换到探索BGM
-	if audio_manager:
-		audio_manager.play_bgm("explore")
+	audio_manager.play_bgm("explore")
 	print("八方旅人 - Octopath Adventure 已启动!")
 	print("当前职业: " + player_data.get_job_name())
 	print("技能: " + str(player_data.skills))
