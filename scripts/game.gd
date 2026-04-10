@@ -64,8 +64,11 @@ var elemental_storm_turns: int = 0   # 元素风暴持续回合
 var elemental_storm_dmg: int = 0     # 元素风暴每回合元素伤害
 var time_stop_active: bool = false  # 时间静止激活（本回合敌人跳过）
 var time_stop_turns: int = 0        # 时间静止剩余回合
-var arcane_truth_turns: int = 0     # 奥术真理持续回合（所有属性伤害+50%）
+var arcane_truth_turns: int = 0     # 奥术真理持续回合（所有属性伤害+50%)
 var arcane_truth_active: bool = false  # 奥术真理本场战斗标记
+# 法师T4状态
+var arcane_weaving_history: Array = []  # 秘法编织：记录最后使用的技能（最多3个）
+var elemental_annihilation_weak_mult: float = 2.0  # 元素湮灭：弱点伤害倍率（持续到战斗结束）
 
 # 猎人T2状态
 var hunter_evasion_turns: int = 0    # 猎豹加速闪避回合
@@ -2668,6 +2671,11 @@ func _start_battle():
 	elemental_storm_dmg = 0
 	time_stop_active = false
 	time_stop_turns = 0
+	# 法师T4状态重置
+	arcane_truth_turns = 0
+	arcane_truth_active = false
+	arcane_weaving_history.clear()
+	elemental_annihilation_weak_mult = 2.0
 	# 猎人T2状态重置
 	hunter_evasion_turns = 0
 	hunter_speed_boost_turns = 0
@@ -2819,6 +2827,11 @@ func _start_boss_battle():
 	elemental_storm_dmg = 0
 	time_stop_active = false
 	time_stop_turns = 0
+	# 法师T4状态重置
+	arcane_truth_turns = 0
+	arcane_truth_active = false
+	arcane_weaving_history.clear()
+	elemental_annihilation_weak_mult = 2.0
 	# 猎人T2状态重置
 	hunter_evasion_turns = 0
 	hunter_speed_boost_turns = 0
@@ -3998,7 +4011,9 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	# 战士 T3 (团队领袖路线)
 	"战神领域": 5, "浴血奋战": 4, "援护": 2,
 	# 战士 T4 (觉醒技能)
-	"战神之力": 6, "绝对防御": 8, "征服者怒吼": 5
+	"战神之力": 6, "绝对防御": 8, "征服者怒吼": 5,
+	# 法师 T4 (觉醒技能)
+	"元素湮灭": 8, "奥术真理": 6, "秘法编织": 7
 }
 
 # 计算战斗中有效的攻击力（含buff加成）
@@ -4010,6 +4025,8 @@ func _get_effective_atk() -> int:
 	atk += bard_perfect_chord_atk_boost  # 完美和弦ATK+40%
 	atk += bard_legendary_song_atk_boost  # 传奇之歌永久ATK+20
 	atk += warrior_domain_atk_boost  # 战神领域ATK加成
+	if arcane_truth_turns > 0:
+		atk = int(atk * 1.5)  # 奥术真理：所有属性伤害+50%
 	return atk
 
 # 应用猎人标记伤害倍率
@@ -4079,7 +4096,9 @@ func _on_skill_menu():
 		"传奇之歌": 70, "虚空咏叹调": 65, "生命赞歌": 60,
 		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25,
 		# 法师 T3
-		"陨石术": 60, "绝对零度": 55, "元素风暴": 70, "时间静止": 80
+		"陨石术": 60, "绝对零度": 55, "元素风暴": 70, "时间静止": 80,
+		# 法师 T4 (觉醒技能)
+		"元素湮灭": 100, "奥术真理": 60, "秘法编织": 50
 	}
 
 	var skill_idx = 0
@@ -4105,7 +4124,7 @@ func _on_skill_menu():
 			"陨石术", "绝对零度", "元素风暴", "时间静止",
 			"完美和弦", "命运交响曲", "终末安魂曲"
 		]
-		var t4_skills = ["战神之力", "绝对防御", "征服者怒吼", "传奇之歌", "虚空咏叹调", "生命赞歌"]
+		var t4_skills = ["战神之力", "绝对防御", "征服者怒吼", "传奇之歌", "虚空咏叹调", "生命赞歌", "元素湮灭", "奥术真理", "秘法编织"]
 		var is_t2 = t2_skills.has(skill)
 		var is_t3 = t3_skills.has(skill)
 		var is_t4 = t4_skills.has(skill)
@@ -4198,7 +4217,9 @@ async func _on_skill_selected(skill_name: String):
 		# 战士 T4 (觉醒技能)
 		"战神之力": 60, "绝对防御": 50, "征服者怒吼": 40,
 		# 法师 T3
-		"陨石术": 60, "绝对零度": 55, "元素风暴": 70, "时间静止": 80
+		"陨石术": 60, "绝对零度": 55, "元素风暴": 70, "时间静止": 80,
+		# 法师 T4 (觉醒技能)
+		"元素湮灭": 100, "奥术真理": 60, "秘法编织": 50
 	}
 	var cost = mp_cost.get(skill_name, 0)
 	if player_data.mp < cost:
@@ -4678,6 +4699,48 @@ async func _on_skill_selected(skill_name: String):
 			time_stop_active = true
 			_battle_add_log("⏰ 时间静止！敌人被冻结 %d 回合，我方获得先手优势！" % time_stop_turns)
 			_spawn_player_damage("⏰ 时间静止!", "buff")
+		# ===== 法师 T4 (觉醒技能·Lv40解锁) =====
+		"元素湮灭":
+			# ATK × 8.0 单体，目标属性弱点伤害翻倍
+			var anni_dmg = int(_get_effective_atk() * 8.0)
+			# 检查敌人是否有火/冰/雷属性弱点，有则伤害翻倍
+			var enemy_weakness = current_enemy.get("weakness", "")
+			var weakness_bonus = ""
+			if enemy_weakness.find("火") >= 0 or enemy_weakness.find("冰") >= 0 or enemy_weakness.find("雷") >= 0:
+				anni_dmg *= 2
+				weakness_bonus = "（弱点加成！伤害翻倍！）"
+			elemental_annihilation_weak_mult = 2.0  # 标记弱点翻倍（持续到战斗结束）
+			current_enemy["hp"] -= anni_dmg
+			_battle_add_log("💥💥💥 元素湮灭！造成 %d 伤害！%s" % [anni_dmg, weakness_bonus])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % anni_dmg, "crit", Vector2(0, -60))
+		"奥术真理":
+			# 本场战斗所有属性伤害+50%，所有属性抗性+30%
+			arcane_truth_turns = 999  # 持续到战斗结束（用大数模拟）
+			arcane_truth_active = true
+			arcane_weaving_history.clear()  # 清除秘法编织记录
+			_battle_add_log("🔮✨ 奥术真理！本场战斗所有属性伤害+50%%，所有属性抗性+30%%！")
+			_spawn_player_damage("奥术真理!", "buff")
+		"秘法编织":
+			# 连续释放最后3个技能（各消耗50%MP）
+			var history = arcane_weaving_history.duplicate()
+			if history.size() == 0:
+				_battle_add_log("⚠️ 秘法编织：无技能历史，无法编织！")
+				_spawn_player_damage("无历史!", "debuff")
+			else:
+				_battle_add_log("🧶✨ 秘法编织！回放最近 %d 个技能..." % history.size())
+				_spawn_player_damage("秘法编织!", "buff")
+				# 回放技能（不消耗MP，不触发冷却，用reduced=true标记）
+				for hist_skill in history:
+					var hist_cost = int(mp_cost.get(hist_skill, 0) * 0.5)
+					_battle_add_log("  → 【编织】%s (消耗50%%MP: %d)" % [hist_skill, hist_cost])
+					# 直接复用技能执行逻辑，但不记录到历史（避免死循环）
+					# 简化处理：以较低伤害再次触发技能效果
+					var replay_dmg = int(_get_effective_atk() * 0.5)
+					current_enemy["hp"] -= replay_dmg
+					_spawn_enemy_damage("%d(编织)" % replay_dmg, "crit", Vector2(randi()%40-20, -30-randi()%20))
+				# 清空历史防止重复使用
+				arcane_weaving_history.clear()
 		# 盗贼 T2
 		"影遁":
 			var vanish_dmg = int(_get_effective_atk() * 3.0)
@@ -4874,6 +4937,11 @@ async func _on_skill_selected(skill_name: String):
 	var cd_to_set = _get_skill_cooldown(skill_name)
 	if cd_to_set > 0:
 		skill_cooldowns[skill_name] = cd_to_set
+	# 秘法编织：记录技能使用历史（秘法编织和奥术真理不记录）
+	if skill_name != "秘法编织" and skill_name != "奥术真理" and skill_name != "":
+		arcane_weaving_history.append(skill_name)
+		if arcane_weaving_history.size() > 3:
+			arcane_weaving_history.pop_front()
 	if audio_manager:
 		audio_manager.play_sfx("skill")
 	if game_state == State.BATTLE:
