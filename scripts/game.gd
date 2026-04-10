@@ -1815,6 +1815,7 @@ func _get_shop_items_by_tab(tab: int) -> Array:
 	return []
 
 var shop_bg_sprite: Sprite2D  # 商店背景精灵
+var shop_bg_fallback: ColorRect  # 商店背景fallback（加载失败时使用）
 
 func _open_shop():
 	game_state = State.SHOP
@@ -1853,11 +1854,12 @@ func _create_shop_bg():
 		shop_bg_sprite.position = Vector2((1280 - scaled_w) / 2, (720 - scaled_h) / 2)
 	else:
 		# 回退到纯色背景
-		var fallback = ColorRect.new()
-		fallback.size = Vector2(1280, 720)
-		fallback.color = Color(0.15, 0.1, 0.05, 1)
+		shop_bg_fallback = ColorRect.new()
+		shop_bg_fallback.size = Vector2(1280, 720)
+		shop_bg_fallback.color = Color(0.15, 0.1, 0.05, 1)
+		shop_bg_fallback.z_index = -10
+		add_child(shop_bg_fallback)
 		shop_bg_sprite = null
-		add_child(fallback)
 		return
 
 	add_child(shop_bg_sprite)
@@ -1868,6 +1870,9 @@ func _close_shop():
 	if shop_bg_sprite:
 		shop_bg_sprite.queue_free()
 		shop_bg_sprite = null
+	if shop_bg_fallback:
+		shop_bg_fallback.queue_free()
+		shop_bg_fallback = null
 	if shop_ui != null:
 		shop_ui.queue_free()
 		shop_ui = null
@@ -4013,8 +4018,8 @@ func _apply_hunter_mark(base_dmg: int) -> int:
 		return int(base_dmg * hunter_mark_mult)
 	return base_dmg
 
-# 法术穿透：无视敌人防御，消耗1层
-func _consume_spell_pierce() -> int:
+# 获取穿透后的防御值（法术穿透：无视敌人防御，消耗1层）
+func _get_pierced_defense() -> int:
 	# 穿甲箭：无视防御
 	if hunter_armor_pierce_turns > 0:
 		return 0
@@ -4212,7 +4217,7 @@ async func _on_skill_selected(skill_name: String):
 	match skill_name:
 		# 战士
 		"猛击":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var dmg = int(_get_effective_atk() * 1.5 - pierce_def + randi() % 7 - 3)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
@@ -4225,7 +4230,7 @@ async func _on_skill_selected(skill_name: String):
 			player_data.mp = min(player_data.max_mp, player_data.mp + 5)
 			_battle_add_log("🛡️ 防御姿态！伤害减半，回复5MP")
 		"冲锋":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var dmg = int(_get_effective_atk() * 2.5 - pierce_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
@@ -4243,7 +4248,7 @@ async func _on_skill_selected(skill_name: String):
 			var hits = 2 + randi() % 3  # 2-4次攻击
 			var total_dmg = 0
 			for i in range(hits):
-				var pierce_def = _consume_spell_pierce()
+				var pierce_def = _get_pierced_defense()
 				var hit_dmg = int(_get_effective_atk() * 1.2 - pierce_def + randi() % 7 - 3)
 				hit_dmg = max(1, hit_dmg)
 				current_enemy["hp"] -= hit_dmg
@@ -4260,7 +4265,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_player_damage("ATK+40%", "buff")
 		# 战士 T3 (毁灭者路线)
 		"毁天灭地":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var base_dmg = int(_get_effective_atk() * 4.0 - pierce_def + randi() % 11 - 5)
 			# 战神T4: 战神印记 - 目标受伤+30%
 			if warrior_wargod_mark_turns > 0:
@@ -4286,7 +4291,7 @@ async func _on_skill_selected(skill_name: String):
 				_battle_add_log("🛡️ 不死不灭！设置完成：本场战斗中HP降至1时自动回复30%%HP（限1次）")
 				_spawn_player_damage("不!死!", "shield")
 		"碎甲":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var shatk = _get_effective_atk()
 			# 战神领域加成
 			shatk += warrior_domain_atk_boost
@@ -4319,7 +4324,7 @@ async func _on_skill_selected(skill_name: String):
 			# 战神T4: 战神印记 - 目标受伤+30%
 			if warrior_wargod_mark_turns > 0:
 				batk = int(batk * 1.3)
-			var b_dmg = int(batk * bloodlust_mult - _consume_spell_pierce() + randi() % 7 - 3)
+			var b_dmg = int(batk * bloodlust_mult - _get_pierced_defense() + randi() % 7 - 3)
 			b_dmg = max(1, b_dmg)
 			current_enemy["hp"] -= b_dmg
 			_battle_add_log("🩸 浴血奋战！HP%d%%时ATK×%.1f，造成 %d 伤害" % [int(hp_pct*100), bloodlust_mult, b_dmg])
@@ -4333,7 +4338,7 @@ async func _on_skill_selected(skill_name: String):
 		# ===== 战士 T4 (觉醒技能·Lv40解锁) =====
 		"战神之力":
 			# ATK × 6.0，附带"战神印记"（使目标受伤+30%持续3回合）
-			var wg_dmg = int(_get_effective_atk() * 6.0 - _consume_spell_pierce() + randi() % 11 - 5)
+			var wg_dmg = int(_get_effective_atk() * 6.0 - _get_pierced_defense() + randi() % 11 - 5)
 			wg_dmg = max(1, wg_dmg)
 			# 战神印记在受到伤害时额外加成，这里首次打击也附带标记
 			current_enemy["hp"] -= wg_dmg
@@ -4351,7 +4356,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_player_damage("绝对防御!", "shield")
 		"征服者怒吼":
 			# ATK × 2.5 全体，恐惧效果：敌人-30%ATK持续3回合
-			var conqueror_dmg = int(_get_effective_atk() * 2.5 - _consume_spell_pierce() + randi() % 11 - 5)
+			var conqueror_dmg = int(_get_effective_atk() * 2.5 - _get_pierced_defense() + randi() % 11 - 5)
 			# 战神T4: 战神印记 - 目标受伤+30%
 			if warrior_wargod_mark_turns > 0:
 				conqueror_dmg = int(conqueror_dmg * 1.3)
@@ -4366,7 +4371,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % conqueror_dmg, "crit", Vector2(0, -50))
 		# 法师
 		"火球":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var dmg = int(_get_effective_atk() * 2.0 - pierce_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
@@ -4374,7 +4379,7 @@ async func _on_skill_selected(skill_name: String):
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(randi()%20-10, -30))
 		"冰霜":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var dmg = int(_get_effective_atk() * 1.8 - pierce_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
@@ -4383,7 +4388,7 @@ async func _on_skill_selected(skill_name: String):
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(0, -20))
 		"闪电":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var dmg = int(_get_effective_atk() * 3.0 - pierce_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
@@ -4392,7 +4397,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -35))
 		# 法师 T2 (元素大师路线)
 		"流星火雨":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var burn_dmg = int(_get_effective_atk() * 0.8)
 			current_enemy["hp"] -= burn_dmg
 			meteor_burn_turns = 3
@@ -4401,7 +4406,7 @@ async func _on_skill_selected(skill_name: String):
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % burn_dmg, "crit", Vector2(0, -40))
 		"霜冻领域":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var f_dmg = int(_get_effective_atk() * 1.5 - pierce_def + randi() % 11 - 5)
 			f_dmg = max(1, f_dmg)
 			current_enemy["hp"] -= f_dmg
@@ -4410,7 +4415,7 @@ async func _on_skill_selected(skill_name: String):
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % f_dmg, "damage", Vector2(0, -25))
 		"连锁闪电":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var chain_dmg1 = int(_get_effective_atk() * 2.5 - pierce_def + randi() % 7 - 3)
 			chain_dmg1 = max(1, chain_dmg1)
 			current_enemy["hp"] -= chain_dmg1
@@ -4419,7 +4424,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % chain_dmg1, "crit", Vector2(0, -35))
 			# 连锁效果：本回合内额外造成递减伤害
 			await get_tree().create_timer(0.3).timeout
-			var chain_dmg2 = int(_get_effective_atk() * 1.5 - _consume_spell_pierce() + randi() % 5 - 2)
+			var chain_dmg2 = int(_get_effective_atk() * 1.5 - _get_pierced_defense() + randi() % 5 - 2)
 			chain_dmg2 = max(1, chain_dmg2)
 			current_enemy["hp"] -= chain_dmg2
 			_battle_add_log("⚡⚡ 闪电连锁！追加 %d 伤害" % chain_dmg2)
@@ -4441,7 +4446,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_player_damage("DRAIN x3", "buff")
 		# 猎人
 		"狙击":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var dmg = int(_get_effective_atk() * 2.0 - pierce_def + randi() % 7 - 3)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
@@ -4449,7 +4454,7 @@ async func _on_skill_selected(skill_name: String):
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -30))
 		"毒箭":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var dmg = int(_get_effective_atk() * 1.5 - pierce_def + randi() % 7 - 3)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
@@ -4462,7 +4467,7 @@ async func _on_skill_selected(skill_name: String):
 		# 盗贼
 		"背刺":
 			var is_crit = randi() % 100 < player_data.luk * 3
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var base_dmg = int(_get_effective_atk() * 2.2 - pierce_def + randi() % 7 - 3)
 			var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 			current_enemy["hp"] -= dmg
@@ -4510,7 +4515,7 @@ async func _on_skill_selected(skill_name: String):
 			_battle_add_log("⚔️ 格挡！伤害减少，护盾+%d" % player_shield)
 			_spawn_player_damage("+%d" % player_shield, "shield")
 		"斩击":
-			var pierce_def = _consume_spell_pierce()
+			var pierce_def = _get_pierced_defense()
 			var dmg = int(_get_effective_atk() * 1.8 - pierce_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
@@ -4518,7 +4523,7 @@ async func _on_skill_selected(skill_name: String):
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg)
 		"神圣":
-			var effective_def = int(_consume_spell_pierce() * 0.5)
+			var effective_def = int(_get_pierced_defense() * 0.5)
 			var dmg = int(_get_effective_atk() * 2.5 - effective_def + randi() % 11 - 5)
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
@@ -4789,7 +4794,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_player_damage("命运!", "buff")
 		"终末安魂曲":
 			# ATK × 3.0 全体，附加"安魂"效果（敌人无法回复HP）持续5回合
-			var requiem_dmg = int(_get_effective_atk() * 3.0 - _consume_spell_pierce() + randi() % 11 - 5)
+			var requiem_dmg = int(_get_effective_atk() * 3.0 - _get_pierced_defense() + randi() % 11 - 5)
 			requiem_dmg = max(1, requiem_dmg)
 			current_enemy["hp"] -= requiem_dmg
 			bard_requiem_turns = 5
@@ -4815,7 +4820,7 @@ async func _on_skill_selected(skill_name: String):
 				_battle_add_log("🎤🌟 传奇之歌已激活！ATK+20，DEF+20")
 		"虚空咏叹调":
 			# ATK × 5.0 单体，附加"虚空"效果（敌人所有属性-30%持续4回合）
-			var void_dmg = int(_get_effective_atk() * 5.0 - _consume_spell_pierce() + randi() % 11 - 5)
+			var void_dmg = int(_get_effective_atk() * 5.0 - _get_pierced_defense() + randi() % 11 - 5)
 			void_dmg = max(1, void_dmg)
 			current_enemy["hp"] -= void_dmg
 			bard_void_aria_turns = 4
@@ -6002,7 +6007,7 @@ func _on_attack():
 		return
 	is_player_turn = false
 	var is_crit = randi() % 100 < player_data.luk * 2
-	var pierce_def = _consume_spell_pierce()
+	var pierce_def = _get_pierced_defense()
 	var base_dmg = player_data.attack_power() - pierce_def + randi() % 7 - 3
 	# 战神T4: 战神印记 - 目标受伤+30%
 	if warrior_wargod_mark_turns > 0:
@@ -6687,6 +6692,10 @@ func _open_save_ui():
 			new_btn.add_theme_font_size_override("font_size", 13)
 			new_btn.pressed.connect(_on_save_slot_write.bind(slot))
 			slot_panel.add_child(new_btn)
+			# 空槽追加3个占位元素保持数组对称（与有存档槽一致）
+			_save_slot_buttons.append(new_btn)
+			_save_slot_buttons.append(null)  # load_btn占位
+			_save_slot_buttons.append(null)  # del_btn占位
 
 func _close_save_ui():
 	if save_ui != null:

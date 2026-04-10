@@ -1221,8 +1221,8 @@ func _roll_damage_variance_large(base_dmg: int) -> int:
 - **✅ P1 (已修复)**: 迷雾系统 fog_map — 2026-04-08 引入 `fog_container: Node2D` 统一管理
 - **P2 (既有未修复)**: `_load_job_texture()` 第720-722行创建未使用 Sprite2D 临时对象（自 2026-04-03 06:03）
 - ✅ P2 (已修复): 敌人/商店素材纹理尺寸 `2048` 硬编码 — 已提取为 ASSET_TEX_SIZE 常量 (2026-04-09)（自 2026-04-03 06:03）
-- **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03）
-- **P2 (既有未修复)**: `_save_slot_buttons` 数组不对称（自 2026-04-04 06:03）
+- ✅ P2 (已修复): `_consume_spell_pierce()` → `_get_pierced_defense()` 重命名 (2026-04-10 23:06)
+- ✅ P2 (已修复): `_save_slot_buttons` 数组不对称 — 空槽追加3个占位元素(null)保持对称 (2026-04-10 23:06)
 - **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理（自 2026-04-03 06:03）
 - **P3 (既有未修复)**: 伤害方差三种变体（±2/±3/±5）散落在 20+ 处未提取为辅助函数（自 2026-04-04 12:03）
 - **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量
@@ -1357,8 +1357,8 @@ func _roll_damage_variance_large(base_dmg: int) -> int:
 
 **既有未修复问题状态**（持续待修复）：
 - ✅ P2 (已修复): 敌人/商店素材纹理尺寸 `2048` 硬编码 — 已提取为 ASSET_TEX_SIZE 常量 (2026-04-09)（自 2026-04-03 06:03）
-- **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03）
-- **P2 (既有未修复)**: `_save_slot_buttons` 数组不对称（自 2026-04-04 06:03）
+- ✅ P2 (已修复): `_consume_spell_pierce()` → `_get_pierced_defense()` 重命名 (2026-04-10 23:06)
+- ✅ P2 (已修复): `_save_slot_buttons` 数组不对称 — 空槽追加3个占位元素(null)保持对称 (2026-04-10 23:06)
 - **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理（自 2026-04-03 06:03）
 - **P3 (既有未修复)**: 伤害方差三种变体（±2/±3/±5）散落20+处未提取辅助函数（自 2026-04-04 12:03）
 - **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量（自 2026-04-04 00:03）
@@ -1371,8 +1371,8 @@ func _roll_damage_variance_large(base_dmg: int) -> int:
 - **文件行数**: game.gd 当前约 **6622 行**（+7行：常量定义）
 
 **既有未修复问题状态**（持续待修复）：
-- **P2 (既有未修复)**: `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03）
-- **P2 (既有未修复)**: `_save_slot_buttons` 数组不对称（自 2026-04-04 06:03）
+- ✅ P2 (已修复): `_consume_spell_pierce()` → `_get_pierced_defense()` 重命名 (2026-04-10 23:06)
+- ✅ P2 (已修复): `_save_slot_buttons` 数组不对称 — 空槽追加3个占位元素(null)保持对称 (2026-04-10 23:06)
 - **P3 (既有未修复)**: `particle_container`/`audio_manager` 在 `_on_job_selected` 中未清理（自 2026-04-03 06:03）
 - **P3 (既有未修复)**: 伤害方差三种变体（±2/±3/±5）散落20+处未提取辅助函数（自 2026-04-04 12:03）
 - **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量（自 2026-04-04 00:03）
@@ -1499,7 +1499,134 @@ P2 级：
 - `_consume_spell_pierce()` 命名歧义（自 2026-04-02 12:03）
 - `_save_slot_buttons` 数组不对称（自 2026-04-04 06:03）
 
-P3 级：
-- 伤害方差三种变体（±2/±3/±5）散落 20+ 处未提取辅助函数（自 2026-04-04 12:03）
-- 随机数魔法数字（`0.003` 遇敌率、`randi() % 100` 阈值等）未提取常量（自 2026-04-04 00:03）
+### 新发现问题 (2026-04-10 12:03)
 
+#### P3 - Boss AI 技能伤害倍率硬编码（多处）
+
+**文件**: `scripts/game.gd`
+**问题**: Boss 技能伤害倍率以字面量形式散布在多处，缺乏语义化命名。
+
+| 行号 | 代码 | 建议常量 |
+|------|------|---------|
+| 5413 | `current_enemy["atk"] * 2.0` | `const BOSS_SKILL_MULT_HIGH: float = 2.0` |
+| 5443 | `current_enemy["atk"] * 1.5` | `const BOSS_SKILL_MULT_MED: float = 1.5` |
+| 5507 | `current_enemy["atk"] * 0.8` | `const BOSS_SKILL_MULT_LOW: float = 0.8` |
+| 5536 | `current_enemy["atk"] * 0.7` | `const BOSS_SKILL_MULT_XLOW: float = 0.7` |
+| 5568 | `current_enemy["atk"] * 1.5` | (重复) |
+| 5598 | `current_enemy["atk"] * 1.2` | `const BOSS_SKILL_MULT_MED2: float = 1.2` |
+
+#### P3 - Boss AI 伤害方差 `randi() % 3` 新变体（±1）
+
+**文件**: `scripts/game.gd`
+**问题**: Boss AI 中出现 `randi() % 3` 伤害方差（±1），与已有的 ±2/±3/±5 形成四种不同方差等级，标准不统一。
+
+| 行号 | 代码 | 说明 |
+|------|------|------|
+| 5413 | `+ randi() % 3` | Boss 强力技能方差 ±1 |
+| 5507 | `+ randi() % 3` | Boss 技能方差 ±1 |
+| 5536 | `+ randi() % 3` | Boss 技能方差 ±1 |
+| 5568 | `+ randi() % 3` | Boss 技能方差 ±1 |
+| 5598 | `+ randi() % 3` | Boss 技能方差 ±1 |
+| 5612 | `+ randi() % 3` | Boss 技能方差 ±1 |
+| 5641 | `+ randi() % 3` | Boss 技能方差 ±1 |
+| 5674 | `+ randi() % 3` | Boss 多段攻击方差 ±1 |
+
+**说明**: 原先记录的伤害方差三种变体（±2/±3/±5）加上此次发现的 ±1，共四种。建议统一提取为 `_roll_damage_variance_small/medium/large` 辅助函数。
+
+#### P3 - Boss AI 暴击/眩晕概率硬编码
+
+**文件**: `scripts/game.gd`
+**问题**: Boss 技能中的触发概率以字面量出现。
+
+| 行号 | 代码 | 说明 |
+|------|------|------|
+| 4271 | `randi() % 100 < execute_chance` | 处决触发概率 |
+| 4797 | `randi() % 100 < 30` | 眩晕触发概率 30% |
+| 5457 | `randi() % 100 < 30` | 眩晕概率 30% |
+| 5612 | `randi() % 100 < 50` | 眩晕概率 50% |
+
+**建议**: 提取 `BOSS_STUN_CHANCE_LOW: int = 30`、`BOSS_STUN_CHANCE_MED: int = 50` 等常量。
+
+#### P2 - 既有未修复：商店背景 fallback ColorRect 泄漏
+
+**文件**: `scripts/game.gd`
+**行号**: 第 1856-1860 行
+
+**问题**: 上次审查（2026-04-10 06:03）已记录，至今仍未修复。`_create_shop_bg()` 加载失败路径中 fallback ColorRect 以局部变量创建并添加到场景树，但 `shop_bg_sprite = null` 导致 `_close_shop()` 无法释放。
+
+```gdscript
+else:
+    var fallback = ColorRect.new()      # 局部变量
+    fallback.size = Vector2(1280, 720)
+    shop_bg_sprite = null                # ← 引用丢失！
+    add_child(fallback)
+```
+
+**建议**: 添加 `var shop_bg_fallback: ColorRect` 实例变量跟踪 fallback，或在 `_close_shop()` 中额外清理。
+
+---
+
+### 审查记录 - 2026-04-10 12:03
+
+本次审查发现：
+- **✅ 编译通过**: Godot `--headless --check-only` exit code 0，无语法错误
+- **文件行数**: game.gd 为 **6730 行**（与上次 6730 行持平）
+- **✅ 已确认修复**: `_load_job_texture()` Sprite2D 泄漏 — 已直接返回 tex，不再创建临时节点
+- **✅ 已确认修复**: `warrior_shatter_turns`/`warrior_shatter_defdebuff` 重复声明 — 仅有第 124-125 行声明，重复行已删除
+
+**本次新增发现**（均为 P3 级）：
+- Boss AI 技能伤害倍率（2.0/1.5/0.8/0.7/0.6）多处硬编码
+- Boss AI 伤害方差 `randi() % 3`（±1）新变体，在 8+ 处出现
+- Boss AI 暴击/眩晕概率（30%/50%）多处硬编码
+- 商店 fallback ColorRect 泄漏（P2，既有问题，仍未修复）
+
+**既有未修复问题状态**：
+- **P2 (既有未修复)**: 商店背景 fallback ColorRect 泄漏（自 2026-04-10 06:03 至今未修复）
+- ✅ P2 (已修复): `_consume_spell_pierce()` → `_get_pierced_defense()` 重命名 (2026-04-10 23:06)
+- ✅ P2 (已修复): `_save_slot_buttons` 数组不对称 — 空槽追加3个占位元素(null)保持对称 (2026-04-10 23:06)
+- **P3 (既有未修复)**: 伤害方差四种变体（±1/±2/±3/±5）散落 28+ 处未提取辅助函数（自 2026-04-04 12:03）
+- **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量（自 2026-04-04 00:03）
+
+
+
+### 审查记录 - 2026-04-10 18:03
+
+本次审查发现：
+- **✅ 编译通过**: Godot `--headless --check-only` exit code 0，无语法错误
+- **文件行数**: game.gd 为 **6730 行**（与上次 6730 行持平）
+- **✅ 无新增 P0/P1 问题**
+- **✅ 无新增语法/内存泄漏问题**：queue_free 模式正常，fog_container 统一管理正确
+
+**本次检查确认**：
+- ✅ P2 (已修复): shop_bg fallback ColorRect 泄漏 — shop_bg_fallback 实例变量跟踪，_close_shop() 同步清理 (2026-04-10 23:06)
+- ✅ 硬编码屏幕尺寸 `Vector2(1280, 720)` 在 13+ 处重复使用，未提取常量
+- ✅ Boss AI 技能伤害方差 `randi() % 3`（±1）在多处使用，P3 既有未修复
+- ✅ 眩晕概率 `randi() % 100 < 30/50` 在多处硬编码，P3 既有未修复
+
+**既有未修复问题状态**（持续待修复）：
+- ✅ P2 (已修复): 商店背景 fallback ColorRect 泄漏 — shop_bg_fallback 实例变量跟踪，_close_shop() 同步清理 (2026-04-10 23:06)
+- ✅ P2 (已修复): `_consume_spell_pierce()` → `_get_pierced_defense()` 重命名 (2026-04-10 23:06)
+- ✅ P2 (已修复): `_save_slot_buttons` 数组不对称 — 空槽追加3个占位元素(null)保持对称 (2026-04-10 23:06)
+- **P3 (既有未修复)**: 伤害方差四种变体（±1/±2/±3/±5）散落 28+ 处未提取辅助函数（自 2026-04-04 12:03）
+- **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量（自 2026-04-04 00:03）
+- **P3 (既有未修复)**: Boss AI 技能伤害倍率（2.0/1.5/0.8等）多处硬编码（自 2026-04-10 12:03）
+- **P3 (既有未修复)**: 屏幕尺寸 `Vector2(1280, 720)` 在 13+ 处重复硬编码
+
+
+
+---
+
+### 审查记录 - 2026-04-10 23:06
+
+本次审查修复（3个P2问题）：
+- **✅ 编译通过**: Godot `--headless --check-only --quit` exit code 0，无语法错误
+- **✅ P2 (已修复)**: 商店背景 fallback ColorRect 泄漏 — 新增 `shop_bg_fallback: ColorRect` 实例变量跟踪 fallback， 中设置该变量， 同步清理
+- **✅ P2 (已修复)**: `_consume_spell_pierce()` → `_get_pierced_defense()` 重命名，更准确反映获取穿透后防御值的实际行为，24处调用全部更新
+- **✅ P2 (已修复)**: `_save_slot_buttons` 数组不对称 — 空槽追加3个占位元素（new_btn, null, null）保持每槽3元素对称
+- **文件行数**: game.gd 为 **6733 行**（+3行 shop_bg_fallback 追踪，+行号偏移）
+
+**既有未修复问题状态**（持续待修复）：
+- **P3 (既有未修复)**: 伤害方差四种变体（±1/±2/±3/±5）散落 28+ 处未提取辅助函数（自 2026-04-04 12:03）
+- **P3 (既有未修复)**: 连锁闪电/闪避率/逃跑成功率等魔法数字未提取常量（自 2026-04-04 00:03）
+- **P3 (既有未修复)**: Boss AI 技能伤害倍率（2.0/1.5/0.8等）多处硬编码（自 2026-04-10 12:03）
+- **P3 (既有未修复)**: 屏幕尺寸 `Vector2(1280, 720)` 在 13+ 处重复硬编码
