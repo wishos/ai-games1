@@ -3,6 +3,20 @@
 ## [Unreleased] - v0.6
 
 ### Added
+- **盗贼T3/T4技能**（v0.6 迭代 - 2026-04-11）:
+  - T3 影分身 (40MP/5CD): 制造2个分身迷惑敌人，持续5回合（分身各30%HP，攻击无效）
+  - T3 绝杀 (45MP/4CD): ATK×6.0，仅对HP<30%目标有效（否则伤害减半）
+  - T3 暗影之牙 (50MP/5CD): ATK×2.5全体攻击，附加「影蚀」debuff（DEF-30%持续2回合）
+  - T4 千面杀手 (60MP/7CD): 每回合自动攻击HP最低敌人（ATK×3.0），持续5回合
+  - T4 暗影吞噬 (55MP/6CD): ATK×8.0单体，吸收敌人50%已损失HP转化为自身HP
+  - T4 幻惑领域 (50MP/6CD): 3回合内敌人30%概率混乱攻击自己（精英/Boss为20%）
+  - 新增状态变量: thief_shadow_clone_turns, thief_shadow_fang_turns, thief_shadow_fang_defdebuff, thief_thousand_faces_turns, thief_shadow_devour_turns, thief_illusion_domain_turns
+  - 暗影之牙DEF减益于每回合结束时递减并自动恢复
+  - 千面杀手每回合自动追击最低HP目标（基于有效攻击力计算）
+  - 幻惑领域在敌人攻击前判定，混乱时敌人自伤80%攻击力
+  - 更新 player.gd 盗贼技能列表，包含T1-T4全部12个技能
+  - 两处状态重置（`_start_battle` / `_start_boss_battle`）均已更新
+
 - **法师T4觉醒技能**（v0.6 迭代 - 2026-04-10）:
   - 元素湮灭 (100MP/8CD): ATK×8.0单体，敌人有火/冰/雷弱点时伤害翻倍
   - 奥术真理 (60MP/6CD): 本场战斗所有属性伤害+50%，所有属性抗性+30%

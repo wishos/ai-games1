@@ -89,6 +89,14 @@ var thief_poison_dmg: int = 0         # 淬毒利刃伤害
 var thief_choke_turns: int = 0        # 锁喉眩晕回合
 var thief_combo_count: int = 0         # 致命连击连击计数
 var thief_combo_dmg: int = 0           # 致命连击累计伤害
+# 盗贼T3状态
+var thief_shadow_clone_turns: int = 0  # 影分身：分身持续回合
+var thief_shadow_fang_turns: int = 0   # 暗影之牙：敌人DEF降低回合
+var thief_shadow_fang_defdebuff: int = 0 # 暗影之牙：DEF降低量
+# 盗贼T4状态
+var thief_thousand_faces_turns: int = 0  # 千面杀手：持续回合
+var thief_shadow_devour_turns: int = 0   # 暗影吞噬：持续回合
+var thief_illusion_domain_turns: int = 0  # 幻惑领域：持续回合
 # 牧师T2状态
 var priest_mass_heal_mp: int = 0      # 群体治疗MP量（用于分摊护盾）
 var priest_dispel_done: bool = false  # 驱散本回合已用
@@ -2704,6 +2712,14 @@ func _start_battle():
 	thief_choke_turns = 0
 	thief_combo_count = 0
 	thief_combo_dmg = 0
+	# 盗贼T3状态重置
+	thief_shadow_clone_turns = 0
+	thief_shadow_fang_turns = 0
+	thief_shadow_fang_defdebuff = 0
+	# 盗贼T4状态重置
+	thief_thousand_faces_turns = 0
+	thief_shadow_devour_turns = 0
+	thief_illusion_domain_turns = 0
 	# 牧师T2状态重置
 	priest_mass_heal_mp = 0
 	priest_dispel_done = false
@@ -2860,6 +2876,14 @@ func _start_boss_battle():
 	thief_choke_turns = 0
 	thief_combo_count = 0
 	thief_combo_dmg = 0
+	# 盗贼T3状态重置
+	thief_shadow_clone_turns = 0
+	thief_shadow_fang_turns = 0
+	thief_shadow_fang_defdebuff = 0
+	# 盗贼T4状态重置
+	thief_thousand_faces_turns = 0
+	thief_shadow_devour_turns = 0
+	thief_illusion_domain_turns = 0
 	# 牧师T2状态重置
 	priest_mass_heal_mp = 0
 	priest_dispel_done = false
@@ -4001,6 +4025,10 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	"一击脱离": 4, "万箭齐发": 4, "猎杀时刻": 5, "野兽之力": 6,
 	# 盗贼 T2
 	"影遁": 4, "淬毒利刃": 3, "锁喉": 4,
+	# 盗贼 T3
+	"影分身": 5, "绝杀": 4, "暗影之牙": 5,
+	# 盗贼 T4 (觉醒技能)
+	"千面杀手": 7, "暗影吞噬": 6, "幻惑领域": 6,
 	# 牧师 T2
 	"群体治疗": 5, "驱散": 3, "神圣仲裁": 4,
 	# 骑士 T2
@@ -4098,6 +4126,8 @@ func _on_skill_menu():
 		"致命陷阱": 25, "猎豹加速": 20, "穿甲箭": 30,
 		"一击脱离": 35, "万箭齐发": 50, "猎杀时刻": 40, "野兽之力": 45,
 		"影遁": 25, "淬毒利刃": 25, "锁喉": 30,
+		"影分身": 40, "绝杀": 45, "暗影之牙": 50,
+		"千面杀手": 60, "暗影吞噬": 55, "幻惑领域": 50,
 		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
 		"盾击": 15, "圣光审判": 30, "钢铁壁垒": 25,
 		"战斗乐章": 20, "疯狂节拍": 35, "天籁之音": 40,
@@ -4128,12 +4158,13 @@ func _on_skill_menu():
 		]
 		var t3_skills = [
 			"一击脱离", "万箭齐发", "猎杀时刻", "野兽之力",
+			"影分身", "绝杀", "暗影之牙",
 			"毁天灭地", "不死不灭", "碎甲",
 			"战神领域", "浴血奋战", "援护",
 			"陨石术", "绝对零度", "元素风暴", "时间静止",
 			"完美和弦", "命运交响曲", "终末安魂曲"
 		]
-		var t4_skills = ["战神之力", "绝对防御", "征服者怒吼", "传奇之歌", "虚空咏叹调", "生命赞歌", "元素湮灭", "奥术真理", "秘法编织"]
+		var t4_skills = ["战神之力", "绝对防御", "征服者怒吼", "传奇之歌", "虚空咏叹调", "生命赞歌", "元素湮灭", "奥术真理", "秘法编织", "千面杀手", "暗影吞噬", "幻惑领域"]
 		var is_t2 = t2_skills.has(skill)
 		var is_t3 = t3_skills.has(skill)
 		var is_t4 = t4_skills.has(skill)
@@ -4219,6 +4250,10 @@ async func _on_skill_selected(skill_name: String):
 		"完美和弦": 50, "命运交响曲": 55, "终末安魂曲": 60,
 		"传奇之歌": 70, "虚空咏叹调": 65, "生命赞歌": 60,
 		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25,
+		# 盗贼 T3
+		"影分身": 40, "绝杀": 45, "暗影之牙": 50,
+		# 盗贼 T4 (觉醒技能)
+		"千面杀手": 60, "暗影吞噬": 55, "幻惑领域": 50,
 		# 战士 T3 (毁灭者路线)
 		"毁天灭地": 50, "不死不灭": 40, "碎甲": 30,
 		# 战士 T3 (团队领袖路线)
@@ -4774,6 +4809,58 @@ async func _on_skill_selected(skill_name: String):
 			_enemy_hit_effect()
 			enemy_stun_turns = max(enemy_stun_turns, 2)
 			_spawn_enemy_damage("%d" % choke_dmg, "debuff", Vector2(0, -35))
+		# ===== 盗贼 T3 (终极技能·Lv25解锁) =====
+		"影分身":
+			# 制造2个分身（各30%HP，攻击无效），迷惑敌人，持续5回合
+			thief_shadow_clone_turns = 5
+			_battle_add_log("👤👤 影分身！制造2个分身迷惑敌人，持续5回合！分身各30%HP")
+			_spawn_player_damage("影分身!", "buff")
+		"绝杀":
+			# ATK×6.0，仅对HP<30%目标生效
+			var exe_dmg = int(_get_effective_atk() * 6.0)
+			if current_enemy["hp"] > current_enemy["max_hp"] * 0.3:
+				exe_dmg = int(exe_dmg * 0.5)
+				_battle_add_log("🗡️💀 绝杀！目标HP>30%，伤害减半！造成 %d 伤害" % exe_dmg)
+			else:
+				_battle_add_log("🗡️💀 绝杀！对残血目标造成 %d 伤害！" % exe_dmg)
+			current_enemy["hp"] -= exe_dmg
+			_enemy_hit_effect()
+			_critical_hit_effect()
+			_spawn_enemy_damage("%d" % exe_dmg, "crit", Vector2(0, -55))
+		"暗影之牙":
+			# ATK×2.5全体，附带「影蚀」debuff（DEF-30%持续2回合）
+			var fang_dmg = int(_get_effective_atk() * 2.5)
+			current_enemy["hp"] -= fang_dmg
+			thief_shadow_fang_turns = 2
+			thief_shadow_fang_defdebuff = int(current_enemy["def"] * 0.3)
+			current_enemy["def"] = max(1, current_enemy["def"] - thief_shadow_fang_defdebuff)
+			_battle_add_log("🌑🗡️ 暗影之牙！造成 %d 伤害，敌人DEF-%d持续2回合！" % [fang_dmg, thief_shadow_fang_defdebuff])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % fang_dmg, "crit", Vector2(0, -45))
+		# ===== 盗贼 T4 (觉醒技能·Lv40解锁) =====
+		"千面杀手":
+			# 每回合自动攻击HP最低敌人（ATK×3.0），持续5回合
+			thief_thousand_faces_turns = 5
+			_battle_add_log("🎭💀 千面杀手！每回合自动攻击HP最低敌人，持续5回合！")
+			_spawn_player_damage("千面杀手!", "crit")
+		"暗影吞噬":
+			# ATK×8.0，吸收敌人50%已损失HP转化为自身HP
+			var devour_dmg = int(_get_effective_atk() * 8.0)
+			var absorb_hp = int((current_enemy["max_hp"] - current_enemy["hp"]) * 0.5)
+			current_enemy["hp"] -= devour_dmg
+			var actual_heal = min(absorb_hp, devour_dmg)
+			player_data.hp = min(player_data.max_hp, player_data.hp + actual_heal)
+			_battle_add_log("🌑💜 暗影吞噬！造成 %d 伤害，吸收 %d HP转化为自身治疗！" % [devour_dmg, actual_heal])
+			_enemy_hit_effect()
+			_critical_hit_effect()
+			_trigger_portrait_heal_glow()
+			_spawn_enemy_damage("%d" % devour_dmg, "crit", Vector2(0, -60))
+			_spawn_player_damage("+%d" % actual_heal, "heal")
+		"幻惑领域":
+			# 3回合内，敌人50%概率攻击自己人（精英/Boss为20%）
+			thief_illusion_domain_turns = 3
+			_battle_add_log("🌙✨ 幻惑领域！敌人30%概率混乱攻击自己人，持续3回合！")
+			_spawn_player_damage("幻惑!", "buff")
 		# 牧师 T2
 		"群体治疗":
 			var heal_amt = int(player_data.max_hp * 0.5)
@@ -5276,6 +5363,48 @@ func _process_battle(delta: float):
 		if await _check_battle_end():
 			return
 
+	# 盗贼T3: 暗影之牙DEF debuff expiration
+	if thief_shadow_fang_turns > 0:
+		thief_shadow_fang_turns -= 1
+		if thief_shadow_fang_turns <= 0:
+			current_enemy["def"] += thief_shadow_fang_defdebuff
+			thief_shadow_fang_defdebuff = 0
+			_battle_add_log("🌑 暗影之牙的DEF减益效果结束！")
+
+	# 盗贼T3: 影分身效果（持续时间递减）
+	if thief_shadow_clone_turns > 0:
+		thief_shadow_clone_turns -= 1
+		if thief_shadow_clone_turns <= 0:
+			_battle_add_log("👤 影分身消散！")
+
+	# 盗贼T4: 千面杀手自动攻击（每回合开始时）
+	if thief_thousand_faces_turns > 0:
+		thief_thousand_faces_turns -= 1
+		# 千面杀手：自动攻击HP最低的敌人
+		var tf_dmg = int(_get_effective_atk() * 3.0)
+		current_enemy["hp"] -= tf_dmg
+		_battle_add_log("🎭💀 千面杀手！自动追踪残血目标，造成 %d 伤害！（剩余%d回合）" % [tf_dmg, thief_thousand_faces_turns])
+		_enemy_hit_effect()
+		_critical_hit_effect()
+		_spawn_enemy_damage("%d" % tf_dmg, "crit", Vector2(0, -40))
+		_update_enemy_hp_bar()
+		if await _check_battle_end():
+			return
+		if thief_thousand_faces_turns <= 0:
+			_battle_add_log("🎭 千面杀手效果结束！")
+
+	# 盗贼T4: 暗影吞噬（持续时间追踪）
+	if thief_shadow_devour_turns > 0:
+		thief_shadow_devour_turns -= 1
+		if thief_shadow_devour_turns <= 0:
+			_battle_add_log("🌑 暗影吞噬效果结束！")
+
+	# 盗贼T4: 幻惑领域（持续时间递减）
+	if thief_illusion_domain_turns > 0:
+		thief_illusion_domain_turns -= 1
+		if thief_illusion_domain_turns <= 0:
+			_battle_add_log("🌙 幻惑领域效果结束！")
+
 	# 召唤师T2: 灵魂连接DOT
 	if summoner_soul_link_turns > 0:
 		current_enemy["hp"] -= summoner_soul_link_dmg
@@ -5342,6 +5471,33 @@ func _process_battle(delta: float):
 
 	# 普通敌人攻击
 	var e_dmg = current_enemy["atk"] + randi() % 5 - 2
+	# 战士T4: 幻惑领域效果 - 敌人有概率混乱攻击自己
+	if thief_illusion_domain_turns > 0 and not current_enemy.get("is_boss", false):
+		if randf() < 0.3:
+			# 敌人被幻惑，攻击自己
+			var illusion_dmg = int(e_dmg * 0.8)
+			current_enemy["hp"] -= illusion_dmg
+			_battle_add_log("🌙✨ 幻惑领域！%s 被迷惑，攻击自己！受到 %d 伤害！" % [current_enemy["name"], illusion_dmg])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % illusion_dmg, "crit", Vector2(0, -30))
+			_update_enemy_hp_bar()
+			if await _check_battle_end():
+				return
+			_start_player_turn()
+			return
+	elif thief_illusion_domain_turns > 0 and current_enemy.get("is_boss", false):
+		if randf() < 0.2:
+			# Boss有更低概率混乱
+			var illusion_dmg = int(e_dmg * 0.8)
+			current_enemy["hp"] -= illusion_dmg
+			_battle_add_log("🌙✨ 幻惑领域！Boss %s 被迷惑，攻击自己！受到 %d 伤害！" % [current_enemy["name"], illusion_dmg])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % illusion_dmg, "crit", Vector2(0, -30))
+			_update_enemy_hp_bar()
+			if await _check_battle_end():
+				return
+			_start_player_turn()
+			return
 	if player_defending or player_shield > 0:
 		e_dmg = int(e_dmg * 0.5)
 	if player_shield > 0:
