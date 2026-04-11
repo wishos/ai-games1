@@ -406,14 +406,14 @@ func _show_title_screen():
 	# 全屏背景
 	var bg = ColorRect.new()
 	bg.name = "TitleBG"
-	bg.size = Vector2(1280, 720)
+	bg.size = SCREEN_SIZE
 	bg.color = PALETTE.sky_top
 	add_child(bg)
 
 	# 半透明遮罩
 	var overlay = ColorRect.new()
 	overlay.name = "TitleOverlay"
-	overlay.size = Vector2(1280, 720)
+	overlay.size = SCREEN_SIZE
 	overlay.position = Vector2(0, 0)
 	overlay.color = Color(0, 0, 0, 0.6)
 	add_child(overlay)
@@ -1025,14 +1025,14 @@ func _generate_map():
 
 	# 背景（天空）
 	map_bg = ColorRect.new()
-	map_bg.size = Vector2(1280, 720)
+	map_bg.size = SCREEN_SIZE
 	map_bg.position = Vector2(0, 0)
 	map_bg.color = PALETTE.sky_top
 	add_child(map_bg)
 
 	# 地面（草地）
 	map_ground = ColorRect.new()
-	map_ground.size = Vector2(1280, 720)
+	map_ground.size = SCREEN_SIZE
 	map_ground.position = Vector2(0, 0)
 	map_ground.color = PALETTE.grass_1
 	add_child(map_ground)
@@ -1147,7 +1147,7 @@ func _process_explore(delta):
 		return
 
 	# 持续按住时随机触发战斗
-	if moved and randf() < 0.003 and is_player_turn:
+	if moved and randf() < RANDOM_ENCOUNTER_RATE and is_player_turn:
 		_start_battle()
 		return
 
@@ -1253,7 +1253,7 @@ func _show_transition_overlay():
 	if transition_overlay == null:
 		transition_overlay = ColorRect.new()
 		transition_overlay.name = "TransitionOverlay"
-		transition_overlay.size = Vector2(1280, 720)
+		transition_overlay.size = SCREEN_SIZE
 		transition_overlay.position = Vector2(0, 0)
 		transition_overlay.color = Color(0, 0, 0, 0.0)
 		add_child(transition_overlay)
@@ -1322,7 +1322,7 @@ func _show_boss_intro(boss_def: Dictionary):
 	# 暗色遮罩
 	var overlay = ColorRect.new()
 	overlay.name = "BossIntroOverlay"
-	overlay.size = Vector2(1280, 720)
+	overlay.size = SCREEN_SIZE
 	overlay.color = Color(0, 0, 0, 0.95)
 	overlay.position = Vector2(0, 0)
 	overlay.modulate = Color(1, 1, 1, 0)
@@ -1469,7 +1469,7 @@ func _create_inventory_ui():
 
 	# 背景遮罩
 	var overlay = ColorRect.new()
-	overlay.size = Vector2(1280, 720)
+	overlay.size = SCREEN_SIZE
 	overlay.color = Color(0, 0, 0, 0.82)
 	overlay.position = Vector2(0, 0)
 	overlay.gui_input.connect(_on_inventory_overlay_click)
@@ -1734,6 +1734,40 @@ const MINIMAP_CELL: int = 2  # 每个小地图格子的像素大小
 const ASSET_TEX_SIZE: float = 2048.0  # 敌人/商店等素材纹理尺寸
 const ENEMY_SPRITE_DISPLAY_SIZE: float = 200.0  # 敌人精灵显示尺寸
 
+# 屏幕/场景尺寸常量
+const SCREEN_SIZE: Vector2 = Vector2(1280, 720)
+
+# 探索与战斗概率常量
+const RANDOM_ENCOUNTER_RATE: float = 0.003  # 探索随机遇敌率
+const VANISH_EVASION_CHANCE: float = 0.5   # 消失/猎豹闪避成功率
+const FLEE_SUCCESS_CHANCE: float = 0.6      # 逃跑成功率
+
+# Boss技能伤害倍率常量
+const BOSS_SKILL_MULT_HIGH: float = 2.0   # 高伤害倍率
+const BOSS_SKILL_MULT_MED: float = 1.5    # 中等伤害倍率
+const BOSS_SKILL_MULT_LOW: float = 0.8     # 低伤害倍率
+const BOSS_SKILL_MULT_XLOW: float = 0.7   # 极低伤害倍率
+const BOSS_SKILL_MULT_MED2: float = 1.2   # 中等伤害倍率(v2)
+const BOSS_SKILL_MULT_1D3: float = 1.3   # 1.3倍
+const BOSS_SKILL_MULT_2D5: float = 2.5   # 2.5倍
+const BOSS_SKILL_MULT_2D8: float = 2.8   # 2.8倍
+const BOSS_SKILL_MULT_3D0: float = 3.0   # 3.0倍
+const BOSS_SKILL_MULT_1D8: float = 1.8   # 1.8倍
+const BOSS_SKILL_MULT_0D6: float = 0.6   # 0.6倍
+
+# 伤害方差辅助函数 (避免硬编码散落)
+## base_dmg ±2 波动 (用于敌人普攻/连锁闪电第2段)
+func _roll_dmg_var_small(base_dmg: int) -> int:
+	return base_dmg + randi() % 5 - 2
+
+## base_dmg ±3 波动 (用于大多数技能)
+func _roll_dmg_var_medium(base_dmg: int) -> int:
+	return base_dmg + randi() % 7 - 3
+
+## base_dmg ±5 波动 (用于重型技能)
+func _roll_dmg_var_large(base_dmg: int) -> int:
+	return base_dmg + randi() % 11 - 5
+
 func _create_minimap():
 	minimap_container = Control.new()
 	minimap_container.name = "MinimapContainer"
@@ -1875,7 +1909,7 @@ func _create_shop_bg():
 	else:
 		# 回退到纯色背景
 		shop_bg_fallback = ColorRect.new()
-		shop_bg_fallback.size = Vector2(1280, 720)
+		shop_bg_fallback.size = SCREEN_SIZE
 		shop_bg_fallback.color = Color(0.15, 0.1, 0.05, 1)
 		shop_bg_fallback.z_index = -10
 		add_child(shop_bg_fallback)
@@ -1923,7 +1957,7 @@ func _create_shop_ui():
 
 	# 背景遮罩
 	var overlay = ColorRect.new()
-	overlay.size = Vector2(1280, 720)
+	overlay.size = SCREEN_SIZE
 	overlay.color = Color(0, 0, 0, 0.82)
 	overlay.position = Vector2(0, 0)
 	shop_ui.add_child(overlay)
@@ -2972,7 +3006,7 @@ func _create_battle_ui():
 	# 暗色遮罩
 	var overlay = ColorRect.new()
 	overlay.name = "BattleOverlay"
-	overlay.size = Vector2(1280, 720)
+	overlay.size = SCREEN_SIZE
 	overlay.color = Color(0, 0, 0, 0.75)
 	overlay.position = Vector2(0, 0)
 	add_child(overlay)
@@ -4283,7 +4317,7 @@ async func _on_skill_selected(skill_name: String):
 		# 战士
 		"猛击":
 			var pierce_def = _get_pierced_defense()
-			var dmg = int(_get_effective_atk() * 1.5 - pierce_def + randi() % 7 - 3)
+			var dmg = _roll_dmg_var_medium(int(_get_effective_atk() * 1.5)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚔️ 猛击！造成 %d 伤害" % dmg)
@@ -4296,7 +4330,7 @@ async func _on_skill_selected(skill_name: String):
 			_battle_add_log("🛡️ 防御姿态！伤害减半，回复5MP")
 		"冲锋":
 			var pierce_def = _get_pierced_defense()
-			var dmg = int(_get_effective_atk() * 2.5 - pierce_def + randi() % 11 - 5)
+			var dmg = _roll_dmg_var_large(int(_get_effective_atk() * 2.5)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			enemy_stun_turns = 1
@@ -4314,7 +4348,7 @@ async func _on_skill_selected(skill_name: String):
 			var total_dmg = 0
 			for i in range(hits):
 				var pierce_def = _get_pierced_defense()
-				var hit_dmg = int(_get_effective_atk() * 1.2 - pierce_def + randi() % 7 - 3)
+				var hit_dmg = _roll_dmg_var_medium(int(_get_effective_atk() * 1.2)) - pierce_def
 				hit_dmg = max(1, hit_dmg)
 				current_enemy["hp"] -= hit_dmg
 				total_dmg += hit_dmg
@@ -4331,7 +4365,7 @@ async func _on_skill_selected(skill_name: String):
 		# 战士 T3 (毁灭者路线)
 		"毁天灭地":
 			var pierce_def = _get_pierced_defense()
-			var base_dmg = int(_get_effective_atk() * 4.0 - pierce_def + randi() % 11 - 5)
+			var base_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 4.0)) - pierce_def
 			# 战神T4: 战神印记 - 目标受伤+30%
 			if warrior_wargod_mark_turns > 0:
 				base_dmg = int(base_dmg * 1.3)
@@ -4363,7 +4397,7 @@ async func _on_skill_selected(skill_name: String):
 			# 战神T4: 战神印记 - 目标受伤+30%
 			if warrior_wargod_mark_turns > 0:
 				shatk = int(shatk * 1.3)
-			var s_dmg = int(shatk * 2.0 - pierce_def + randi() % 7 - 3)
+			var s_dmg = _roll_dmg_var_medium(int(shatk * 2.0)) - pierce_def
 			s_dmg = max(1, s_dmg)
 			current_enemy["hp"] -= s_dmg
 			# 敌人DEF降低50%持续2回合
@@ -4389,7 +4423,7 @@ async func _on_skill_selected(skill_name: String):
 			# 战神T4: 战神印记 - 目标受伤+30%
 			if warrior_wargod_mark_turns > 0:
 				batk = int(batk * 1.3)
-			var b_dmg = int(batk * bloodlust_mult - _get_pierced_defense() + randi() % 7 - 3)
+			var b_dmg = _roll_dmg_var_medium(int(batk * bloodlust_mult)) - _get_pierced_defense()
 			b_dmg = max(1, b_dmg)
 			current_enemy["hp"] -= b_dmg
 			_battle_add_log("🩸 浴血奋战！HP%d%%时ATK×%.1f，造成 %d 伤害" % [int(hp_pct*100), bloodlust_mult, b_dmg])
@@ -4403,7 +4437,7 @@ async func _on_skill_selected(skill_name: String):
 		# ===== 战士 T4 (觉醒技能·Lv40解锁) =====
 		"战神之力":
 			# ATK × 6.0，附带"战神印记"（使目标受伤+30%持续3回合）
-			var wg_dmg = int(_get_effective_atk() * 6.0 - _get_pierced_defense() + randi() % 11 - 5)
+			var wg_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 6.0)) - _get_pierced_defense()
 			wg_dmg = max(1, wg_dmg)
 			# 战神印记在受到伤害时额外加成，这里首次打击也附带标记
 			current_enemy["hp"] -= wg_dmg
@@ -4421,7 +4455,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_player_damage("绝对防御!", "shield")
 		"征服者怒吼":
 			# ATK × 2.5 全体，恐惧效果：敌人-30%ATK持续3回合
-			var conqueror_dmg = int(_get_effective_atk() * 2.5 - _get_pierced_defense() + randi() % 11 - 5)
+			var conqueror_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 2.5)) - _get_pierced_defense()
 			# 战神T4: 战神印记 - 目标受伤+30%
 			if warrior_wargod_mark_turns > 0:
 				conqueror_dmg = int(conqueror_dmg * 1.3)
@@ -4437,7 +4471,7 @@ async func _on_skill_selected(skill_name: String):
 		# 法师
 		"火球":
 			var pierce_def = _get_pierced_defense()
-			var dmg = int(_get_effective_atk() * 2.0 - pierce_def + randi() % 11 - 5)
+			var dmg = _roll_dmg_var_large(int(_get_effective_atk() * 2.0)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("🔥 火球术！造成 %d 伤害" % dmg)
@@ -4445,7 +4479,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(randi()%20-10, -30))
 		"冰霜":
 			var pierce_def = _get_pierced_defense()
-			var dmg = int(_get_effective_atk() * 1.8 - pierce_def + randi() % 11 - 5)
+			var dmg = _roll_dmg_var_large(int(_get_effective_atk() * 1.8)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			current_enemy["spd"] = max(1, current_enemy["spd"] - 2)
@@ -4454,7 +4488,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(0, -20))
 		"闪电":
 			var pierce_def = _get_pierced_defense()
-			var dmg = int(_get_effective_atk() * 3.0 - pierce_def + randi() % 11 - 5)
+			var dmg = _roll_dmg_var_large(int(_get_effective_atk() * 3.0)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚡ 闪电术！造成 %d 伤害" % dmg)
@@ -4472,7 +4506,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % burn_dmg, "crit", Vector2(0, -40))
 		"霜冻领域":
 			var pierce_def = _get_pierced_defense()
-			var f_dmg = int(_get_effective_atk() * 1.5 - pierce_def + randi() % 11 - 5)
+			var f_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 1.5)) - pierce_def
 			f_dmg = max(1, f_dmg)
 			current_enemy["hp"] -= f_dmg
 			frost_slow_turns = 2
@@ -4481,7 +4515,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % f_dmg, "damage", Vector2(0, -25))
 		"连锁闪电":
 			var pierce_def = _get_pierced_defense()
-			var chain_dmg1 = int(_get_effective_atk() * 2.5 - pierce_def + randi() % 7 - 3)
+			var chain_dmg1 = _roll_dmg_var_medium(int(_get_effective_atk() * 2.5)) - pierce_def
 			chain_dmg1 = max(1, chain_dmg1)
 			current_enemy["hp"] -= chain_dmg1
 			_battle_add_log("⚡ 连锁闪电！造成 %d 伤害" % chain_dmg1)
@@ -4489,7 +4523,8 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % chain_dmg1, "crit", Vector2(0, -35))
 			# 连锁效果：本回合内额外造成递减伤害
 			await get_tree().create_timer(0.3).timeout
-			var chain_dmg2 = int(_get_effective_atk() * 1.5 - _get_pierced_defense() + randi() % 5 - 2)
+			var chain_dmg2_base = int(_get_effective_atk() * 1.5)
+			chain_dmg2 = _roll_dmg_var_small(chain_dmg2_base) - _get_pierced_defense()
 			chain_dmg2 = max(1, chain_dmg2)
 			current_enemy["hp"] -= chain_dmg2
 			_battle_add_log("⚡⚡ 闪电连锁！追加 %d 伤害" % chain_dmg2)
@@ -4512,7 +4547,7 @@ async func _on_skill_selected(skill_name: String):
 		# 猎人
 		"狙击":
 			var pierce_def = _get_pierced_defense()
-			var dmg = int(_get_effective_atk() * 2.0 - pierce_def + randi() % 7 - 3)
+			var dmg = _roll_dmg_var_medium(int(_get_effective_atk() * 2.0)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("🎯 狙击！必定命中，造成 %d 伤害" % dmg)
@@ -4520,7 +4555,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -30))
 		"毒箭":
 			var pierce_def = _get_pierced_defense()
-			var dmg = int(_get_effective_atk() * 1.5 - pierce_def + randi() % 7 - 3)
+			var dmg = _roll_dmg_var_medium(int(_get_effective_atk() * 1.5)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			poison_stacks += 1
@@ -4533,7 +4568,7 @@ async func _on_skill_selected(skill_name: String):
 		"背刺":
 			var is_crit = randi() % 100 < player_data.luk * 3
 			var pierce_def = _get_pierced_defense()
-			var base_dmg = int(_get_effective_atk() * 2.2 - pierce_def + randi() % 7 - 3)
+			var base_dmg = _roll_dmg_var_medium(int(_get_effective_atk() * 2.2)) - pierce_def
 			var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 			current_enemy["hp"] -= dmg
 			var backstab_msg = "暴击！" if is_crit else ""
@@ -4581,7 +4616,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_player_damage("+%d" % player_shield, "shield")
 		"斩击":
 			var pierce_def = _get_pierced_defense()
-			var dmg = int(_get_effective_atk() * 1.8 - pierce_def + randi() % 11 - 5)
+			var dmg = _roll_dmg_var_large(int(_get_effective_atk() * 1.8)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			_battle_add_log("⚔️ 神圣斩击！造成 %d 伤害" % dmg)
@@ -4589,7 +4624,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % dmg)
 		"神圣":
 			var effective_def = int(_get_pierced_defense() * 0.5)
-			var dmg = int(_get_effective_atk() * 2.5 - effective_def + randi() % 11 - 5)
+			var dmg = _roll_dmg_var_large(int(_get_effective_atk() * 2.5)) - effective_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			var heal = int(player_data.max_hp * 0.15)
@@ -4628,7 +4663,7 @@ async func _on_skill_selected(skill_name: String):
 			contract_turns = 3
 			var contract_dmg = int(_get_effective_atk() * 1.2)
 			current_enemy["hp"] -= contract_dmg
-			current_enemy["atk"] = max(1, int(current_enemy["atk"] * 0.7))
+			current_enemy["atk"] = max(1, int(current_enemy["atk"] * BOSS_SKILL_MULT_XLOW))
 			_battle_add_log("📜 契约诅咒！造成 %d 伤害，敌人ATK降至70%%，持续3回合" % contract_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % contract_dmg, "debuff", Vector2(0, -25))
@@ -4953,7 +4988,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_player_damage("命运!", "buff")
 		"终末安魂曲":
 			# ATK × 3.0 全体，附加"安魂"效果（敌人无法回复HP）持续5回合
-			var requiem_dmg = int(_get_effective_atk() * 3.0 - _get_pierced_defense() + randi() % 11 - 5)
+			var requiem_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 3.0)) - _get_pierced_defense()
 			requiem_dmg = max(1, requiem_dmg)
 			current_enemy["hp"] -= requiem_dmg
 			bard_requiem_turns = 5
@@ -4979,7 +5014,7 @@ async func _on_skill_selected(skill_name: String):
 				_battle_add_log("🎤🌟 传奇之歌已激活！ATK+20，DEF+20")
 		"虚空咏叹调":
 			# ATK × 5.0 单体，附加"虚空"效果（敌人所有属性-30%持续4回合）
-			var void_dmg = int(_get_effective_atk() * 5.0 - _get_pierced_defense() + randi() % 11 - 5)
+			var void_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 5.0)) - _get_pierced_defense()
 			void_dmg = max(1, void_dmg)
 			current_enemy["hp"] -= void_dmg
 			bard_void_aria_turns = 4
@@ -5455,7 +5490,7 @@ func _process_battle(delta: float):
 			vanish_turns -= 1
 		if hunter_evasion_turns > 0:
 			hunter_evasion_turns -= 1
-		if randf() < 0.5:
+		if randf() < VANISH_EVASION_CHANCE:
 			var evade_name = "消失" if vanish_turns >= 0 else "猎豹加速"
 			_battle_add_log("💨 %s！完美闪避了敌人攻击！" % evade_name)
 			_spawn_player_damage("MISS!", "miss")
@@ -5470,7 +5505,7 @@ func _process_battle(delta: float):
 		return
 
 	# 普通敌人攻击
-	var e_dmg = current_enemy["atk"] + randi() % 5 - 2
+	var e_dmg = _roll_dmg_var_small(current_enemy["atk"])
 	# 战士T4: 幻惑领域效果 - 敌人有概率混乱攻击自己
 	if thief_illusion_domain_turns > 0 and not current_enemy.get("is_boss", false):
 		if randf() < 0.3:
@@ -5648,7 +5683,7 @@ func _enemy_execute_action():
 
 func _enemy_skill_heavy_strike():
 	# 重击：2x伤害，降低玩家防御2点，持续2回合
-	var dmg = int(current_enemy["atk"] * 2.0) + randi() % 3
+	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_HIGH) + randi() % 3
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -5678,7 +5713,7 @@ func _enemy_skill_heavy_strike():
 
 func _enemy_skill_bone_crusher():
 	# 碎骨：1.5x伤害，30%几率眩晕玩家1回合
-	var dmg = int(current_enemy["atk"] * 1.5) + randi() % 5
+	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED) + randi() % 5
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -5711,7 +5746,7 @@ func _enemy_skill_bone_crusher():
 
 func _enemy_skill_poison_thrust():
 	# 淬毒：正常伤害 + 附加3层中毒（每层3伤害，持续3回合）
-	var dmg = int(current_enemy["atk"]) + randi() % 5 - 2
+	var dmg = _roll_dmg_var_small(int(current_enemy["atk"]))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -5742,7 +5777,7 @@ func _enemy_skill_poison_thrust():
 
 func _enemy_skill_strangle():
 	# 锁喉：0.8x伤害 + 必定眩晕1回合
-	var dmg = int(current_enemy["atk"] * 0.8) + randi() % 3
+	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW) + randi() % 3
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -5771,7 +5806,7 @@ func _enemy_skill_strangle():
 
 func _enemy_skill_life_drain():
 	# 吸血：0.7x伤害，回复自身50%伤害量的HP
-	var dmg = int(current_enemy["atk"] * 0.7) + randi() % 3
+	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_XLOW) + randi() % 3
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -5803,7 +5838,7 @@ func _enemy_skill_life_drain():
 
 func _enemy_skill_soul_drain():
 	# 噬魂：0.6x伤害 + 偷取3点MP
-	var dmg = int(current_enemy["atk"] * 0.6) + randi() % 3
+	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_0D6) + randi() % 3
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -5833,7 +5868,7 @@ func _enemy_skill_soul_drain():
 
 func _enemy_skill_shield_bash():
 	# 盾击：1.5x伤害，50%几率眩晕1回合
-	var dmg = int(current_enemy["atk"] * 1.5) + randi() % 3
+	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED) + randi() % 3
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -5876,7 +5911,7 @@ func _enemy_skill_iron_wall():
 
 func _enemy_skill_bite():
 	# 撕咬：1.2x伤害，附加2层流血（每回合3伤害，持续2回合）
-	var dmg = int(current_enemy["atk"] * 1.2) + randi() % 3
+	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED2) + randi() % 3
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -5909,7 +5944,7 @@ func _enemy_skill_claw():
 	# 利爪：1.3x伤害，连续攻击2次（各0.7x），但第二次必中
 	var total_dmg = 0
 	for i in range(2):
-		var d = int(current_enemy["atk"] * (1.3 if i == 0 else 0.7)) + randi() % 3
+		var d = int(current_enemy["atk"] * (BOSS_SKILL_MULT_1D3 if i == 0 else BOSS_SKILL_MULT_XLOW)) + randi() % 3
 		if player_defending or player_shield > 0:
 			d = int(d * 0.5)
 		if player_shield > 0:
@@ -5945,7 +5980,7 @@ func _boss_hanbatian_action(hp_ratio: float):
 		_boss_default_attack("开山刀斩")
 	elif roll < 55:
 		# 战吼：全体攻击+震慑
-		var dmg = int(current_enemy["atk"] * 0.8)
+		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW)
 		_apply_player_damage(dmg)
 		_battle_add_log("⚡ 战吼！全体受到 %d 伤害震慑！" % dmg)
 		enemy_stun_turns = max(enemy_stun_turns, 1)
@@ -5958,7 +5993,7 @@ func _boss_hanbatian_action(hp_ratio: float):
 		# 狂暴化：自残+高伤攻击
 		var self_dmg = 10
 		current_enemy["hp"] -= self_dmg
-		var atk_dmg = int(current_enemy["atk"] * 1.5)
+		var atk_dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED)
 		_apply_player_damage(atk_dmg)
 		_battle_add_log("🔥 狂暴化！自残%d HP，造成 %d 伤害！" % [self_dmg, atk_dmg])
 		_spawn_enemy_damage("-%d" % self_dmg, "poison", Vector2(0, -20))
@@ -5969,7 +6004,7 @@ func _boss_helian_action(hp_ratio: float):
 	var roll = randi() % 100
 	if roll < 25:
 		# 一线斩：高伤单体+破甲
-		var dmg = int(current_enemy["atk"] * 3.0)
+		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_3D0)
 		_apply_player_damage(dmg)
 		_battle_add_log("🗡️ 一线斩！造成 %d 伤害，斩断护甲！" % dmg)
 	elif roll < 45:
@@ -5980,7 +6015,7 @@ func _boss_helian_action(hp_ratio: float):
 		_battle_add_log("🩸 血雾！回复 %d HP，ATK+20%%！" % heal)
 	elif roll < 65:
 		# 血刀斩：持续掉血
-		var dmg = int(current_enemy["atk"] * 1.8)
+		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_1D8)
 		_apply_player_damage(dmg)
 		poison_stacks += 2
 		poison_damage += 5
@@ -5988,7 +6023,7 @@ func _boss_helian_action(hp_ratio: float):
 		_battle_add_log("🗡️ 血刀斩！造成 %d 伤害，附加流血！" % dmg)
 	elif roll < 80 and hp_ratio < 0.3:
 		# 嗜血狂刀：低血量斩杀
-		var dmg = int(current_enemy["atk"] * 2.5)
+		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_2D5)
 		_apply_player_damage(dmg)
 		var heal = int(dmg * 0.4)
 		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
@@ -6001,7 +6036,7 @@ func _boss_sima_action(hp_ratio: float):
 	var roll = randi() % 100
 	if roll < 30:
 		# 御剑术：高伤单体+穿刺
-		var dmg = int(current_enemy["atk"] * 1.5)
+		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED)
 		_apply_player_damage(dmg)
 		_battle_add_log("🗡️ 御剑术！飞剑穿刺，造成 %d 伤害！" % dmg)
 	elif roll < 55:
@@ -6011,7 +6046,7 @@ func _boss_sima_action(hp_ratio: float):
 		_battle_add_log("⚡ 剑气纵横！全体受到 %d 剑气伤害！" % dmg)
 	elif roll < 75:
 		# 夺命十三剑：极高单体伤害
-		var dmg = int(current_enemy["atk"] * 2.8)
+		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_2D8)
 		_apply_player_damage(dmg)
 		enemy_stun_turns = max(enemy_stun_turns, 1)
 		_battle_add_log("💀 夺命十三剑！连刺十三剑，%d 伤害，眩晕1回合！" % dmg)
@@ -6033,12 +6068,12 @@ func _boss_yue_action(hp_ratio: float):
 		_battle_add_log("🌀 紫霞神功！全体 %d 伤害，我方ATK降低15%%！" % dmg)
 	elif roll < 40:
 		# 独孤九剑：破招极高伤
-		var dmg = int(current_enemy["atk"] * 2.5)
+		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_2D5)
 		_apply_player_damage(dmg)
 		_battle_add_log("⚔️ 独孤九剑！破尽天下招式，%d 伤害！" % dmg)
 	elif roll < 55:
 		# 吸星大法：吸玩家HP
-		var dmg = int(current_enemy["atk"] * 1.5)
+		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED)
 		_apply_player_damage(dmg)
 		var heal = int(dmg * 0.6)
 		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
@@ -6046,12 +6081,12 @@ func _boss_yue_action(hp_ratio: float):
 	elif roll < 75:
 		# 辟邪剑法：连续攻击
 		for i in range(3):
-			var dmg = int(current_enemy["atk"] * 0.8)
+			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW)
 			_apply_player_damage(dmg)
-		_battle_add_log("🗡️ 辟邪剑法！快剑三连击，每击 %d 伤害！" % int(current_enemy["atk"] * 0.8))
+		_battle_add_log("🗡️ 辟邪剑法！快剑三连击，每击 %d 伤害！" % int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW))
 	else:
 		# 伪君子真面目：爆发+护盾
-		var dmg = int(current_enemy["atk"] * 2.0)
+		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_HIGH)
 		_apply_player_damage(dmg)
 		player_shield += 80
 		_battle_add_log("🎭 伪君子真面目！露出獠牙，%d 伤害，获得80护盾！" % dmg)
@@ -6068,13 +6103,13 @@ func _boss_zhang_action(hp_ratio: float):
 			_battle_add_log("☯️ 太极拳！以柔克刚，%d 伤害并吸收攻势！" % dmg)
 		elif roll < 50:
 			# 太极剑：群体攻击
-			var dmg = int(current_enemy["atk"] * 1.5)
+			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED)
 			_apply_player_damage(dmg)
 			_battle_add_log("⚔️ 太极剑！剑意如风，%d 伤害！" % dmg)
 		elif roll < 75:
 			# 梯云纵：轻盈闪避+反击
 			vanish_turns = 1
-			var dmg = int(current_enemy["atk"] * 0.8)
+			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW)
 			_apply_player_damage(dmg)
 			_battle_add_log("🦶 梯云纵！纵云梯飞身闪避，顺手一击 %d 伤害！" % dmg)
 		else:
@@ -6084,7 +6119,7 @@ func _boss_zhang_action(hp_ratio: float):
 		var roll = randi() % 100
 		if roll < 30:
 			# 武当九阳功：全体高伤害
-			var dmg = int(current_enemy["atk"] * 2.5)
+			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_2D5)
 			_apply_player_damage(dmg)
 			_battle_add_log("🔥 武当九阳功！纯阳内力爆发，全体 %d 伤害！" % dmg)
 		elif roll < 55:
@@ -6098,7 +6133,7 @@ func _boss_zhang_action(hp_ratio: float):
 			for i in range(4):
 				var dmg = int(current_enemy["atk"] * 0.7)
 				_apply_player_damage(dmg)
-			_battle_add_log("⚔️ 太极剑·连绵不绝！四剑连发，每击 %d 伤害！" % int(current_enemy["atk"] * 0.7))
+			_battle_add_log("⚔️ 太极剑·连绵不绝！四剑连发，每击 %d 伤害！" % int(current_enemy["atk"] * BOSS_SKILL_MULT_XLOW))
 		else:
 			_boss_default_attack("武当剑法")
 	else:
@@ -6106,12 +6141,12 @@ func _boss_zhang_action(hp_ratio: float):
 		var roll = randi() % 100
 		if roll < 35:
 			# 太极拳·云手：全体+推退
-			var dmg = int(current_enemy["atk"] * 3.0)
+			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_3D0)
 			_apply_player_damage(dmg)
 			_battle_add_log("☯️ 太极拳·云手！一代宗师全力一击，%d 伤害！" % dmg)
 		elif roll < 60:
 			# 太极剑·无形：必中沉默
-			var dmg = int(current_enemy["atk"] * 2.0)
+			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_HIGH)
 			_apply_player_damage(dmg)
 			silenced = true
 			_battle_add_log("⚔️ 太极剑·无形！剑意无形，%d 伤害，我方沉默1回合！" % dmg)
@@ -6123,7 +6158,7 @@ func _boss_zhang_action(hp_ratio: float):
 	_update_enemy_hp_bar()
 
 func _boss_default_attack(skill_name: String = "攻击"):
-	var e_dmg = current_enemy["atk"] + randi() % 5 - 2
+	var e_dmg = _roll_dmg_var_small(current_enemy["atk"])
 	if player_defending or player_shield > 0:
 		e_dmg = int(e_dmg * 0.5)
 	if player_shield > 0:
@@ -6241,7 +6276,7 @@ func _on_attack():
 	is_player_turn = false
 	var is_crit = randi() % 100 < player_data.luk * 2
 	var pierce_def = _get_pierced_defense()
-	var base_dmg = player_data.attack_power() - pierce_def + randi() % 7 - 3
+	var base_dmg = _roll_dmg_var_medium(player_data.attack_power()) - pierce_def
 	# 战神T4: 战神印记 - 目标受伤+30%
 	if warrior_wargod_mark_turns > 0:
 		base_dmg = int(base_dmg * 1.3)
@@ -6285,7 +6320,7 @@ func _on_defend():
 func _on_flee():
 	if not is_player_turn or game_state != State.BATTLE:
 		return
-	if randf() < 0.6:
+	if randf() < FLEE_SUCCESS_CHANCE:
 		_battle_add_log("🏃 逃跑成功！")
 		_close_battle_ui()
 		game_state = State.EXPLORE
@@ -6378,7 +6413,7 @@ func _show_boss_victory_screen():
 	# Boss击败特别画面
 	var overlay = ColorRect.new()
 	overlay.name = "BossVictoryOverlay"
-	overlay.size = Vector2(1280, 720)
+	overlay.size = SCREEN_SIZE
 	overlay.color = Color(0, 0, 0, 0.9)
 	overlay.position = Vector2(0, 0)
 	overlay.modulate = Color(1, 1, 1, 0)
@@ -6816,7 +6851,7 @@ func _open_save_ui():
 	add_child(save_ui)
 
 	var overlay = ColorRect.new()
-	overlay.size = Vector2(1280, 720)
+	overlay.size = SCREEN_SIZE
 	overlay.color = Color(0, 0, 0, 0.8)
 	overlay.gui_input.connect(_on_save_overlay_click)
 	save_ui.add_child(overlay)
