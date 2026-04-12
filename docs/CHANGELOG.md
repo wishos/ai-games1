@@ -3,6 +3,20 @@
 ## [Unreleased] - v0.6
 
 ### Added
+- **牧师T3/T4技能**（v0.6 迭代 - 2026-04-12）:
+  - T3 复活术 (60MP/6CD): 每战斗限2次，满HP复活（替代T1的50%复活）
+  - T3 神圣领域 (55MP/5CD): 每回合回复HP上限10%持续3回合，清除所有debuff
+  - T3 神圣裁定 (50MP/5CD): ATK×3.5，对邪派/叛门敌人+100%伤害
+  - T3 生命之泉 (45MP/6CD): 每回合回复HP上限15%持续4回合
+  - T4 神迹 (80MP/8CD): 全队HP全满+清除所有debuff，每战斗限1次
+  - T4 神圣审判 (70MP/7CD): ATK×6.0全体攻击，「神判」禁止敌人回复HP持续5回合
+  - T4 永恒庇护 (60MP/6CD): 全队获得「神圣之魂」，死亡时自动复活（限1次）
+  - 新增状态变量: priest_resurrection_uses, priest_divine_domain_turns, priest_life_fountain_turns, priest_divine_judgment_turns, priest_divine_miracle_used, priest_holy_sentinel_active
+  - 神圣裁定/神圣审判「神判」效果在敌人吸血时被检测，显示阻止提示
+  - 永恒庇护复活检测位于战士不死不灭之后，独立复活逻辑
+  - 更新 player.gd 牧师技能列表，包含T1-T4全部13个技能
+  - 两处状态重置（`_start_battle` / `_start_boss_battle`）均已更新
+
 - **盗贼T3/T4技能**（v0.6 迭代 - 2026-04-11）:
   - T3 影分身 (40MP/5CD): 制造2个分身迷惑敌人，持续5回合（分身各30%HP，攻击无效）
   - T3 绝杀 (45MP/4CD): ATK×6.0，仅对HP<30%目标有效（否则伤害减半）
