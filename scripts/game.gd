@@ -1779,6 +1779,10 @@ func _roll_dmg_var_medium(base_dmg: int) -> int:
 func _roll_dmg_var_large(base_dmg: int) -> int:
 	return base_dmg + randi() % 11 - 5
 
+## base_dmg ±1 波动 (用于Boss技能)
+func _roll_dmg_var_tiny(base_dmg: int) -> int:
+	return base_dmg + randi() % 3 - 1
+
 func _create_minimap():
 	minimap_container = Control.new()
 	minimap_container.name = "MinimapContainer"
@@ -5837,7 +5841,7 @@ func _enemy_execute_action():
 
 func _enemy_skill_heavy_strike():
 	# 重击：2x伤害，降低玩家防御2点，持续2回合
-	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_HIGH) + randi() % 3
+	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_HIGH))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -5931,7 +5935,7 @@ func _enemy_skill_poison_thrust():
 
 func _enemy_skill_strangle():
 	# 锁喉：0.8x伤害 + 必定眩晕1回合
-	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW) + randi() % 3
+	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -5960,7 +5964,7 @@ func _enemy_skill_strangle():
 
 func _enemy_skill_life_drain():
 	# 吸血：0.7x伤害，回复自身50%伤害量的HP
-	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_XLOW) + randi() % 3
+	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_XLOW))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -5993,7 +5997,7 @@ func _enemy_skill_life_drain():
 
 func _enemy_skill_soul_drain():
 	# 噬魂：0.6x伤害 + 偷取3点MP
-	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_0D6) + randi() % 3
+	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_0D6))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -6023,7 +6027,7 @@ func _enemy_skill_soul_drain():
 
 func _enemy_skill_shield_bash():
 	# 盾击：1.5x伤害，50%几率眩晕1回合
-	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED) + randi() % 3
+	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_MED))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -6066,7 +6070,7 @@ func _enemy_skill_iron_wall():
 
 func _enemy_skill_bite():
 	# 撕咬：1.2x伤害，附加2层流血（每回合3伤害，持续2回合）
-	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED2) + randi() % 3
+	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_MED2))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
 	if player_shield > 0:
@@ -6099,7 +6103,7 @@ func _enemy_skill_claw():
 	# 利爪：1.3x伤害，连续攻击2次（各0.7x），但第二次必中
 	var total_dmg = 0
 	for i in range(2):
-		var d = int(current_enemy["atk"] * (BOSS_SKILL_MULT_1D3 if i == 0 else BOSS_SKILL_MULT_XLOW)) + randi() % 3
+		var d = _roll_dmg_var_tiny(int(current_enemy["atk"] * (BOSS_SKILL_MULT_1D3 if i == 0 else BOSS_SKILL_MULT_XLOW)))
 		if player_defending or player_shield > 0:
 			d = int(d * 0.5)
 		if player_shield > 0:

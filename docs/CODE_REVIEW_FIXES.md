@@ -1839,5 +1839,14 @@ else:
 - ✅ `floor_label` 实例变量在 `_setup_ui()` 中被赋值两次（lines 623 & 650），属既有 P3 问题
 
 **既有未修复问题状态**（全部为 P3，持续存在）：
-- Boss AI 技能 `randi() % 3` 方差未使用 `_roll_dmg_var_small()` helper（8处，2026-04-04 12:03 起）
+- `floor_label` 实例变量在 `_setup_ui()` 中被赋值两次，第一次创建的 Label 成为孤儿（P3，2026-04-12 00:03 起）
+
+### 审查记录 - 2026-04-12 23:15
+
+本次审查修复（1个P3问题）：
+- **✅ 编译通过**: Godot `--headless --check-only --quit` exit code 0，无语法错误
+- **✅ P3 (已修复)**: Boss AI 技能 `randi() % 3` 方差 — 新增 `_roll_dmg_var_tiny(base_dmg)` 辅助函数（±1波动），替换全部7处Boss AI硬编码
+- **文件行数**: game.gd 为 **7015 行**（+4行新辅助函数，+4行替换偏移）
+
+**既有未修复问题状态**（1个P3遗留）：
 - `floor_label` 实例变量在 `_setup_ui()` 中被赋值两次，第一次创建的 Label 成为孤儿（P3，2026-04-12 00:03 起）
