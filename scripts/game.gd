@@ -639,11 +639,6 @@ func _setup_ui():
 	gold_label.add_theme_color_override("font_color", PALETTE.gold)
 	ui_panel.add_child(gold_label)
 
-	floor_label = Label.new()
-	floor_label.position = Vector2(15, 104)
-	floor_label.add_theme_color_override("font_color", Color.WHITE)
-	ui_panel.add_child(floor_label)
-
 	# 消息标签
 	message_label = Label.new()
 	message_label.position = Vector2(10, 640)
