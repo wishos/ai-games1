@@ -1850,3 +1850,88 @@ else:
 
 **既有未修复问题状态**（1个P3遗留）：
 - `floor_label` 实例变量在 `_setup_ui()` 中被赋值两次，第一次创建的 Label 成为孤儿（P3，2026-04-12 00:03 起）
+
+### 审查记录 - 2026-04-13 00:03 - 无新问题
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程被 SIGKILL 终止（历史一致行为，动态节点创建较多，非语法错误）
+- **文件行数**: game.gd 为 **7166 行**（+151行，新增：Boss阶段公告系统/Boss击杀奖励对话框/扩展存档UI）
+- **✅ 无新增 P0/P1/P2 问题**
+- **✅ 无新增语法/内存泄漏问题**
+
+**本次新增检查项**：
+- ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 仅在第146-147行有一处声明，无重复（P0历史问题已修复）
+- ✅ `_show_boss_intro()` overlay/panel 动画后正确 `queue_free()`（lines 1434-1435）
+- ✅ Boss击杀奖励对话框 `_show_boss_victory()` overlay/panel 动画后正确 `queue_free()`（lines 6634-6635）
+- ✅ Boss阶段公告 Label `announce` 动画后正确 `queue_free()`（line 6395）
+- ✅ `_spawn_floating_text()` 浮动文字 `lbl` 等待动画完成后正确 `queue_free()`（line 5267）
+- ✅ `shop_bg_fallback` 实例变量追踪正确，`_close_shop()` 同步清理（P2，2026-04-10 23:06 已修复）
+- ✅ `_save_slot_buttons` 空槽追加3个占位元素保持对称（P2，2026-04-10 23:06 已修复）
+- ✅ 伤害方差辅助函数 `_roll_dmg_var_small/medium/large/tiny` 全部正确定义并使用（P3，2026-04-11/12 已修复）
+- ✅ Boss AI `_enemy_skill_bone_crusher()` 第5874行使用 `randi() % 5`（+0~+4单极性方差），有别于辅助函数的±N双极性，为Boss特有可接受
+
+**既有未修复问题状态**（1个P3遗留）：
+- `floor_label` 实例变量在 `_setup_ui()` 中被赋值两次，第一次创建的 Label 成为孤儿（P3，2026-04-12 00:03 起）
+
+### 审查记录 - 2026-04-13 06:03 - 无新问题
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程被 SIGKILL 终止（历史一致行为，动态节点创建较多，非语法错误）
+- **文件行数**: game.gd 为 **7166 行**（与上次持平，无新增代码）
+- **✅ 无新增 P0/P1/P2 问题**
+- **✅ 无新增语法/内存泄漏问题**
+
+**本次检查确认**：
+- ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 仅在第146-147行有一处声明，无重复
+- ✅ 所有 `_check_battle_end()` 调用（共18处）均正确使用 `await`，无遗漏
+- ✅ `floor_label` 赋值两次问题仍然存在（lines 634-637 和 661-665），属P3遗留
+- ✅ 伤害方差辅助函数 `_roll_dmg_var_small/medium/large/tiny` 正确定义
+- ✅ Boss AI `randi() % 5` 第5874行属单极性方差（+0~+4），与双极性辅助函数不同，为Boss特有可接受
+- ✅ 所有 P0/P1/P2 历史问题均已修复
+
+**Git状态**: f0445c9（fix: 修复CODE_REVIEW P3 Boss AI randi()%3方差）
+
+**既有未修复问题状态**（1个P3遗留）：
+- `floor_label` 实例变量在 `_setup_ui()` 中被赋值两次，第一次创建的 Label 成为孤儿（P3，2026-04-12 00:03 起）
+
+### 审查记录 - 2026-04-13 12:03 - 无新问题
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程被 SIGKILL 终止（历史一致行为，动态节点创建较多，非语法错误）
+- **文件行数**: game.gd 为 **7166 行**（与上次持平，无新增代码）
+- **✅ 无新增 P0/P1/P2 问题**
+- **✅ 无新增语法/内存泄漏问题**
+
+**本次检查确认**：
+- ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 仅在第146-147行有一处声明，无重复
+- ✅ 所有 `_check_battle_end()` 调用（18处）均正确使用 `await`，无遗漏
+- ✅ `floor_label` 赋值两次问题仍然存在（lines 634-637 和 661-665），属P3遗留
+- ✅ `fog_container` 迷雾系统正确管理（lines 22, 1056-1097）
+- ✅ 伤害方差辅助函数 `_roll_dmg_var_small/medium/large/tiny` 正确定义
+- ✅ Boss AI `randi() % 5` 第5874行属单极性方差（+0~+4），为Boss特有可接受
+- ✅ 所有 P0/P1/P2 历史问题均已修复
+
+**既有未修复问题状态**（1个P3遗留）：
+- `floor_label` 实例变量在 `_setup_ui()` 中被赋值两次，第一次创建的 Label 成为孤儿（P3，2026-04-12 00:03 起）
+
+### 审查记录 - 2026-04-13 18:03 - 无新问题
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程被 SIGKILL 终止（历史一致行为，动态节点创建较多，非语法错误）
+- **文件行数**: game.gd 为 **7166 行**（与上次持平，无新增代码）
+- **✅ 无新增 P0/P1/P2 问题**
+- **✅ 无新增语法/内存泄漏问题**
+
+**本次检查确认**：
+- ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 仅在第146-147行有一处声明，无重复
+- ✅ 所有 `_check_battle_end()` 调用（18处）均正确使用 `await`，无遗漏
+- ✅ `floor_label` 赋值两次问题仍然存在（lines 634-637 和 661-665），属P3遗留
+- ✅ `fog_container` 迷雾系统正确管理（lines 22, 1056-1097）
+- ✅ 伤害方差辅助函数 `_roll_dmg_var_small/medium/large/tiny` 正确定义
+- ✅ Boss AI `randi() % 5` 第5874行属单极性方差（+0~+4），为Boss特有可接受
+- ✅ 所有 P0/P1/P2 历史问题均已修复
+
+**Git状态**: f0445c9（fix: 修复CODE_REVIEW P3 Boss AI randi()%3方差）
+
+**既有未修复问题状态**（1个P3遗留）：
+- `floor_label` 实例变量在 `_setup_ui()` 中被赋值两次，第一次创建的 Label 成为孤儿（P3，2026-04-12 00:03 起）

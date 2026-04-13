@@ -142,6 +142,14 @@ var summoner_contract_boost_dmg: int = 0    # 契约强化伤害加成
 var summoner_soul_link_turns: int = 0        # 灵魂连接回合
 var summoner_soul_link_dmg: int = 0          # 灵魂连接每回合伤害
 var summoner_beast_boost_turns: int = 0       # 召唤兽强化回合
+# 召唤师T3/T4状态 - 召唤物系统
+var active_summons: Array = []  # [{name, hp, max_hp, atk, turns, type}]
+var summoner_fusion_active: bool = false  # 召唤融合：当前是否处于融合状态
+var summoner_fusion_turns: int = 0        # 召唤融合持续回合
+var summoner_fusion_power: int = 0         # 融合召唤物的攻击力
+var summoner_fusion_hp: int = 0            # 融合召唤物的HP
+var summoner_soul_contract_turns: int = 0   # 契约之魂：召唤物自动攻击持续回合
+var summoner_soul_contract_dmg_boost: int = 0  # 契约之魂：召唤物伤害加成
 # 战士T3状态
 var warrior_shatter_turns: int = 0          # 碎甲：敌人DEF降低回合
 var warrior_shatter_defdebuff: int = 0       # 碎甲：敌人DEF降低量
@@ -2811,6 +2819,11 @@ func _start_battle():
 	summoner_soul_link_turns = 0
 	summoner_soul_link_dmg = 0
 	summoner_beast_boost_turns = 0
+	active_summons.clear()
+	summoner_fusion_active = false
+	summoner_fusion_turns = 0
+	summoner_soul_contract_turns = 0
+	summoner_soul_contract_dmg_boost = 0
 	# 战士T3状态重置
 	warrior_shatter_turns = 0
 	warrior_shatter_defdebuff = 0
@@ -2986,6 +2999,11 @@ func _start_boss_battle():
 	summoner_soul_link_turns = 0
 	summoner_soul_link_dmg = 0
 	summoner_beast_boost_turns = 0
+	active_summons.clear()
+	summoner_fusion_active = false
+	summoner_fusion_turns = 0
+	summoner_soul_contract_turns = 0
+	summoner_soul_contract_dmg_boost = 0
 	# 战士T3状态重置
 	warrior_shatter_turns = 0
 	warrior_shatter_defdebuff = 0
@@ -4125,7 +4143,11 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	# 牧师 T3
 	"复活术": 6, "神圣领域": 5, "神圣裁定": 5, "生命之泉": 6,
 	# 牧师 T4 (觉醒技能)
-	"神迹": 8, "神圣审判": 7, "永恒庇护": 6
+	"神迹": 8, "神圣审判": 7, "永恒庇护": 6,
+	# 召唤师 T3 (终极技能·Lv25解锁)
+	"究极召唤·天使": 7, "究极召唤·恶魔": 7, "召唤融合": 6,
+	# 召唤师 T4 (觉醒技能·Lv40解锁)
+	"万灵召唤": 8, "灵魂献祭": 7, "契约之魂": 7
 }
 
 # 计算战斗中有效的攻击力（含buff加成）
@@ -4216,7 +4238,11 @@ func _on_skill_menu():
 		# 牧师 T3
 		"复活术": 60, "神圣领域": 55, "神圣裁定": 50, "生命之泉": 45,
 		# 牧师 T4 (觉醒技能)
-		"神迹": 80, "神圣审判": 70, "永恒庇护": 60
+		"神迹": 80, "神圣审判": 70, "永恒庇护": 60,
+		# 召唤师 T3 (终极技能·Lv25解锁)
+		"究极召唤·天使": 60, "究极召唤·恶魔": 60, "召唤融合": 55,
+		# 召唤师 T4 (觉醒技能·Lv40解锁)
+		"万灵召唤": 80, "灵魂献祭": 70, "契约之魂": 75
 	}
 
 	var skill_idx = 0
@@ -4242,9 +4268,10 @@ func _on_skill_menu():
 			"战神领域", "浴血奋战", "援护",
 			"陨石术", "绝对零度", "元素风暴", "时间静止",
 			"完美和弦", "命运交响曲", "终末安魂曲",
-			"复活术", "神圣领域", "神圣裁定", "生命之泉"
+			"复活术", "神圣领域", "神圣裁定", "生命之泉",
+			"究极召唤·天使", "究极召唤·恶魔", "召唤融合"
 		]
-		var t4_skills = ["战神之力", "绝对防御", "征服者怒吼", "传奇之歌", "虚空咏叹调", "生命赞歌", "元素湮灭", "奥术真理", "秘法编织", "千面杀手", "暗影吞噬", "幻惑领域", "神迹", "神圣审判", "永恒庇护"]
+		var t4_skills = ["战神之力", "绝对防御", "征服者怒吼", "传奇之歌", "虚空咏叹调", "生命赞歌", "元素湮灭", "奥术真理", "秘法编织", "千面杀手", "暗影吞噬", "幻惑领域", "神迹", "神圣审判", "永恒庇护", "万灵召唤", "灵魂献祭", "契约之魂"]
 		var is_t2 = t2_skills.has(skill)
 		var is_t3 = t3_skills.has(skill)
 		var is_t4 = t4_skills.has(skill)
@@ -5176,6 +5203,93 @@ async func _on_skill_selected(skill_name: String):
 			_battle_add_log("🐉 召唤兽强化！召唤兽攻击力+%d，额外造成 %d 伤害" % [_get_effective_atk() / 3, beast_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % beast_dmg, "crit", Vector2(0, -35))
+		# 召唤师 T3 (终极技能·Lv25解锁)
+		"究极召唤·天使":
+			var angel_hp = int(player_data.max_hp * 1.5)
+			var angel_atk = int(_get_effective_atk() * 1.2)
+			active_summons.append({"name": "天使", "hp": angel_hp, "max_hp": angel_hp, "atk": angel_atk, "turns": 5, "type": "angel"})
+			# 治疗全队30%HP
+			var heal_amt = int(player_data.max_hp * 0.3)
+			player_data.hp = min(player_data.max_hp, player_data.hp + heal_amt)
+			_trigger_portrait_heal_glow()
+			_battle_add_log("👼 究极召唤·天使！召唤天使（HP:%d ATK:%d）持续5回合，并治疗全队 %d HP" % [angel_hp, angel_atk, heal_amt])
+			_spawn_player_damage("+%d HP" % heal_amt, "heal")
+		"究极召唤·恶魔":
+			var demon_hp = int(player_data.max_hp * 0.8)
+			var demon_atk = int(_get_effective_atk() * 1.5)
+			active_summons.append({"name": "恶魔", "hp": demon_hp, "max_hp": demon_hp, "atk": demon_atk, "turns": 5, "type": "demon"})
+			# 恶魔造成范围伤害
+			var demon_dmg = int(demon_atk * 1.2)
+			current_enemy["hp"] -= demon_dmg
+			_battle_add_log("😈 究极召唤·恶魔！召唤恶魔（HP:%d ATK:%d）持续5回合，造成 %d 范围伤害" % [demon_hp, demon_atk, demon_dmg])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % demon_dmg, "crit", Vector2(0, -35))
+		"召唤融合":
+			if active_summons.size() < 2:
+				_battle_add_log("⚠️ 召唤融合需要至少2只召唤物！当前召唤物：%d" % active_summons.size())
+			else:
+				var total_hp = 0
+				var total_atk = 0
+				var names = []
+				for s in active_summons:
+					total_hp += s["hp"]
+					total_atk += s["atk"]
+					names.append(s["name"])
+				var fused_hp = int(total_hp * 1.5)
+				var fused_atk = int(total_atk * 1.5)
+				active_summons.clear()
+				active_summons.append({"name": "融合召唤", "hp": fused_hp, "max_hp": fused_hp, "atk": fused_atk, "turns": 3, "type": "fused"})
+				summoner_fusion_active = true
+				summoner_fusion_turns = 3
+				_battle_add_log("🌀 召唤融合！融合 %s 为超级召唤物（HP:%d ATK:%d）持续3回合" % [names.join("+"), fused_hp, fused_atk])
+				_spawn_player_damage("FUSED!", "buff")
+		# 召唤师 T4 (觉醒技能·Lv40解锁)
+		"万灵召唤":
+			var summons_created = []
+			# 使魔
+			var imp_hp = int(player_data.max_hp * 0.6)
+			var imp_atk = int(_get_effective_atk() * 0.6)
+			active_summons.append({"name": "使魔", "hp": imp_hp, "max_hp": imp_hp, "atk": imp_atk, "turns": 6, "type": "normal"})
+			summons_created.append("使魔")
+			# 精灵
+			var fairy_hp = int(player_data.max_hp * 0.5)
+			var fairy_atk = int(_get_effective_atk() * 0.7)
+			active_summons.append({"name": "精灵", "hp": fairy_hp, "max_hp": fairy_hp, "atk": fairy_atk, "turns": 6, "type": "normal"})
+			summons_created.append("精灵")
+			# 天使
+			var angel_hp = int(player_data.max_hp * 1.5)
+			var angel_atk = int(_get_effective_atk() * 1.2)
+			active_summons.append({"name": "天使", "hp": angel_hp, "max_hp": angel_hp, "atk": angel_atk, "turns": 6, "type": "angel"})
+			summons_created.append("天使")
+			# 恶魔
+			var demon_hp = int(player_data.max_hp * 0.8)
+			var demon_atk = int(_get_effective_atk() * 1.5)
+			active_summons.append({"name": "恶魔", "hp": demon_hp, "max_hp": demon_hp, "atk": demon_atk, "turns": 6, "type": "demon"})
+			summons_created.append("恶魔")
+			_battle_add_log("🌟 万灵召唤！召唤 %s，持续6回合" % summons_created.join("、"))
+			_spawn_player_damage("万灵!", "buff")
+		"灵魂献祭":
+			if active_summons.size() == 0:
+				_battle_add_log("⚠️ 灵魂献祭需要场上有召唤物！")
+			else:
+				var total_sac_hp = 0
+				var names = []
+				for s in active_summons:
+					total_sac_hp += s["hp"]
+					names.append(s["name"])
+				var sac_dmg = int(total_sac_hp * 0.5)
+				active_summons.clear()
+				summoner_fusion_active = false
+				summoner_fusion_turns = 0
+				current_enemy["hp"] -= sac_dmg
+				_battle_add_log("💀 灵魂献祭！牺牲 %s，对敌人造成 %d 真实伤害！" % [names.join("、"), sac_dmg])
+				_enemy_hit_effect()
+				_spawn_enemy_damage("%d" % sac_dmg, "crit", Vector2(0, -40))
+		"契约之魂":
+			summoner_soul_contract_turns = 5
+			summoner_soul_contract_dmg_boost = int(_get_effective_atk() * 1.0)
+			_battle_add_log("🔥 契约之魂！所有召唤物伤害+100%%，每回合自动攻击持续5回合")
+			_spawn_player_damage("契约之魂!", "buff")
 
 	_update_enemy_hp_bar()
 	_update_battle_player_ui()
@@ -5296,6 +5410,63 @@ func _process_battle(delta: float):
 		return  # 等待玩家输入
 
 	# 敌人回合
+	# ===== 召唤师召唤物自动攻击 =====
+	if active_summons.size() > 0 and not is_player_turn:
+		# 每只召唤物攻击
+		var summons_to_remove = []
+		for i in range(active_summons.size()):
+			var s = active_summons[i]
+			s["turns"] -= 1
+			if s["turns"] <= 0:
+				summons_to_remove.append(i)
+				_battle_add_log("⏰ %s消失了（持续时间结束）" % s["name"])
+				continue
+			# 计算召唤物伤害
+			var s_atk = s["atk"]
+			if summoner_soul_contract_turns > 0:
+				s_atk += summoner_soul_contract_dmg_boost
+			var s_base_dmg = int(s_atk + randi() % 7 - 3)
+			var s_dmg = max(1, s_base_dmg - int(current_enemy["def"] * 0.5))
+			current_enemy["hp"] -= s_dmg
+			_battle_add_log("🌟 %s攻击！造成 %d 伤害（剩余%d回合）" % [s["name"], s_dmg, s["turns"])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % s_dmg, "buff", Vector2(0, -20))
+			# 恶魔范围攻击
+			if s["type"] == "demon":
+				var demon_aoe = int(s_dmg * 0.4)
+				current_enemy["hp"] -= demon_aoe
+				_battle_add_log("😈 恶魔暗影！额外造成 %d 范围伤害" % demon_aoe)
+				_spawn_enemy_damage("+%d" % demon_aoe, "debuff", Vector2(20, -10))
+			# 召唤物受击（敌人反击，随机）
+			if randf() < 0.25:
+				var counter_dmg = int(current_enemy["atk"] * 0.3)
+				s["hp"] -= counter_dmg
+				_battle_add_log("⚔️ %s受到反击！损失 %d HP" % [s["name"], counter_dmg])
+			# 召唤物死亡检测
+			if s["hp"] <= 0:
+				_battle_add_log("💀 %s被消灭了！" % s["name"])
+				summons_to_remove.append(i)
+		# 移除已消失/死亡的召唤物（倒序删除避免索引问题）
+		for idx in range(summons_to_remove.size() - 1, -1, -1):
+			active_summons.remove_at(summons_to_remove[idx])
+		if active_summons.size() > 0:
+			_battle_add_log("【召唤物: %d只】" % active_summons.size())
+		_update_enemy_hp_bar()
+		if await _check_battle_end():
+			return
+		await get_tree().create_timer(0.3).timeout
+	# ===== 契约之魂：回合递减 =====
+	if summoner_soul_contract_turns > 0:
+		summoner_soul_contract_turns -= 1
+		if summoner_soul_contract_turns <= 0:
+			summoner_soul_contract_dmg_boost = 0
+			_battle_add_log("🔥 契约之魂效果结束！")
+	# ===== 融合召唤持续时间递减 =====
+	if summoner_fusion_turns > 0:
+		summoner_fusion_turns -= 1
+		if summoner_fusion_turns <= 0:
+			summoner_fusion_active = false
+			_battle_add_log("🌀 召唤融合效果结束！")
 	# 时间静止：敌人被冻结
 	if time_stop_turns > 0:
 		time_stop_turns -= 1
