@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### Fixed
+- **存档系统Bug修复**: 装备强化等级(weapon_enhance/armor_enhance/accessory_enhance)之前未保存/读取存档，现在完整支持存档保存和读取
+
 ## [Unreleased] - v0.6
 
 ### Added

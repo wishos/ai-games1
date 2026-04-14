@@ -7272,6 +7272,9 @@ func save_game(slot: int) -> bool:
 			"weapon": player_data.weapon,
 			"armor": player_data.armor,
 			"accessory": player_data.accessory,
+			"weapon_enhance": player_data.weapon_enhance,
+			"armor_enhance": player_data.armor_enhance,
+			"accessory_enhance": player_data.accessory_enhance,
 			"inventory": player_data.inventory
 		},
 		"progress": {
@@ -7336,6 +7339,9 @@ func load_game(slot: int) -> bool:
 	player_data.weapon = pdata.get("weapon", {})
 	player_data.armor = pdata.get("armor", {})
 	player_data.accessory = pdata.get("accessory", {})
+	player_data.weapon_enhance = pdata.get("weapon_enhance", 0)
+	player_data.armor_enhance = pdata.get("armor_enhance", 0)
+	player_data.accessory_enhance = pdata.get("accessory_enhance", 0)
 	player_data.inventory = pdata.get("inventory", [])
 
 	# 恢复进度
