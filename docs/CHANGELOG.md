@@ -3,6 +3,21 @@
 ## [Unreleased] - v0.6
 
 ### Added
+- **骑士T3/T4技能 + 猎人T4觉醒技能**（v0.6 迭代 - 2026-04-14）:
+  - 骑士T3 神圣复仇 (50MP/5CD): ATK×4.0 + 圣光灼烧DOT每回合ATK×0.8持续3回合
+  - 骑士T3 永恒守卫 (45MP/4CD): 保护生命值最低队友替他承受所有伤害持续2回合
+  - 骑士T3 圣光审判(全) (55MP/5CD): ATK×3.5全体 + 审判DOT每回合ATK×0.5持续3回合
+  - 骑士T4 天使守护 (70MP/7CD): 5回合内全队HP不降至1以下（最低保留1HP）
+  - 骑士T4 神圣之锤 (65MP/7CD): ATK×7.0必然暴击，伤害×2持续3回合
+  - 骑士T4 正义执行 (60MP/6CD): 对HP<30%敌人立即斩杀（无视免死），否则ATK×4.0
+  - 猎人T4 死标记 (60MP/7CD): ATK×10.0，HP>50%打折50%；HP<50%真实伤害
+  - 猎人T4 自然之力 (55MP/5CD): 每有种草/陷阱/召唤物+30%伤害，持续3回合
+  - 猎人T4 狩猎领域 (50MP/6CD): 全体队友速度+5，先手率+50%，持续4回合
+  - 新增状态变量: knight_holy_avenger_*, knight_eternal_guard_*, knight_judgment_aoe_*, knight_angel_guard_*, knight_holy_hammer_*, knight_execution_*, hunter_death_mark_*, hunter_nature_power_*, hunter_hunting_field_*
+  - 自然之力/神圣之锤加成纳入_get_effective_atk()计算
+  - 天使守护HP保护逻辑添加到玩家受伤检测
+  - 两处状态重置（`_start_battle` / `_start_boss_battle`）均已更新
+
 - **召唤师T3/T4技能**（v0.6 迭代 - 2026-04-13）:
   - T3 究极召唤·天使 (60MP/7CD): 召唤天使（HP×150%，ATK×120%），持续5回合，并治疗全队30%HP
   - T3 究极召唤·恶魔 (60MP/7CD): 召唤恶魔（HP×80%，ATK×150%），持续5回合，造成ATK×1.2范围伤害
