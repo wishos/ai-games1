@@ -83,6 +83,11 @@ var hunter_mark_turns: int = 0          # 猎杀时刻标记回合
 var hunter_mark_mult: float = 1.0       # 猎杀时刻伤害倍率
 var hunter_beast_turns: int = 0        # 野兽之力召唤回合
 var hunter_beast_dmg: int = 0           # 野兽之力每回合伤害
+var hunter_death_mark_turns: int = 0    # 死标记持续回合
+var hunter_death_mark_dmg: float = 1.0  # 死标记当前伤害倍率
+var hunter_nature_power_turns: int = 0  # 自然之力持续回合
+var hunter_nature_power_bonus: float = 1.0  # 自然之力每召唤物加成
+var hunter_hunting_field_turns: int = 0 # 狩猎领域持续回合
 # 盗贼T2状态
 var thief_poison_turns: int = 0      # 淬毒利刃回合
 var thief_poison_dmg: int = 0         # 淬毒利刃伤害
@@ -119,6 +124,17 @@ var knight_judgment_turns: int = 0     # 圣光审判降低防御回合
 var knight_judgment_defdebuff: int = 0 # 圣光审判降低防御量
 var knight_iron_wall_turns: int = 0    # 钢铁壁垒持续回合
 var knight_iron_wall_defboost: int = 0 # 钢铁壁垒防御加成
+var knight_holy_avenger_turns: int = 0  # 神圣复仇持续回合（DOT）
+var knight_holy_avenger_dmg: int = 0    # 神圣复仇每回合伤害
+var knight_eternal_guard_turns: int = 0  # 永恒守卫：替队友承受伤害的回合数
+var knight_eternal_guard_target: int = -1  # 永恒守卫保护的目标队友索引
+var knight_judgment_aoe_turns: int = 0  # 圣光审判AOE持续回合
+var knight_judgment_aoe_dmg: int = 0    # 圣光审判AOE每回合伤害
+var knight_angel_guard_turns: int = 0    # 天使守护：全队HP不降至1以下
+var knight_angel_guard_triggered: bool = false  # 天使守护是否已触发过
+var knight_holy_hammer_turns: int = 0   # 神圣之锤印记回合
+var knight_holy_hammer_mult: float = 2.0  # 神圣之锤暴击倍率
+var knight_execution_turns: int = 0      # 正义执行：斩杀生效回合
 # 吟游诗人T2状态
 var bard_song_atk_turns: int = 0       # 战斗乐章atk提升回合
 var bard_song_atk_boost: int = 0        # 战斗乐章提升量
@@ -2758,6 +2774,11 @@ func _start_battle():
 	hunter_mark_mult = 1.0
 	hunter_beast_turns = 0
 	hunter_beast_dmg = 0
+	hunter_death_mark_turns = 0
+	hunter_death_mark_dmg = 1.0
+	hunter_nature_power_turns = 0
+	hunter_nature_power_bonus = 1.0
+	hunter_hunting_field_turns = 0
 	# 盗贼T2状态重置
 	thief_poison_turns = 0
 	thief_poison_dmg = 0
@@ -2794,6 +2815,17 @@ func _start_battle():
 	knight_judgment_defdebuff = 0
 	knight_iron_wall_turns = 0
 	knight_iron_wall_defboost = 0
+	knight_holy_avenger_turns = 0
+	knight_holy_avenger_dmg = 0
+	knight_eternal_guard_turns = 0
+	knight_eternal_guard_target = -1
+	knight_judgment_aoe_turns = 0
+	knight_judgment_aoe_dmg = 0
+	knight_angel_guard_turns = 0
+	knight_angel_guard_triggered = false
+	knight_holy_hammer_turns = 0
+	knight_holy_hammer_mult = 2.0
+	knight_execution_turns = 0
 	# 吟游诗人T2状态重置
 	bard_song_atk_turns = 0
 	bard_song_atk_boost = 0
@@ -2938,6 +2970,11 @@ func _start_boss_battle():
 	hunter_mark_mult = 1.0
 	hunter_beast_turns = 0
 	hunter_beast_dmg = 0
+	hunter_death_mark_turns = 0
+	hunter_death_mark_dmg = 1.0
+	hunter_nature_power_turns = 0
+	hunter_nature_power_bonus = 1.0
+	hunter_hunting_field_turns = 0
 	# 盗贼T2状态重置
 	thief_poison_turns = 0
 	thief_poison_dmg = 0
@@ -2974,6 +3011,17 @@ func _start_boss_battle():
 	knight_judgment_defdebuff = 0
 	knight_iron_wall_turns = 0
 	knight_iron_wall_defboost = 0
+	knight_holy_avenger_turns = 0
+	knight_holy_avenger_dmg = 0
+	knight_eternal_guard_turns = 0
+	knight_eternal_guard_target = -1
+	knight_judgment_aoe_turns = 0
+	knight_judgment_aoe_dmg = 0
+	knight_angel_guard_turns = 0
+	knight_angel_guard_triggered = false
+	knight_holy_hammer_turns = 0
+	knight_holy_hammer_mult = 2.0
+	knight_execution_turns = 0
 	# 吟游诗人T2状态重置
 	bard_song_atk_turns = 0
 	bard_song_atk_boost = 0
@@ -4142,7 +4190,13 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	# 召唤师 T3 (终极技能·Lv25解锁)
 	"究极召唤·天使": 7, "究极召唤·恶魔": 7, "召唤融合": 6,
 	# 召唤师 T4 (觉醒技能·Lv40解锁)
-	"万灵召唤": 8, "灵魂献祭": 7, "契约之魂": 7
+	"万灵召唤": 8, "灵魂献祭": 7, "契约之魂": 7,
+	# 骑士 T3 (终极技能·Lv25解锁)
+	"神圣复仇": 5, "永恒守卫": 4, "圣光审判(全)": 5,
+	# 骑士 T4 (觉醒技能·Lv40解锁)
+	"天使守护": 7, "神圣之锤": 7, "正义执行": 6,
+	# 猎人 T4 (觉醒技能·Lv40解锁)
+	"死标记": 7, "自然之力": 5, "狩猎领域": 6
 }
 
 # 计算战斗中有效的攻击力（含buff加成）
@@ -4156,6 +4210,10 @@ func _get_effective_atk() -> int:
 	atk += warrior_domain_atk_boost  # 战神领域ATK加成
 	if arcane_truth_turns > 0:
 		atk = int(atk * 1.5)  # 奥术真理：所有属性伤害+50%
+	if hunter_nature_power_turns > 0:
+		atk = int(atk * hunter_nature_power_bonus)  # 自然之力：每召唤物+30%伤害
+	if knight_holy_hammer_turns > 0:
+		atk = int(atk * knight_holy_hammer_mult)  # 神圣之锤：伤害×2持续3回合
 	return atk
 
 # 应用猎人标记伤害倍率
@@ -4179,6 +4237,26 @@ func _get_pierced_defense() -> int:
 
 func _get_skill_cooldown(skill: String) -> int:
 	return _SKILL_COOLDOWNS.get(skill, 1)
+
+# 获取生命值最低的队友索引（用于骑士永恒守卫）
+func _get_lowest_hp_ally_index() -> int:
+	var lowest_idx = -1
+	var lowest_hp_ratio = 999.0
+	# 检查队伍成员（player是索引0）
+	var allies = []
+	if player_data.hp > 0:
+		allies.append([0, float(player_data.hp) / player_data.max_hp])
+	# 检查召唤物
+	for i in range(active_summons.size()):
+		var s = active_summons[i]
+		if s.hp > 0:
+			allies.append([10 + i, float(s.hp) / s.max_hp])
+	for ally in allies:
+		if ally[1] < lowest_hp_ratio:
+			lowest_hp_ratio = ally[1]
+			lowest_idx = ally[0]
+	return lowest_idx
+
 var _skill_menu_buttons: Array = []
 
 func _on_skill_menu():
@@ -4237,7 +4315,13 @@ func _on_skill_menu():
 		# 召唤师 T3 (终极技能·Lv25解锁)
 		"究极召唤·天使": 60, "究极召唤·恶魔": 60, "召唤融合": 55,
 		# 召唤师 T4 (觉醒技能·Lv40解锁)
-		"万灵召唤": 80, "灵魂献祭": 70, "契约之魂": 75
+		"万灵召唤": 80, "灵魂献祭": 70, "契约之魂": 75,
+		# 骑士 T3 (终极技能·Lv25解锁)
+		"神圣复仇": 50, "永恒守卫": 45, "圣光审判(全)": 55,
+		# 骑士 T4 (觉醒技能·Lv40解锁)
+		"天使守护": 70, "神圣之锤": 65, "正义执行": 60,
+		# 猎人 T4 (觉醒技能·Lv40解锁)
+		"死标记": 60, "自然之力": 55, "狩猎领域": 50
 	}
 
 	var skill_idx = 0
@@ -4264,9 +4348,10 @@ func _on_skill_menu():
 			"陨石术", "绝对零度", "元素风暴", "时间静止",
 			"完美和弦", "命运交响曲", "终末安魂曲",
 			"复活术", "神圣领域", "神圣裁定", "生命之泉",
-			"究极召唤·天使", "究极召唤·恶魔", "召唤融合"
+			"究极召唤·天使", "究极召唤·恶魔", "召唤融合",
+			"神圣复仇", "永恒守卫", "圣光审判(全)"
 		]
-		var t4_skills = ["战神之力", "绝对防御", "征服者怒吼", "传奇之歌", "虚空咏叹调", "生命赞歌", "元素湮灭", "奥术真理", "秘法编织", "千面杀手", "暗影吞噬", "幻惑领域", "神迹", "神圣审判", "永恒庇护", "万灵召唤", "灵魂献祭", "契约之魂"]
+		var t4_skills = ["战神之力", "绝对防御", "征服者怒吼", "传奇之歌", "虚空咏叹调", "生命赞歌", "元素湮灭", "奥术真理", "秘法编织", "千面杀手", "暗影吞噬", "幻惑领域", "神迹", "神圣审判", "永恒庇护", "万灵召唤", "灵魂献祭", "契约之魂", "天使守护", "神圣之锤", "正义执行", "死标记", "自然之力", "狩猎领域"]
 		var is_t2 = t2_skills.has(skill)
 		var is_t3 = t3_skills.has(skill)
 		var is_t4 = t4_skills.has(skill)
@@ -4874,6 +4959,39 @@ async func _on_skill_selected(skill_name: String):
 			hunter_beast_dmg = int(player_data.attack_power() * 0.8)
 			_battle_add_log("🐺 野兽之力！召唤巨狼，每回合对敌人造成 %d 伤害，持续4回合" % hunter_beast_dmg)
 			_spawn_player_damage("🐺 野兽之力!", "buff")
+		# ===== 猎人 T4 (觉醒技能·Lv40解锁) =====
+		"死标记":
+			# ATK×10.0，对HP>50%敌人伤害打折(×0.5)；HP<50%时真实伤害
+			var death_dmg = int(_get_effective_atk() * 10.0)
+			if current_enemy["hp"] > current_enemy["max_hp"] * 0.5:
+				death_dmg = int(death_dmg * 0.5)
+				_battle_add_log("💀🏹 死标记！目标HP充足，伤害×0.5，造成 %d 伤害" % death_dmg)
+			else:
+				_battle_add_log("💀🏹💀 死标记！对HP<50%%目标造成真实伤害 %d ！" % death_dmg)
+			current_enemy["hp"] -= death_dmg
+			_enemy_hit_effect()
+			_critical_hit_effect()
+			_spawn_enemy_damage("%d" % death_dmg, "crit", Vector2(0, -65))
+		"自然之力":
+			# 场上每有种草/陷阱/召唤物，伤害+30%
+			hunter_nature_power_turns = 3
+			hunter_nature_power_bonus = 1.0
+			# 计算加成：巨狼+1，致命陷阱激活+1，猎豹+1等
+			var nature_bonus = 1.0
+			if hunter_beast_turns > 0:
+				nature_bonus += 0.3
+			if hunter_trap_turns > 0:
+				nature_bonus += 0.3
+			if hunter_evasion_turns > 0:
+				nature_bonus += 0.3
+			hunter_nature_power_bonus = nature_bonus
+			_battle_add_log("🌿✨ 自然之力！当前伤害加成×%.1f，持续3回合" % nature_bonus)
+			_spawn_player_damage("自然之力!", "buff")
+		"狩猎领域":
+			# 全体队友SPD+5，先手率+50%，持续4回合
+			hunter_hunting_field_turns = 4
+			_battle_add_log("🏹🌲 狩猎领域！全体队友速度+5，先手率+50%%，持续4回合！")
+			_spawn_player_damage("狩猎领域!", "buff")
 		# ===== 法师 T3 =====
 		"陨石术":
 			# ATK × 5.0 单体 + 爆炸范围伤 ATK × 2.0 全体
@@ -5034,6 +5152,35 @@ async func _on_skill_selected(skill_name: String):
 			thief_illusion_domain_turns = 3
 			_battle_add_log("🌙✨ 幻惑领域！敌人30%概率混乱攻击自己人，持续3回合！")
 			_spawn_player_damage("幻惑!", "buff")
+		# ===== 骑士 T4 (觉醒技能·Lv40解锁) =====
+		"天使守护":
+			# 5回合内，全队HP不会降至1以下（最低保留1HP）
+			knight_angel_guard_turns = 5
+			knight_angel_guard_triggered = false
+			_battle_add_log("👼✨ 天使守护！全队HP不会降至1以下，持续5回合！")
+			_spawn_player_damage("天使守护!", "buff")
+		"神圣之锤":
+			# ATK×7.0单体，圣光属性，必然暴击
+			knight_holy_hammer_turns = 3
+			knight_holy_hammer_mult = 2.0
+			var hammer_dmg = int(_get_effective_atk() * 7.0)
+			current_enemy["hp"] -= hammer_dmg
+			_battle_add_log("🔨⚡ 神圣之锤！必然暴击，造成 %d 圣光伤害，持续3回合内伤害×2！" % hammer_dmg)
+			_enemy_hit_effect()
+			_critical_hit_effect()
+			_spawn_enemy_damage("%d" % hammer_dmg, "crit", Vector2(0, -65))
+		"正义执行":
+			# 对HP<30%敌人立即斩杀（无视免死），否则ATK×4.0
+			knight_execution_turns = 2
+			var exe_dmg2 = int(_get_effective_atk() * 4.0)
+			if current_enemy["hp"] > current_enemy["max_hp"] * 0.3:
+				current_enemy["hp"] -= exe_dmg2
+				_battle_add_log("⚖️ 正义执行！对 %d 敌人造成 %d 伤害，斩杀生效中..." % (current_enemy["hp"], exe_dmg2))
+				_spawn_enemy_damage("%d" % exe_dmg2, "crit", Vector2(0, -50))
+			else:
+				current_enemy["hp"] = 0
+				_battle_add_log("💀⚖️ 正义执行！敌人HP<30%%，立即处决！")
+				_spawn_enemy_damage("斩杀!", "crit", Vector2(0, -65))
 		# 牧师 T2
 		"群体治疗":
 			var heal_amt = int(player_data.max_hp * 0.5)
@@ -5086,7 +5233,30 @@ async func _on_skill_selected(skill_name: String):
 			player_shield += int(player_data.defense() * 2.0)
 			_battle_add_log("🏰 钢铁壁垒！自身DEF+%d持续3回合，护盾+%d" % [knight_iron_wall_defboost, int(player_data.defense() * 2.0)])
 			_spawn_player_damage("+%d" % int(player_data.defense() * 2.0), "shield")
-		# 吟游诗人 T2
+		# ===== 骑士 T3 (终极技能·Lv25解锁) =====
+		"神圣复仇":
+			# ATK×4.0，附带神圣DOT（无视抗性）持续3回合
+			var avenger_dmg = int(_get_effective_atk() * 4.0)
+			current_enemy["hp"] -= avenger_dmg
+			knight_holy_avenger_turns = 3
+			knight_holy_avenger_dmg = int(_get_effective_atk() * 0.8)
+			_battle_add_log("⚔️✨ 神圣复仇！造成 %d 伤害，圣光灼烧每回合 %d 伤害持续3回合" % [avenger_dmg, knight_holy_avenger_dmg])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % avenger_dmg, "crit", Vector2(0, -50))
+		"永恒守卫":
+			# 为生命值最低队友附加「守卫」效果：替他承受所有伤害持续2回合
+			knight_eternal_guard_turns = 2
+			knight_eternal_guard_target = _get_lowest_hp_ally_index()
+			_battle_add_log("🛡️🛡️ 永恒守卫！保护队友 #%d 替他承受所有伤害持续2回合" % (knight_eternal_guard_target + 1))
+			_spawn_player_damage("守卫!", "buff")
+		"圣光审判(全)":
+			# ATK×3.5全体，附加「审判」DOT每回合ATK×0.5持续3回合
+			var aoe_judgment_dmg = int(_get_effective_atk() * 3.5)
+			knight_judgment_aoe_turns = 3
+			knight_judgment_aoe_dmg = int(_get_effective_atk() * 0.5)
+			_battle_add_log("⚖️⚖️ 圣光审判(全体)！对全体敌人造成 %d 伤害，审判每回合 %d 伤害持续3回合" % [aoe_judgment_dmg, knight_judgment_aoe_dmg])
+			_spawn_enemy_damage("%d" % aoe_judgment_dmg, "crit", Vector2(0, -50))
+		# ===== 吟游诗人 T2
 		"战斗乐章":
 			bard_song_atk_turns = 3
 			bard_song_atk_boost = int(_get_effective_atk() * 0.25)
@@ -5772,6 +5942,51 @@ func _process_battle(delta: float):
 		if await _check_battle_end():
 			return
 
+	# 骑士T3: 神圣复仇DOT（圣光灼烧，每回合额外伤害）
+	if knight_holy_avenger_turns > 0:
+		current_enemy["hp"] -= knight_holy_avenger_dmg
+		_battle_add_log("⚔️✨ 圣光灼烧！神圣复仇造成 %d 伤害（剩余%d回合）" % [knight_holy_avenger_dmg, knight_holy_avenger_turns])
+		_spawn_enemy_damage("%d" % knight_holy_avenger_dmg, "poison", Vector2(-15, -10))
+		knight_holy_avenger_turns -= 1
+		_update_enemy_hp_bar()
+		if await _check_battle_end():
+			return
+
+	# 骑士T3: 圣光审判(全)AOE DOT
+	if knight_judgment_aoe_turns > 0:
+		var aoe_dmg2 = knight_judgment_aoe_dmg
+		current_enemy["hp"] -= aoe_dmg2
+		_battle_add_log("⚖️⚖️ 圣光审判！审判造成 %d 伤害（剩余%d回合）" % [aoe_dmg2, knight_judgment_aoe_turns])
+		_spawn_enemy_damage("%d" % aoe_dmg2, "debuff", Vector2(15, -10))
+		knight_judgment_aoe_turns -= 1
+		_update_enemy_hp_bar()
+		if await _check_battle_end():
+			return
+
+	# 猎人T4: 自然之力持续时间
+	if hunter_nature_power_turns > 0:
+		hunter_nature_power_turns -= 1
+		if hunter_nature_power_turns <= 0:
+			_battle_add_log("🌿 自然之力效果结束！")
+
+	# 猎人T4: 狩猎领域持续时间
+	if hunter_hunting_field_turns > 0:
+		hunter_hunting_field_turns -= 1
+		if hunter_hunting_field_turns <= 0:
+			_battle_add_log("🏹 狩猎领域效果结束！")
+
+	# 骑士T4: 神圣之锤持续时间
+	if knight_holy_hammer_turns > 0:
+		knight_holy_hammer_turns -= 1
+		if knight_holy_hammer_turns <= 0:
+			_battle_add_log("🔨 神圣之锤效果结束！")
+
+	# 骑士T4: 天使守护持续时间
+	if knight_angel_guard_turns > 0:
+		knight_angel_guard_turns -= 1
+		if knight_angel_guard_turns <= 0:
+			_battle_add_log("👼 天使守护效果结束！")
+
 	await get_tree().create_timer(0.5).timeout
 
 	# 陷阱触发：敌人被困住，无法攻击并受到伤害
@@ -5904,6 +6119,18 @@ func _process_battle(delta: float):
 		_trigger_portrait_heal_glow()
 		_battle_add_log("🛡️✨ 永恒庇护！神圣之魂触发！HP回复至50%%！")
 		_spawn_player_damage("神圣之魂!", "heal")
+		_update_battle_player_ui()
+		if await _check_battle_end():
+			return
+		_start_player_turn()
+		return
+	# 骑士T4: 天使守护 - 全队HP不会降至1以下
+	if player_data.hp <= 0 and knight_angel_guard_turns > 0 and not knight_angel_guard_triggered:
+		player_data.hp = 1
+		knight_angel_guard_triggered = true
+		_trigger_portrait_heal_glow()
+		_battle_add_log("👼✨ 天使守护！HP保留在1点！")
+		_spawn_player_damage("天使守护!", "shield")
 		_update_battle_player_ui()
 		if await _check_battle_end():
 			return
