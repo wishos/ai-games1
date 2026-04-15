@@ -2097,7 +2097,7 @@ else:
 
 ### 新发现问题 (2026-04-15 06:03)
 
-#### P3 - 召唤物伤害计算使用硬编码方差（±3）
+#### ✅ P3 - 召唤物伤害计算使用硬编码方差（±3）**[已修复]**
 
 **文件**: `scripts/game.gd`
 **行号**: 第 5593 行
@@ -2125,7 +2125,7 @@ var s_base_dmg = _roll_dmg_var_medium(s_atk)  # 使用已存在的辅助函数
 本次审查发现：
 - **✅ 编译通过**: Godot `--headless --check-only --quit` exit code 0，无语法错误
 - **文件行数**: game.gd 为 **7565 行**（与上次持平，无新增代码）
-- **P3 (新)**: 召唤物伤害计算 `randi() % 7 - 3` 硬编码（第5593行）— 应使用 `_roll_dmg_var_medium(s_atk)` 辅助函数
+- ✅ P3 (已修复): 召唤物伤害计算 `randi() % 7 - 3` 硬编码（第5593行）— 已使用 `_roll_dmg_var_medium(s_atk)` 替换 (2026-04-15 23:16)
 
 **本次检查确认**：
 - ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 无重复声明（P0历史问题已修复）
