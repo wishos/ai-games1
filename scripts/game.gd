@@ -5592,7 +5592,7 @@ func _process_battle(delta: float):
 			var s_atk = s["atk"]
 			if summoner_soul_contract_turns > 0:
 				s_atk += summoner_soul_contract_dmg_boost
-			var s_base_dmg = int(s_atk + randi() % 7 - 3)
+			var s_base_dmg = _roll_dmg_var_medium(s_atk)
 			var s_dmg = max(1, s_base_dmg - int(current_enemy["def"] * 0.5))
 			current_enemy["hp"] -= s_dmg
 			_battle_add_log("🌟 %s攻击！造成 %d 伤害（剩余%d回合）" % [s["name"], s_dmg, s["turns"])
