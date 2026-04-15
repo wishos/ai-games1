@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [Unreleased] - v0.8
+
+### Added
+- **智能敌人AI系统**（v0.8 迭代 - 2026-04-15）:
+  - 重写 `_enemy_execute_action()` 从纯随机 → 条件决策AI
+  - 新增4个决策节点:
+    - 决策节点1: HP<25%时根据原型选择维持技能（守护→铁壁/神秘→吸血/粗暴→重击/盗贼→锁喉）
+    - 决策节点2: 玩家HP<20%时激进收割（粗暴→重击/盗贼→淬毒/神秘→吸血）
+    - 决策节点3: 玩家护盾>50%时优先破盾（神秘→噬魂/盗贼→淬毒或锁喉/粗暴→碎骨）
+    - 决策节点4: HP中高时原型优先技能（45%概率）
+  - 新增技能去重机制：80%概率避免连续使用相同技能
+  - 新增辅助函数：`_ai_execute_archetype_skill()`、`_ai_execute_skill_safe()`、`_ai_dispatch_skill()`
+  - 战斗开始时重置 `_last_skill` 状态（普通战斗 + Boss战均已更新）
+  - 原型判断仍然依赖 `ENEMY_ARCHETYPE`（草寇brute/邪派rogue+mystic/散人rogue+guardian+mystic/正派guardian+mystic）
+
 ### Fixed
 - **存档系统Bug修复**: 装备强化等级(weapon_enhance/armor_enhance/accessory_enhance)之前未保存/读取存档，现在完整支持存档保存和读取
 

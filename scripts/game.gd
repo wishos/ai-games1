@@ -2893,6 +2893,7 @@ func _start_battle():
 	_create_battle_ui()
 	# 重置技能冷却
 	skill_cooldowns.clear()
+	current_enemy["_last_skill"] = ""
 	battle_started = true
 	# 切换到战斗BGM
 	if audio_manager:
@@ -3076,6 +3077,7 @@ func _start_boss_battle():
 	_create_battle_ui()
 	# 重置技能冷却
 	skill_cooldowns.clear()
+	current_enemy["_last_skill"] = ""
 	battle_started = true
 	if audio_manager:
 		audio_manager.play_bgm("boss")
@@ -6208,18 +6210,131 @@ func _process_boss_turn():
 		_: _enemy_execute_action()
 
 func _enemy_execute_action():
-	# 普通敌人技能系统：60%普攻，40%特殊技能
-	var roll = randi() % 100
-	if roll < 60:
-		_boss_default_attack("普通攻击")
-		return
+	# 智能敌人AI系统 - 条件决策而非纯随机
+	# 决策顺序: 1)HP危机 2)玩家护盾高 3)原型优先技能 4)普攻
 	
 	var enemy_type = current_enemy.get("type", "")
 	var archetype = ENEMY_ARCHETYPE.get(enemy_type, "brute")
-	var skills = ENEMY_SKILLS.get(archetype, ["重击"])
-	var chosen_skill = skills[randi() % skills.size()]
+	var hp_ratio = float(current_enemy["hp"]) / float(current_enemy["max_hp"])
+	var player_hp_ratio = float(player_data.hp) / float(player_data.max_hp)
+	var shield_ratio = float(player_shield) / float(max(1, player_data.max_hp))
 	
-	match chosen_skill:
+	# 追踪敌人已用技能（避免连续重复，80%概率避免重复）
+	var last_skill = current_enemy.get("_last_skill", "")
+	
+	# === 决策节点1: HP危机时使用维持技能 ===
+	if hp_ratio < 0.25:
+		# 危机时刻：根据原型选择维持手段
+		var sustain_roll = randi() % 100
+		match archetype:
+			"guardian":
+				# 守护型: 优先铁壁自保，再考虑撤退反击
+				if sustain_roll < 60:
+					_ai_execute_skill_safe("铁壁", last_skill)
+					return
+			"mystic":
+				# 神秘型: 优先吸血续航
+				if sustain_roll < 70:
+					_ai_execute_skill_safe("吸血", last_skill)
+					return
+			"brute":
+				# 粗暴型: 狂暴反扑，高伤害赌一把
+				if sustain_roll < 50:
+					_ai_execute_skill_safe("重击", last_skill)
+					return
+			"rogue":
+				# 盗贼型: 锁喉控制，试图翻盘
+				if sustain_roll < 60:
+					_ai_execute_skill_safe("锁喉", last_skill)
+					return
+		# 默认: 孤注一掷用最强技能
+		_ai_execute_archetype_skill(archetype, last_skill)
+		return
+	
+	# === 决策节点2: 玩家HP极低，激进收割 ===
+	if player_hp_ratio < 0.20:
+		var kill_roll = randi() % 100
+		match archetype:
+			"brute":
+				# 粗暴型: 重击/碎骨直接斩杀
+				if kill_roll < 55:
+					_ai_execute_skill_safe("重击", last_skill)
+					return
+			"rogue":
+				# 盗贼型: 淬毒持续伤害
+				if kill_roll < 55:
+					_ai_execute_skill_safe("淬毒", last_skill)
+					return
+			"mystic":
+				# 神秘型: 吸血耗死
+				if kill_roll < 60:
+					_ai_execute_skill_safe("吸血", last_skill)
+					return
+		# 默认普攻收割
+		_boss_default_attack("普通攻击")
+		return
+	
+	# === 决策节点3: 玩家护盾极高，优先破盾 ===
+	if shield_ratio > 0.5:
+		var shield_break_roll = randi() % 100
+		match archetype:
+			"mystic":
+				# 神秘型: 噬魂无视护盾吸血
+				if shield_break_roll < 70:
+					_ai_execute_skill_safe("噬魂", last_skill)
+					return
+			"rogue":
+				# 盗贼型: 淬毒/锁喉DOT无视护盾
+				if shield_break_roll < 55:
+					_ai_execute_skill_safe("淬毒" if shield_break_roll < 28 else "锁喉", last_skill)
+					return
+			"brute":
+				# 粗暴型: 碎骨无视护盾直接伤害
+				if shield_break_roll < 50:
+					_ai_execute_skill_safe("碎骨", last_skill)
+					return
+	
+	# === 决策节点4: HP中高时，原型优先技能 (45%概率) ===
+	var skill_roll = randi() % 100
+	if skill_roll < 45:
+		_ai_execute_archetype_skill(archetype, last_skill)
+		return
+	
+	# === 默认: 普通攻击 ===
+	_boss_default_attack("普通攻击")
+
+func _ai_execute_archetype_skill(archetype: String, last_skill: String):
+	# 根据原型选择代表性技能（带去重逻辑）
+	var skills: Array
+	match archetype:
+		"brute":   skills = ["重击", "碎骨"]
+		"rogue":   skills = ["淬毒", "锁喉"]
+		"mystic":  skills = ["吸血", "噬魂"]
+		"guardian": skills = ["盾击", "铁壁"]
+		"beast":   skills = ["撕咬", "利爪"]
+		_:          skills = ["重击"]
+	
+	# 去重：80%概率避免重复
+	if not skills.is_empty():
+		var available = skills.filter(func(s): return s != last_skill)
+		if not available.is_empty() and randi() % 100 < 80:
+			skills = available
+	
+	var chosen = skills[randi() % skills.size()]
+	current_enemy["_last_skill"] = chosen
+	_ai_dispatch_skill(chosen)
+
+func _ai_execute_skill_safe(skill_name: String, last_skill: String):
+	# 安全执行技能（含去重后备）
+	if skill_name == last_skill and randi() % 100 < 80:
+		_ai_execute_archetype_skill(ENEMY_ARCHETYPE.get(current_enemy.get("type", ""), "brute"), last_skill)
+		return
+	current_enemy["_last_skill"] = skill_name
+	_ai_dispatch_skill(skill_name)
+
+func _ai_dispatch_skill(skill_name: String):
+	# 统一技能分发
+	match skill_name:
 		"重击": _enemy_skill_heavy_strike()
 		"碎骨": _enemy_skill_bone_crusher()
 		"淬毒": _enemy_skill_poison_thrust()
@@ -6230,7 +6345,7 @@ func _enemy_execute_action():
 		"铁壁": _enemy_skill_iron_wall()
 		"撕咬": _enemy_skill_bite()
 		"利爪": _enemy_skill_claw()
-		_: _boss_default_attack(chosen_skill)
+		_: _boss_default_attack(skill_name)
 
 func _enemy_skill_heavy_strike():
 	# 重击：2x伤害，降低玩家防御2点，持续2回合
