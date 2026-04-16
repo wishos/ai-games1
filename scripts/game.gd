@@ -223,6 +223,11 @@ var inventory_ui: Control
 var inventory_item_buttons: Array = []
 var inventory_open: bool = false
 
+# 任务日志
+var quest_log_ui: Control
+var quest_log_buttons: Array = []
+var quest_log_open: bool = false
+
 # 商店数据
 const SHOP_WEAPONS = [
 	{"name": "铁剑 ★",      "atk": 5,  "def": 0,  "hp": 20,  "mp": 5,  "spd": 1, "luk": 1, "price": 100,  "grade": 1, "icon": "⚔️"},
@@ -297,6 +302,7 @@ const PALETTE = {
 # Boss数据 (第1/3/5/7/8层) - 武侠江湖主题
 const BOSS_DATA = {
 	1: {
+		"id": "boss_bandit_king",
 		"name": "山贼王·韩霸天",
 		"title": "第1层Boss",
 		"hp": 350, "atk": 25, "def": 12, "spd": 5, "luk": 5,
@@ -307,6 +313,7 @@ const BOSS_DATA = {
 		"description": "盘踞在黑风寨的山贼首领，刀法霸道，据说曾是某个门派的弃徒。"
 	},
 	3: {
+		"id": "boss_blood_sect",
 		"name": "血刀门护法·血手赫连铁树",
 		"title": "第3层Boss",
 		"hp": 600, "atk": 45, "def": 15, "spd": 6, "luk": 8,
@@ -317,6 +324,7 @@ const BOSS_DATA = {
 		"description": "血刀门四大护法之一，双手染满江湖人士的鲜血，绝学「血战到底」一旦施展必死无疑。"
 	},
 	5: {
+		"id": "boss_traitors",
 		"name": "门派叛徒·司马青云",
 		"title": "第5层Boss",
 		"hp": 1200, "atk": 55, "def": 35, "spd": 3, "luk": 2,
@@ -327,6 +335,7 @@ const BOSS_DATA = {
 		"description": "原为某正派长老，盗取门派秘籍叛逃江湖，所学武功已入化境。"
 	},
 	7: {
+		"id": "boss_yue_bucun",
 		"name": "华山掌门·岳不群",
 		"title": "第7层Boss",
 		"hp": 2000, "atk": 70, "def": 30, "spd": 8, "luk": 12,
@@ -337,6 +346,7 @@ const BOSS_DATA = {
 		"description": "华山派掌门，外号「君子剑」，实则城府极深，为夺葵花宝典不择手段。"
 	},
 	8: {
+		"id": "boss_zhang_sanfeng",
 		"name": "武当真人·张三丰",
 		"title": "最终Boss",
 		"hp": 5000, "atk": 100, "def": 50, "spd": 10, "luk": 15,
@@ -579,7 +589,7 @@ func _show_title_screen():
 	var tip = Label.new()
 	tip.position = Vector2(0, 420)
 	tip.size = Vector2(1000, 25)
-	tip.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · F2存档"
+	tip.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · 任务(Q) · F2存档"
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
 	tip.add_theme_font_size_override("font_size", 13)
@@ -686,7 +696,7 @@ func _setup_ui():
 	# 提示操作
 	var hint_label = Label.new()
 	hint_label.position = Vector2(1070, 80)
-	hint_label.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · F2存档"
+	hint_label.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · 任务(Q) · F2存档"
 	hint_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	add_child(hint_label)
 
@@ -767,7 +777,7 @@ func _setup_player():
 	player.add_child(col)
 
 	add_child(player)
-	show_message("WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · F2存档")
+	show_message("WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · 任务(Q) · F2存档")
 
 
 func _load_job_texture(job: int) -> Texture2D:
@@ -1209,6 +1219,16 @@ func _process_explore(delta):
 		_close_inventory()
 		return
 
+	# 任务日志 (Q键)
+	if Input.is_key_pressed(KEY_Q) and is_player_turn and not quest_log_open and game_state == State.EXPLORE:
+		_open_quest_log()
+		return
+
+	# 关闭任务日志 (Q键或ESC)
+	if quest_log_open and (Input.is_key_pressed(KEY_Q) or Input.is_key_pressed(KEY_ESCAPE)):
+		_close_quest_log()
+		return
+
 	_update_ui()
 	_update_minimap()
 
@@ -1239,6 +1259,7 @@ func _next_floor():
 	# 执行楼层切换
 	current_floor += 1
 	player.position = Vector2(640, 400)
+	_check_quest_objectives("explore_floor", {"floor": current_floor})
 	player_tile_x = 40
 	player_tile_y = 25
 	for key in fog_map:
@@ -1327,6 +1348,8 @@ func _start_boss_encounter():
 
 	current_boss_data = {
 		"name": boss_def["name"],
+		"id": boss_def.get("id", boss_def["name"]),  # 任务追踪用
+		"type": boss_def.get("id", boss_def["name"]),
 		"hp": int(boss_def["hp"] * mult),
 		"max_hp": int(boss_def["hp"] * mult),
 		"atk": int(boss_def["atk"] * mult),
@@ -1890,6 +1913,323 @@ func _update_minimap():
 			else:
 				# 未探索: 深黑色
 				cell.color = Color(0.02, 0.02, 0.04, 0.95)
+
+# ==================== 任务进度检测 ====================
+
+func _check_quest_objectives(event_type: String, event_data: Dictionary):
+	"""检测并更新任务目标完成状态"""
+	var quests = player_data.quest_log
+	var updated = false
+
+	for quest in quests:
+		if quest.get("completed", false) or not quest.get("active", true):
+			continue
+
+		var objectives = quest.get("objectives", [])
+		for obj in objectives:
+			if obj.get("completed", false):
+				continue
+
+			var obj_type = obj.get("type", "")
+			var obj_target = obj.get("target", "")
+			var obj_done = false
+
+			match obj_type:
+				"defeat_enemy":
+					# 击败特定敌人或敌人类型
+					if event_type == "defeat_enemy":
+						var enemy_id = event_data.get("enemy_id", "")
+						var enemy_name = event_data.get("enemy_name", "")
+						var enemy_type = event_data.get("enemy_type", "")
+						if obj_target == enemy_id or obj_target == enemy_type or obj_target == enemy_name or obj_target == "any":
+							# 检查是否需要计数
+							if obj.has("required") and obj.get("required", 1) > 1:
+								obj["count"] = obj.get("count", 0) + 1
+								obj_done = obj["count"] >= obj.get("required", 1)
+							else:
+								obj_done = true
+
+				"defeat_boss":
+					if event_type == "defeat_enemy" and event_data.get("is_boss", false):
+						if obj_target == event_data.get("enemy_id", "") or obj_target == "any":
+							obj_done = true
+
+				"goto":
+					# 前往特定场景/位置（目前通过探索触发）
+					if event_type == "goto" and obj_target == event_data.get("target", ""):
+						obj_done = true
+
+				"interact":
+					# 与NPC对话
+					if event_type == "interact" and obj_target == event_data.get("npc_id", ""):
+						obj_done = true
+
+				"accept_quest":
+					# 接受任务目标
+					if event_type == "accept_quest" and obj_target == event_data.get("quest_id", ""):
+						obj_done = true
+
+				"explore_floor":
+					# 探索特定层数
+					if event_type == "explore_floor":
+						var target_floor = int(obj_target) if obj_target.is_valid_int() else -1
+						if target_floor > 0 and event_data.get("floor", 0) >= target_floor:
+							obj_done = true
+
+				"collect_item":
+					# 收集物品
+					if event_type == "collect_item" and obj_target == event_data.get("item_type", ""):
+						obj_done = true
+
+			if obj_done:
+				obj["completed"] = true
+			updated = true
+
+		# 检查是否所有目标都完成
+		if updated:
+			var all_done = true
+			for obj in objectives:
+				if not obj.get("completed", false):
+					all_done = false
+					break
+			if all_done:
+				quest["completed"] = true
+				var quest_title = quest.get("title", "未知任务")
+				show_message("📜 任务完成: %s" % quest_title)
+
+	# 如果有已完成的自动接受任务，触发它们
+	if updated:
+		_trigger_accepted_quests()
+
+func _trigger_accepted_quests():
+	"""检查并自动接受任务链中的下一步任务"""
+	# 查找所有已完成但未领取奖励的任务
+	var quests = player_data.quest_log
+	for quest in quests:
+		if quest.get("completed", false) and not quest.get("reward_claimed", false):
+			# 发放奖励
+			var rewards = quest.get("rewards", {})
+			if rewards.get("exp", 0) > 0:
+				player_data.exp += rewards["exp"]
+			if rewards.get("gold", 0) > 0:
+				player_data.gold += rewards["gold"]
+			# 标记奖励已领取
+			quest["reward_claimed"] = true
+
+# ==================== 任务日志系统 ====================
+
+func _open_quest_log():
+	if quest_log_open:
+		return
+	quest_log_open = true
+	if minimap_container:
+		minimap_container.visible = false
+	_create_quest_log_ui()
+	show_message("任务日志 (按 Q 或 ESC 关闭)")
+
+func _close_quest_log():
+	if quest_log_ui != null:
+		quest_log_ui.queue_free()
+		quest_log_ui = null
+	for btn in quest_log_buttons:
+		if btn != null and is_instance_valid(btn):
+			btn.queue_free()
+	quest_log_buttons.clear()
+	quest_log_open = false
+	if minimap_container:
+		minimap_container.visible = true
+	show_message("")
+
+func _create_quest_log_ui():
+	if quest_log_ui != null:
+		quest_log_ui.queue_free()
+	quest_log_buttons.clear()
+
+	quest_log_ui = Control.new()
+	quest_log_ui.name = "QuestLogUI"
+	quest_log_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(quest_log_ui)
+
+	# 背景遮罩
+	var overlay = ColorRect.new()
+	overlay.size = SCREEN_SIZE
+	overlay.color = Color(0, 0, 0, 0.82)
+	overlay.position = Vector2(0, 0)
+	overlay.gui_input.connect(_on_quest_overlay_click)
+	quest_log_ui.add_child(overlay)
+
+	# 任务面板
+	var quest_panel = Panel.new()
+	quest_panel.name = "QuestPanel"
+	quest_panel.position = Vector2(320, 60)
+	quest_panel.size = Vector2(640, 600)
+	quest_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
+	quest_panel.add_theme_stylebox_override("panel", _create_stylebox())
+	quest_log_ui.add_child(quest_panel)
+
+	# 标题
+	var title = Label.new()
+	title.position = Vector2(20, 15)
+	title.text = "📜 任务日志"
+	title.add_theme_color_override("font_color", PALETTE.gold)
+	title.add_theme_font_size_override("font_size", 22)
+	quest_panel.add_child(title)
+
+	# 副标题
+	var sub_title = Label.new()
+	sub_title.position = Vector2(20, 48)
+	sub_title.text = "进行中的任务"
+	sub_title.add_theme_color_override("font_color", Color(0.6, 0.6, 0.5))
+	quest_panel.add_child(sub_title)
+
+	# 任务列表区域
+	var quest_area = Panel.new()
+	quest_area.name = "QuestArea"
+	quest_area.position = Vector2(20, 80)
+	quest_area.size = Vector2(600, 400)
+	quest_area.self_modulate = Color(0, 0, 0, 0.3)
+	quest_area.add_theme_stylebox_override("panel", _create_stylebox())
+	quest_panel.add_child(quest_area)
+
+	_draw_quest_list(quest_area)
+
+	# 提示信息
+	var hint_lbl = Label.new()
+	hint_lbl.position = Vector2(20, 495)
+	hint_lbl.text = "按 Q 或 ESC 关闭"
+	hint_lbl.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+	quest_panel.add_child(hint_lbl)
+
+func _on_quest_overlay_click(event: InputEvent):
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_close_quest_log()
+
+func _draw_quest_list(quest_area: Panel):
+	for btn in quest_log_buttons:
+		if btn != null and is_instance_valid(btn):
+			btn.queue_free()
+	quest_log_buttons.clear()
+
+	var quests = player_data.quest_log
+	if quests.size() == 0:
+		var empty_lbl = Label.new()
+		empty_lbl.name = "EmptyQuestLabel"
+		empty_lbl.text = "暂无进行中的任务\n去客栈打听消息，获得新任务"
+		empty_lbl.position = Vector2(150, 100)
+		empty_lbl.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+		empty_lbl.add_theme_font_size_override("font_size", 16)
+		quest_area.add_child(empty_lbl)
+		quest_log_buttons.append(empty_lbl)
+		return
+
+	var start_x = 15
+	var start_y = 15
+	var row_height = 110
+	var idx = 0
+
+	for quest in quests:
+		if not quest.get("active", true):
+			continue
+
+		var by = start_y + idx * row_height
+
+		# 任务标题背景
+		var quest_bg = ColorRect.new()
+		quest_bg.name = "quest_bg_%d" % idx
+		quest_bg.size = Vector2(570, 100)
+		quest_bg.position = Vector2(start_x, by)
+		if quest.get("completed", false):
+			quest_bg.color = Color(0.1, 0.25, 0.1, 0.5)
+		else:
+			quest_bg.color = Color(0.08, 0.08, 0.15, 0.5)
+		quest_area.add_child(quest_bg)
+		quest_log_buttons.append(quest_bg)
+
+		# 任务ID标签 (用于识别)
+		var qid_lbl = Label.new()
+		qid_lbl.name = "qid_%d" % idx
+		qid_lbl.text = quest.get("id", "?")
+		qid_lbl.visible = false  # 隐藏，只用于标识
+		qid_lbl.position = Vector2(start_x, by)
+		quest_area.add_child(qid_lbl)
+
+		# 任务标题
+		var quest_title = Label.new()
+		quest_title.name = "quest_title_%d" % idx
+		var title_text = "📋 " + quest.get("title", "未知任务")
+		if quest.get("completed", false):
+			title_text = "✅ " + quest.get("title", "未知任务")
+		quest_title.text = title_text
+		quest_title.position = Vector2(start_x + 10, by + 8)
+		if quest.get("completed", false):
+			quest_title.add_theme_color_override("font_color", Color(0.4, 0.7, 0.4))
+		else:
+			quest_title.add_theme_color_override("font_color", PALETTE.gold)
+		quest_title.add_theme_font_size_override("font_size", 16)
+		quest_area.add_child(quest_title)
+		quest_log_buttons.append(quest_title)
+
+		# 任务描述
+		var quest_desc = Label.new()
+		quest_desc.name = "quest_desc_%d" % idx
+		quest_desc.text = quest.get("desc", "")
+		quest_desc.position = Vector2(start_x + 10, by + 32)
+		quest_desc.add_theme_color_override("font_color", Color(0.65, 0.65, 0.55))
+		quest_desc.add_theme_font_size_override("font_size", 12)
+		quest_area.add_child(quest_desc)
+		quest_log_buttons.append(quest_desc)
+
+		# 目标列表
+		var objectives = quest.get("objectives", [])
+		var obj_text = ""
+		var all_done = true
+		for obj in objectives:
+			var done_mark = "☑" if obj.get("completed", false) else "☐"
+			obj_text += done_mark + " " + obj.get("text", "?") + "\n"
+			if not obj.get("completed", false):
+				all_done = false
+
+		var obj_lbl = Label.new()
+		obj_lbl.name = "quest_obj_%d" % idx
+		obj_lbl.text = obj_text
+		obj_lbl.position = Vector2(start_x + 10, by + 55)
+		if all_done and not quest.get("completed", false):
+			obj_lbl.add_theme_color_override("font_color", Color(0.4, 0.8, 0.4))
+		else:
+			obj_lbl.add_theme_color_override("font_color", Color(0.5, 0.5, 0.4))
+		obj_lbl.add_theme_font_size_override("font_size", 12)
+		quest_area.add_child(obj_lbl)
+		quest_log_buttons.append(obj_lbl)
+
+		# 奖励信息
+		var rewards = quest.get("rewards", {})
+		var reward_text = ""
+		if rewards.get("exp", 0) > 0:
+			reward_text += "经验+%d " % rewards["exp"]
+		if rewards.get("gold", 0) > 0:
+			reward_text += "金币+%d" % rewards["gold"]
+		if reward_text != "":
+			var reward_lbl = Label.new()
+			reward_lbl.name = "quest_reward_%d" % idx
+			reward_lbl.text = "奖励: " + reward_text
+			reward_lbl.position = Vector2(start_x + 380, by + 8)
+			reward_lbl.add_theme_color_override("font_color", Color(0.5, 0.5, 0.3))
+			reward_lbl.add_theme_font_size_override("font_size", 12)
+			quest_area.add_child(reward_lbl)
+			quest_log_buttons.append(reward_lbl)
+
+		idx += 1
+
+	# 已完成任务
+	var completed_quests = player_data.completed_quests
+	if completed_quests.size() > 0:
+		var comp_label = Label.new()
+		comp_label.name = "CompletedSection"
+		comp_label.text = "\n已完成任务 (%d)" % completed_quests.size()
+		comp_label.position = Vector2(start_x, by + 115)
+		comp_label.add_theme_color_override("font_color", Color(0.3, 0.3, 0.3))
+		quest_area.add_child(comp_label)
+		quest_log_buttons.append(comp_label)
 
 # ==================== 商店系统 ====================
 
@@ -2876,6 +3216,7 @@ func _start_battle():
 	var edata = enemy_data_class.new(etype, current_floor)
 	current_enemy = {
 		"name": edata.name,
+		"id": etype,  # 敌人类型ID，用于任务追踪
 		"type": etype,  # 保存敌人类型用于选择素材
 		"hp": edata.hp,
 		"max_hp": edata.max_hp,
@@ -7047,6 +7388,7 @@ async func _check_battle_end() -> bool:
 		var gold_gain = current_enemy["gold"]
 		player_data.exp += exp_gain
 		player_data.gold += gold_gain
+		_check_quest_objectives("defeat_enemy", {"enemy_id": current_enemy.get("id", ""), "enemy_name": current_enemy.get("name", ""), "floor": current_floor})
 
 		# Boss击败特殊提示
 		if current_enemy.get("is_boss", false):

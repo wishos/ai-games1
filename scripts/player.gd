@@ -38,10 +38,36 @@ var inventory: Array = [
 	{"type": "小蓝药", "count": 1, "heal_hp": 0, "heal_mp": 30}
 ]
 
+# 任务日志
+var quest_log: Array = []
+var completed_quests: Array = []
+
 func _init():
 	_setup_job_skills()
 
+func _setup_starter_quests():
+	"""初始化初始任务"""
+	quest_log = [
+		{
+			"id": "q001",
+			"title": "初识江湖",
+			"desc": "前往客栈打听消息，了解当前江湖动态",
+			"chapter": 1,
+			"objectives": [
+				{"id": "obj1", "text": "击败3个敌人", "completed": false, "type": "defeat_enemy", "target": "any", "count": 0, "required": 3},
+				{"id": "obj2", "text": "探索第2层", "completed": false, "type": "explore_floor", "target": "2"},
+				{"id": "obj3", "text": "击败山贼王·韩霸天", "completed": false, "type": "defeat_boss", "target": "boss_bandit_king"}
+			],
+			"rewards": {"exp": 100, "gold": 50, "items": []},
+			"completed": false,
+			"active": true,
+			"reward_claimed": false
+		}
+	]
+
 func _setup_job_skills():
+	# 初始化任务日志
+	_setup_starter_quests()
 	match job:
 		Job.WARRIOR:
 			skills = ["猛击", "防御", "冲锋", "血之狂暴", "旋风斩", "战吼", "毁天灭地", "不死不灭", "碎甲", "战神领域", "浴血奋战", "援护", "战神之力", "绝对防御", "征服者怒吼"]
