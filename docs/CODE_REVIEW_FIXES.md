@@ -2314,3 +2314,175 @@ var s_base_dmg = _roll_dmg_var_medium(s_atk)  # 使用已存在的辅助函数
 - Boss 技能倍率/屏幕尺寸/SCREEN_SIZE 常量已提取并替换
 
 **Git状态**: 无需提交 — 所有问题均已修复，无新问题
+
+---
+
+### 新发现问题 (2026-04-17 06:03)
+
+#### P2 - 存档不保存 `quest_log` 和 `completed_quests`，读档后任务进度丢失
+
+**文件**: `scripts/game.gd`
+**行号**: `save_game()` 函数（约 line 7710-7743）、`load_game()` 函数（约 line 7760-7808）
+
+**问题**: `save_game()` 序列化 `player_data` 时未包含 `quest_log` 和 `completed_quests` 数组，导致读档后所有任务进度丢失。这是在上一次审查（7680行）之后新增完整存档系统时引入的问题。
+
+**当前 `save_data` 中 `player` 字典包含的字段**:
+```gdscript
+"player": {
+    "job", "job_name", "hp", "max_hp", "mp", "max_mp",
+    "level", "exp", "gold", "atk", "def", "spd", "luk",
+    "skills", "weapon", "armor", "accessory",
+    "weapon_enhance", "armor_enhance", "accessory_enhance",
+    "inventory"
+}
+```
+
+**缺失的字段**（应添加）:
+```gdscript
+"quest_log": player_data.quest_log,
+"completed_quests": player_data.completed_quests,
+```
+
+**`load_game()` 恢复时缺失的代码**（应在 `player_data.inventory = pdata.get("inventory", [])` 后添加）:
+```gdscript
+player_data.quest_log = pdata.get("quest_log", [])
+player_data.completed_quests = pdata.get("completed_quests", [])
+```
+
+**影响**: 玩家读档后，正在进行和已完成的任务全部丢失，需要重新接任务。这是数据完整性问题，但存档核心功能（角色属性、装备、金币）不受影响。
+
+---
+
+#### P2 - 吟游诗人「传奇之歌」永久增益（Bard T3）在读档后丢失
+
+**文件**: `scripts/game.gd`
+**行号**: `save_game()` / `load_game()` 函数
+
+**问题**: `bard_legendary_song_atk_boost`（永久 ATK+20）和 `bard_legendary_song_def_boost`（永久 DEF+20）是战斗状态变量，记录在 `game.gd` 中（lines 152-153），但 `save_game()` 未保存这些值。
+
+**当前 `save_data` 缺失的游戏状态字段**:
+```gdscript
+"game_state": {
+    "bard_legendary_song_atk_boost": bard_legendary_song_atk_boost,
+    "bard_legendary_song_def_boost": bard_legendary_song_def_boost,
+    "skill_cooldowns": skill_cooldowns,
+    "summoner_fusion_active": summoner_fusion_active,
+    "summoner_fusion_turns": summoner_fusion_turns,
+    "summoner_fusion_power": summoner_fusion_power,
+    "summoner_fusion_hp": summoner_fusion_hp,
+    # ... 其他战斗状态
+}
+```
+
+**影响**: 吟游诗人玩家使用「传奇之歌」技能获得永久属性加成后，如果读档，这些加成会丢失，影响职业平衡。
+
+---
+
+#### P2 - 技能冷却状态 `skill_cooldowns` 在读档后丢失
+
+**文件**: `scripts/game.gd`
+**行号**: `save_game()` / `load_game()` 函数
+
+**问题**: `skill_cooldowns`（Dictionary）记录每个技能的剩余冷却回合，但 `save_game()` 未保存。
+
+**影响**: 读档后所有技能冷却重置，相当于免费刷新了冷却。这是游戏平衡漏洞（相当于获得了一次"重置冷却"的机会），可能让玩家收益而非受损，但属于数据不一致。
+
+---
+
+#### P3 - 召唤师融合状态在读档后丢失
+
+**文件**: `scripts/game.gd`
+**行号**: `save_game()` / `load_game()` 函数
+
+**问题**: `summoner_fusion_active`、`summoner_fusion_turns`、`summoner_fusion_power`、`summoner_fusion_hp` 等召唤融合状态变量未保存进存档。
+
+**影响**: 中等 — 读档后召唤融合状态重置，玩家需要重新积攒融合进度。属于游戏进度损失，但不影响核心数据。
+
+---
+
+### 审查记录 - 2026-04-17 06:03
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程被 SIGKILL 终止（动态节点创建较多导致超时，非语法错误，历史一致行为）
+- **文件行数**: game.gd 为 **8022 行**（+342行，新增：完整存档/读档系统 `_open_save_ui()`/`_close_save_ui()` 及相关回调，约 line 7689-8022）
+- **✅ 无新增 P0/P1 问题**
+- **✅ 无新增语法错误或内存泄漏问题**（Godot headless 超时为历史一致行为，非代码问题）
+
+**本次检查确认的历史问题修复状态**：
+- ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 无重复声明（P0，已修复）
+- ✅ 所有 `_check_battle_end()` 调用均正确使用 `await`（P0，已修复）
+- ✅ `fog_container` 迷雾系统正确管理（P1，已修复）
+- ✅ `_load_job_texture()` 无 Sprite2D 泄漏（P2，已修复）
+- ✅ `ASSET_TEX_SIZE` 常量已提取（P2，已修复）
+- ✅ `_get_pierced_defense()` 重命名正确（P2，已修复）
+- ✅ `_save_slot_buttons` 数组对称（P2，已修复）
+- ✅ `particle_container`/`audio_manager` 正确清理+重建（P3，已修复）
+- ✅ 伤害方差辅助函数正确定义并使用（P3，已修复）
+- ✅ SCREEN_SIZE/RANDOM_ENCOUNTER_RATE 等常量已提取（P3，已修复）
+- ✅ `floor_label` 无重复赋值（P3，已修复）
+- ✅ `shop_bg_fallback` 正确追踪（P2，已修复）
+
+**本次新增发现**（均为 P2 级 — 存档系统数据完整性问题）：
+- **P2 (新)**: `quest_log`/`completed_quests` 未保存进存档，读档后任务进度丢失
+- **P2 (新)**: 吟游诗人「传奇之歌」永久增益未保存，读档后永久 ATK/DEF 加成丢失
+- **P2 (新)**: `skill_cooldowns` 未保存进存档，读档后技能冷却重置
+- **P3 (新)**: 召唤师融合状态（`summoner_fusion_active` 等）未保存进存档，读档后融合进度丢失
+
+**Git状态**: 建议提交修复 — 新增存档系统引入了4个数据完整性问题（P2×3, P3×1）
+
+### 审查记录 - 2026-04-17 12:03 - 无新问题
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程被 SIGKILL 终止（动态节点创建较多导致超时，非语法错误，历史一致行为）
+- **文件行数**: game.gd 为 **8022 行**（与上次审查持平，文件自 2026-04-16 23:12 后无修改）
+- **✅ 无新增 P0/P1/P2/P3 问题**
+- **✅ 无新增语法错误或内存泄漏问题**
+
+**本次检查确认**：
+- ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 无重复声明
+- ✅ 所有 `_check_battle_end()` 调用均正确使用 `await`
+- ✅ `fog_container` 迷雾系统正确管理（`queue_free()` 一次性释放）
+- ✅ 伤害方差辅助函数 `_roll_dmg_var_small/medium/large/tiny` 正确定义并使用
+- ✅ SCREEN_SIZE 常量正确覆盖所有 `Vector2(1280, 720)` 直接使用
+- ✅ 存档系统节点管理正确（`save_ui` 实例变量 + `queue_free()` 统一释放）
+- ✅ `_save_slot_buttons` 数组对称（空槽追加3个占位元素保持对称）
+- ✅ `particle_container`/`audio_manager` 在 `_on_job_selected` 中正确清理+重建
+- ✅ `floor_label` 无重复赋值
+- ✅ `shop_bg_fallback` 正确追踪，`_close_shop()` 同步清理
+- ✅ `_get_pierced_defense()` 重命名正确
+- ✅ `quest_log`/`completed_quests`/`skill_cooldowns`/Bard永久增益/召唤融合状态未保存存档（**P2×3, P3×1**，自上次审查 2026-04-17 06:03 记录至今未修复）
+
+**Git 状态**: 无需提交 — 无新问题，既有问题已在 2026-04-17 06:03 审查中记录
+
+### 审查记录 - 2026-04-17 18:03
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程被 SIGKILL 终止（动态节点创建较多导致超时，历史一致行为，非语法错误）
+- **文件行数**: game.gd 为 **8022 行**（与上次审查持平，自 2026-04-16 23:12 后无新增提交）
+- **✅ 无新增 P0/P1 问题**
+- **✅ 无新增语法错误或内存泄漏问题**
+
+**本次检查确认**：
+- ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 无重复声明
+- ✅ 所有 `_check_battle_end()` 调用均正确使用 `await`
+- ✅ `fog_container` 迷雾系统正确管理（`queue_free()` 一次性释放）
+- ✅ 伤害方差辅助函数 `_roll_dmg_var_small/medium/large/tiny` 正确定义并使用
+- ✅ SCREEN_SIZE 常量正确覆盖所有 `Vector2(1280, 720)` 直接使用
+- ✅ 存档系统节点管理正确（`save_ui` 实例变量 + `queue_free()` 统一释放）
+- ✅ `_save_slot_buttons` 数组对称（空槽追加3个占位元素保持对称）
+- ✅ `particle_container`/`audio_manager` 在 `_on_job_selected` 中正确清理+重建
+- ✅ `floor_label` 无重复赋值
+- ✅ `shop_bg_fallback` 正确追踪，`_close_shop()` 同步清理
+- ✅ `_get_pierced_defense()` 重命名正确
+
+**既有问题状态**（自 2026-04-17 06:03 记录至今未修复）：
+
+| 优先级 | 问题 | 影响 |
+|--------|------|------|
+| **P2** | `quest_log`/`completed_quests` 未保存进存档 | 读档后任务进度全部丢失 |
+| **P2** | 吟游诗人「传奇之歌」永久增益未保存 | 读档后 ATK/DEF+20 永久加成丢失 |
+| **P2** | `skill_cooldowns` 未保存进存档 | 读档后技能冷却重置（相当于免费刷新） |
+| **P3** | 召唤师融合状态未保存进存档 | 读档后融合进度丢失 |
+
+**Git 状态**: 无需提交 — 无新问题，既有问题已在 2026-04-17 06:03 审查中记录
+

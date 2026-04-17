@@ -719,6 +719,21 @@ func _create_stylebox() -> StyleBoxFlat:
 	style.corner_radius_bottom_left = 3
 	return style
 
+func _create_elite_stylebox() -> StyleBoxFlat:
+	# 精英敌人专用样式 - 金色发光边框
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.1, 0.08, 0.02, 0.92)
+	style.border_color = Color(1.0, 0.85, 0.2)  # 更亮的金色
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_right = 4
+	style.corner_radius_bottom_left = 4
+	return style
+
 func _setup_walls():
 	# 创建简化墙壁碰撞区 (地图边缘)
 	wall_rects = [
@@ -3214,23 +3229,39 @@ func _start_battle():
 	var enemy_pool = enemy_data_class.get_floor_enemies(current_floor)
 	var etype = enemy_pool[randi() % enemy_pool.size()]
 	var edata = enemy_data_class.new(etype, current_floor)
+	
+	# 精英敌人检测（15%概率，BOSS层除外）
+	var is_elite = false
+	var elite_mult = 1.0
+	if current_floor < 7 and randf() < 0.15:
+		is_elite = true
+		elite_mult = 1.5  # 精英加成倍率
+	
+	var elite_name_prefix = "" if not is_elite else "精英·"
+	var elite_exp_mult = 1.5 if is_elite else 1.0
+	var elite_gold_mult = 1.5 if is_elite else 1.0
+	
 	current_enemy = {
-		"name": edata.name,
+		"name": elite_name_prefix + edata.name,
 		"id": etype,  # 敌人类型ID，用于任务追踪
 		"type": etype,  # 保存敌人类型用于选择素材
-		"hp": edata.hp,
-		"max_hp": edata.max_hp,
-		"atk": edata.atk,
-		"def": edata.def,
+		"hp": int(edata.hp * elite_mult),
+		"max_hp": int(edata.hp * elite_mult),
+		"atk": int(edata.atk * (1.3 if is_elite else 1.0)),
+		"def": int(edata.def * (1.2 if is_elite else 1.0)),
 		"spd": edata.spd,
-		"exp": edata.exp_reward,
-		"gold": edata.gold_reward,
+		"exp": int(edata.exp_reward * elite_exp_mult),
+		"gold": int(edata.gold_reward * elite_gold_mult),
 		"color": edata.color,
 		"faction": edata.faction,
-		"is_boss": false
+		"is_boss": false,
+		"is_elite": is_elite
 	}
 
-	show_message("遭遇了 " + current_enemy["name"] + "！")
+	if is_elite:
+		show_message("⚠️ 遭遇了精英敌人 " + current_enemy["name"] + "！")
+	else:
+		show_message("遭遇了 " + current_enemy["name"] + "！")
 	_create_battle_ui()
 	# 重置技能冷却
 	skill_cooldowns.clear()
@@ -3463,7 +3494,11 @@ func _create_battle_ui():
 	enemy_panel.position = Vector2(440, 80)
 	enemy_panel.size = Vector2(400, 200)
 	enemy_panel.self_modulate = Color(0.15, 0.12, 0.1, 0.95)  # 调亮背景以便看清sprite
-	enemy_panel.add_theme_stylebox_override("panel", _create_stylebox())
+	var is_elite_enemy = current_enemy.get("is_elite", false)
+	if is_elite_enemy:
+		enemy_panel.add_theme_stylebox_override("panel", _create_elite_stylebox())
+	else:
+		enemy_panel.add_theme_stylebox_override("panel", _create_stylebox())
 	battle_ui.add_child(enemy_panel)
 
 	# 敌人名称
@@ -3471,8 +3506,22 @@ func _create_battle_ui():
 	enemy_name_label.position = Vector2(20, 15)
 	enemy_name_label.text = current_enemy["name"]
 	enemy_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	enemy_name_label.add_theme_color_override("font_color", Color(1, 0.8, 0.5))
+	if is_elite_enemy:
+		enemy_name_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2))  # 金色用于精英
+	else:
+		enemy_name_label.add_theme_color_override("font_color", Color(1, 0.8, 0.5))
 	enemy_panel.add_child(enemy_name_label)
+	
+	# 精英标签
+	if is_elite_enemy:
+		var elite_label = Label.new()
+		elite_label.name = "EliteLabel"
+		elite_label.position = Vector2(20, 38)
+		elite_label.text = "★ 精英敌人 ★"
+		elite_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		elite_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.1))
+		elite_label.add_theme_font_size_override("font_size", 14)
+		enemy_panel.add_child(elite_label)
 
 	# 敌人精灵
 	enemy_sprite = Sprite2D.new()
@@ -3507,7 +3556,10 @@ func _create_battle_ui():
 	enemy_hp_bar.size = Vector2(360, 16)
 	enemy_hp_bar.show_percentage = false
 	enemy_hp_bar.add_theme_stylebox_override("background", _create_hp_bar_bg())
-	enemy_hp_bar.add_theme_stylebox_override("fill", _create_hp_bar_fill())
+	if is_elite_enemy:
+		enemy_hp_bar.add_theme_stylebox_override("fill", _create_elite_hp_bar_fill())
+	else:
+		enemy_hp_bar.add_theme_stylebox_override("fill", _create_hp_bar_fill())
 	enemy_panel.add_child(enemy_hp_bar)
 
 	battle_enemy_hp_label = Label.new()
@@ -3529,7 +3581,10 @@ func _create_battle_ui():
 	battle_log = Label.new()
 	battle_log.position = Vector2(15, 15)
 	battle_log.size = Vector2(370, 130)
-	battle_log.text = ">>> 战斗开始！\n"
+	if is_elite_enemy:
+		battle_log.text = ">>> ⚠️精英战斗！\n"
+	else:
+		battle_log.text = ">>> 战斗开始！\n"
 	battle_log.add_theme_color_override("font_color", Color(0.85, 0.85, 0.75))
 	battle_log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	log_panel.add_child(battle_log)
@@ -4157,6 +4212,16 @@ func _create_hp_bar_bg() -> StyleBoxFlat:
 func _create_hp_bar_fill() -> StyleBoxFlat:
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0.85, 0.15, 0.15)
+	style.corner_radius_top_left = 2
+	style.corner_radius_top_right = 2
+	style.corner_radius_bottom_right = 2
+	style.corner_radius_bottom_left = 2
+	return style
+
+func _create_elite_hp_bar_fill() -> StyleBoxFlat:
+	# 精英敌人HP条 - 金色渐变
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.7, 0.1)  # 金色
 	style.corner_radius_top_left = 2
 	style.corner_radius_top_right = 2
 	style.corner_radius_bottom_right = 2
