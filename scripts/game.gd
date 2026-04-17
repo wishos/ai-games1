@@ -7797,10 +7797,21 @@ func save_game(slot: int) -> bool:
 			"weapon_enhance": player_data.weapon_enhance,
 			"armor_enhance": player_data.armor_enhance,
 			"accessory_enhance": player_data.accessory_enhance,
-			"inventory": player_data.inventory
+			"inventory": player_data.inventory,
+			"quest_log": player_data.quest_log,
+			"completed_quests": player_data.completed_quests
 		},
 		"progress": {
 			"current_floor": current_floor
+		},
+		"game_state": {
+			"bard_legendary_song_atk_boost": bard_legendary_song_atk_boost,
+			"bard_legendary_song_def_boost": bard_legendary_song_def_boost,
+			"skill_cooldowns": skill_cooldowns,
+			"summoner_fusion_active": summoner_fusion_active,
+			"summoner_fusion_turns": summoner_fusion_turns,
+			"summoner_fusion_power": summoner_fusion_power,
+			"summoner_fusion_hp": summoner_fusion_hp
 		}
 	}
 
@@ -7865,10 +7876,22 @@ func load_game(slot: int) -> bool:
 	player_data.armor_enhance = pdata.get("armor_enhance", 0)
 	player_data.accessory_enhance = pdata.get("accessory_enhance", 0)
 	player_data.inventory = pdata.get("inventory", [])
+	player_data.quest_log = pdata.get("quest_log", [])
+	player_data.completed_quests = pdata.get("completed_quests", [])
 
 	# 恢复进度
 	var prog = save_data.get("progress", {})
 	current_floor = prog.get("current_floor", 1)
+
+	# 恢复游戏状态（吟游诗人永久增益/技能冷却/召唤融合）
+	var gst = save_data.get("game_state", {})
+	bard_legendary_song_atk_boost = gst.get("bard_legendary_song_atk_boost", 0)
+	bard_legendary_song_def_boost = gst.get("bard_legendary_song_def_boost", 0)
+	skill_cooldowns = gst.get("skill_cooldowns", {})
+	summoner_fusion_active = gst.get("summoner_fusion_active", false)
+	summoner_fusion_turns = gst.get("summoner_fusion_turns", 0)
+	summoner_fusion_power = gst.get("summoner_fusion_power", 0)
+	summoner_fusion_hp = gst.get("summoner_fusion_hp", 0)
 
 	show_message("📂 读档成功！%s Lv.%d" % [player_data.get_job_name(), player_data.level])
 	if audio_manager:

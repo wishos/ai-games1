@@ -2486,3 +2486,15 @@ player_data.completed_quests = pdata.get("completed_quests", [])
 
 **Git 状态**: 无需提交 — 无新问题，既有问题已在 2026-04-17 06:03 审查中记录
 
+### 审查记录 - 2026-04-17 23:25
+
+本次审查修复（4个P2/P3问题 — 存档数据完整性）：
+- **✅ 编译通过**: Godot `--headless --check-only --quit` exit code 0，无语法错误
+- **✅ P2 (已修复)**: `quest_log`/`completed_quests` 未保存进存档 — 已在 `save_game()` 的 `player` 字典中新增这两个字段，`load_game()` 中恢复
+- **✅ P2 (已修复)**: 吟游诗人「传奇之歌」永久增益 (`bard_legendary_song_atk_boost`/`def_boost`) 未保存 — 已在 `game_state` 字典中新增，load时恢复
+- **✅ P2 (已修复)**: `skill_cooldowns` 未保存进存档 — 已在 `game_state` 字典中保存并恢复
+- **✅ P3 (已修复)**: 召唤师融合状态 (`summoner_fusion_active/turns/power/hp`) 未保存进存档 — 已在 `game_state` 字典中保存并恢复
+- **文件行数**: game.gd 当前约 **8050 行**
+
+**Git状态**: 提交中（fix: 修复CODE_REVIEW存档数据完整性 P2×3 P3×1）
+
