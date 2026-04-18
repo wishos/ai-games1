@@ -186,6 +186,7 @@ var warrior_conqueror_fear_atkdebuff: int = 0  # 征服者怒吼：ATK降低量
 # 技能冷却系统
 var skill_cooldowns: Dictionary = {}  # {skill_name: remaining_turns}
 var battle_started: bool = false     # 战斗是否已开始（用于陷阱被动）
+var enemy_hit_this_battle: bool = false  # 敌人本场战斗是否命中过玩家
 
 # 相机抖动
 var camera_shake_intensity: float = 0.0
@@ -299,6 +300,202 @@ const PALETTE = {
 	"gold": Color("#c9a227")
 }
 
+# ============================================================
+# 成就系统
+# ============================================================
+
+# 成就定义
+const ACHIEVEMENTS = {
+	# === 探索成就 ===
+	"first_step": {
+		"name": "初出茅庐",
+		"desc": "首次击败敌人",
+		"icon": "⚔️",
+		"category": "explore",
+		"condition": "enemies_defeated >= 1"
+	},
+	"slayer_10": {
+		"name": "江湖新秀",
+		"desc": "累计击败10个敌人",
+		"icon": "🗡️",
+		"category": "explore",
+		"condition": "enemies_defeated >= 10"
+	},
+	"slayer_50": {
+		"name": "江湖高手",
+		"desc": "累计击败50个敌人",
+		"icon": "🔪",
+		"category": "explore",
+		"condition": "enemies_defeated >= 50"
+	},
+	"slayer_100": {
+		"name": "一代宗师",
+		"desc": "累计击败100个敌人",
+		"icon": "🏆",
+		"category": "explore",
+		"condition": "enemies_defeated >= 100"
+	},
+	"floor_2": {
+		"name": "初窥门径",
+		"desc": "抵达第2层",
+		"icon": "🚪",
+		"category": "explore",
+		"condition": "max_floor_reached >= 2"
+	},
+	"floor_4": {
+		"name": "渐入佳境",
+		"desc": "抵达第4层",
+		"icon": "🌿",
+		"category": "explore",
+		"condition": "max_floor_reached >= 4"
+	},
+	"floor_6": {
+		"name": "登堂入室",
+		"desc": "抵达第6层",
+		"icon": "⛰️",
+		"category": "explore",
+		"condition": "max_floor_reached >= 6"
+	},
+	"floor_8": {
+		"name": "江湖至尊",
+		"desc": "抵达第8层（通关）",
+		"icon": "👑",
+		"category": "explore",
+		"condition": "max_floor_reached >= 8"
+	},
+	# === Boss成就 ===
+	"boss_1": {
+		"name": "首战告捷",
+		"desc": "击败山贼王·韩霸天",
+		"icon": "💀",
+		"category": "boss",
+		"condition": "bosses_defeated >= 1"
+	},
+	"boss_3": {
+		"name": "除暴安良",
+		"desc": "击败血刀门护法",
+		"icon": "🩸",
+		"category": "boss",
+		"condition": "bosses_defeated >= 2"
+	},
+	"boss_5": {
+		"name": "替天行道",
+		"desc": "击败门派叛徒",
+		"icon": "⚡",
+		"category": "boss",
+		"condition": "bosses_defeated >= 3"
+	},
+	"boss_7": {
+		"name": "武林盟主",
+		"desc": "击败华山掌门",
+		"icon": "🌟",
+		"category": "boss",
+		"condition": "bosses_defeated >= 4"
+	},
+	"boss_final": {
+		"name": "天下无敌",
+		"desc": "击败武当真人·张三丰，通关游戏",
+		"icon": "🏮",
+		"category": "boss",
+		"condition": "bosses_defeated >= 5"
+	},
+	# === 职业成就 ===
+	"warrior_win": {
+		"name": "战士之道",
+		"desc": "使用战士职业击败Boss",
+		"icon": "⚔️",
+		"category": "job",
+		"condition": "warrior_boss_wins >= 1"
+	},
+	"mage_win": {
+		"name": "法师之道",
+		"desc": "使用法师职业击败Boss",
+		"icon": "🔮",
+		"category": "job",
+		"condition": "mage_boss_wins >= 1"
+	},
+	"all_jobs": {
+		"name": "八大门派",
+		"desc": "使用全部8个职业各击败至少1个Boss",
+		"icon": "🎭",
+		"category": "job",
+		"condition": "unique_jobs_boss_wins >= 8"
+	},
+	# === 财富成就 ===
+	"rich_1000": {
+		"name": "小有身家",
+		"desc": "累计获得1000金币",
+		"icon": "💰",
+		"category": "wealth",
+		"condition": "total_gold_earned >= 1000"
+	},
+	"rich_5000": {
+		"name": "富甲一方",
+		"desc": "累计获得5000金币",
+		"icon": "💎",
+		"category": "wealth",
+		"condition": "total_gold_earned >= 5000"
+	},
+	"rich_10000": {
+		"name": "江湖首富",
+		"desc": "累计获得10000金币",
+		"icon": "👛",
+		"category": "wealth",
+		"condition": "total_gold_earned >= 10000"
+	},
+	# === 战斗成就 ===
+	"elite_slayer": {
+		"name": "精英猎手",
+		"desc": "击败3个精英敌人",
+		"icon": "⭐",
+		"category": "battle",
+		"condition": "elite_enemies_defeated >= 3"
+	},
+	"no_damage_floor": {
+		"name": "毫发无损",
+		"desc": "单层地牢不受到任何伤害通关",
+		"icon": "🌟",
+		"category": "battle",
+		"condition": "no_damage_floors >= 1"
+	},
+	"perfect_victory": {
+		"name": "完美胜利",
+		"desc": "在敌人未命中任何攻击的情况下击败敌人",
+		"icon": "✨",
+		"category": "battle",
+		"condition": "perfect_victories >= 1"
+	},
+	# === 特殊成就 ===
+	"level_10": {
+		"name": "小有所成",
+		"desc": "角色等级达到10级",
+		"icon": "📈",
+		"category": "special",
+		"condition": "max_level_reached >= 10"
+	},
+	"level_20": {
+		"name": "登峰造极",
+		"desc": "角色等级达到20级",
+		"icon": "📊",
+		"category": "special",
+		"condition": "max_level_reached >= 20"
+	},
+	"all_quests": {
+		"name": "江湖游侠",
+		"desc": "累计完成10个任务",
+		"icon": "📜",
+		"category": "special",
+		"condition": "quests_completed >= 10"
+	},
+	"shop_master": {
+		"name": "挥金如土",
+		"desc": "在商店消费累计5000金币",
+		"icon": "🛒",
+		"category": "special",
+		"condition": "total_gold_spent >= 5000"
+	}
+}
+
 # Boss数据 (第1/3/5/7/8层) - 武侠江湖主题
 const BOSS_DATA = {
 	1: {
@@ -398,6 +595,37 @@ const ENEMY_SKILLS = {
 var is_transitioning: bool = false
 var transition_overlay: ColorRect
 var current_boss_data: Dictionary = {}
+
+# ============================================================
+# 成就统计变量
+# ============================================================
+var achievement_stats: Dictionary = {
+	"enemies_defeated": 0,
+	"bosses_defeated": 0,
+	"elite_enemies_defeated": 0,
+	"max_floor_reached": 1,
+	"total_gold_earned": 0,
+	"total_gold_spent": 0,
+	"perfect_victories": 0,
+	"no_damage_floors": 0,
+	"max_level_reached": 1,
+	"quests_completed": 0,
+	"warrior_boss_wins": 0,
+	"mage_boss_wins": 0,
+	"hunter_boss_wins": 0,
+	"thief_boss_wins": 0,
+	"priest_boss_wins": 0,
+	"knight_boss_wins": 0,
+	"bard_boss_wins": 0,
+	"summoner_boss_wins": 0,
+	"unique_jobs_boss_wins": 0
+}
+var unlocked_achievements: Array = []  # 已解锁成就ID列表
+var achievement_notification_ui: Control = null  # 成就通知UI
+var achievement_log_open: bool = false
+var achievement_log_ui: Control = null
+var achievement_log_buttons: Array = []
+var _floor_damage_taken: int = 0  # 本层受到的伤害（用于计算无伤通关成就）
 var boss_phase: int = 1  # Boss战阶段
 var boss_enraged: bool = false  # Boss狂暴标记
 var boss_shield_stacks: int = 0  # Boss护盾层数
@@ -589,7 +817,7 @@ func _show_title_screen():
 	var tip = Label.new()
 	tip.position = Vector2(0, 420)
 	tip.size = Vector2(1000, 25)
-	tip.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · 任务(Q) · F2存档"
+	tip.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · 任务(Q) · 成就(K) · F2存档"
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
 	tip.add_theme_font_size_override("font_size", 13)
@@ -616,6 +844,26 @@ func _on_job_selected(job_id: int):
 
 	# 设置职业
 	_setup_player_data(job_id)
+	# 重置成就统计（新游戏）
+	achievement_stats = {
+		"enemies_defeated": 0,
+		"bosses_defeated": 0,
+		"elite_enemies_defeated": 0,
+		"max_floor_reached": 1,
+		"total_gold_earned": 0,
+		"total_gold_spent": 0,
+		"perfect_victories": 0,
+		"no_damage_floors": 0,
+		"max_level_reached": 1,
+		"quests_completed": 0,
+		"warrior_boss_wins": 0, "mage_boss_wins": 0,
+		"hunter_boss_wins": 0, "thief_boss_wins": 0,
+		"priest_boss_wins": 0, "knight_boss_wins": 0,
+		"bard_boss_wins": 0, "summoner_boss_wins": 0,
+		"unique_jobs_boss_wins": 0
+	}
+	unlocked_achievements = []
+	_floor_damage_taken = 0
 	_setup_ui()
 	_generate_map()
 	_setup_walls()
@@ -696,7 +944,7 @@ func _setup_ui():
 	# 提示操作
 	var hint_label = Label.new()
 	hint_label.position = Vector2(1070, 80)
-	hint_label.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · 任务(Q) · F2存档"
+	hint_label.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · 任务(Q) · 成就(K) · F2存档"
 	hint_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	add_child(hint_label)
 
@@ -792,7 +1040,7 @@ func _setup_player():
 	player.add_child(col)
 
 	add_child(player)
-	show_message("WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · 任务(Q) · F2存档")
+	show_message("WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · 任务(Q) · 成就(K) · F2存档")
 
 
 func _load_job_texture(job: int) -> Texture2D:
@@ -1244,6 +1492,16 @@ func _process_explore(delta):
 		_close_quest_log()
 		return
 
+	# 成就日志 (K键)
+	if Input.is_key_pressed(KEY_K) and is_player_turn and not achievement_log_open and game_state == State.EXPLORE:
+		_open_achievement_log()
+		return
+
+	# 关闭成就日志 (K键或ESC)
+	if achievement_log_open and (Input.is_key_pressed(KEY_K) or Input.is_key_pressed(KEY_ESCAPE)):
+		_close_achievement_log()
+		return
+
 	_update_ui()
 	_update_minimap()
 
@@ -1275,6 +1533,18 @@ func _next_floor():
 	current_floor += 1
 	player.position = Vector2(640, 400)
 	_check_quest_objectives("explore_floor", {"floor": current_floor})
+
+	# 成就追踪：探索新层
+	if current_floor > achievement_stats["max_floor_reached"]:
+		achievement_stats["max_floor_reached"] = current_floor
+
+		# 检查无伤通关成就（从上一层切换时检测）
+		if _floor_damage_taken == 0 and current_floor > 1:
+			achievement_stats["no_damage_floors"] += 1
+
+		# 重置本层受伤计数
+		_floor_damage_taken = 0
+	_check_achievements()
 	player_tile_x = 40
 	player_tile_y = 25
 	for key in fog_map:
@@ -2030,6 +2300,220 @@ func _trigger_accepted_quests():
 				player_data.gold += rewards["gold"]
 			# 标记奖励已领取
 			quest["reward_claimed"] = true
+			# 更新成就统计
+			achievement_stats["quests_completed"] += 1
+			_check_achievements()
+
+# ==================== 成就系统 ====================
+
+func _check_achievements():
+	"""检查所有成就是否达成"""
+	for ach_id in ACHIEVEMENTS.keys():
+		if ach_id in unlocked_achievements:
+			continue  # 已解锁
+		var ach = ACHIEVEMENTS[ach_id]
+		var cond = ach["condition"]
+		if _eval_achievement_condition(cond):
+			_unlock_achievement(ach_id)
+
+func _eval_achievement_condition(cond: String) -> bool:
+	"""求值成就条件表达式"""
+	# 解析形如 "enemies_defeated >= 10" 的表达式
+	var parts = cond.split(" ")
+	if parts.size() < 3:
+		return false
+	var stat_name = parts[0]
+	var op = parts[1]
+	var threshold = int(parts[2])
+	var value = achievement_stats.get(stat_name, 0)
+	match op:
+		">=":
+			return value >= threshold
+		"==":
+			return value == threshold
+		">":
+			return value > threshold
+		"<":
+			return value < threshold
+	return false
+
+func _unlock_achievement(ach_id: String):
+	"""解锁成就并显示通知"""
+	if ach_id in unlocked_achievements:
+		return
+	unlocked_achievements.append(ach_id)
+	var ach = ACHIEVEMENTS[ach_id]
+	_show_achievement_notification(ach)
+
+func _show_achievement_notification(ach: Dictionary):
+	"""显示成就解锁通知（屏幕中央弹出）"""
+	# 移除已有通知
+	if achievement_notification_ui != null:
+		achievement_notification_ui.queue_free()
+	achievement_notification_ui = Control.new()
+	achievement_notification_ui.name = "AchievementNotification"
+	achievement_notification_ui.set_anchors_preset(Control.PRESET_CENTER)
+	achievement_notification_ui.position = Vector2(-200, -40)
+	achievement_notification_ui.size = Vector2(400, 80)
+	add_child(achievement_notification_ui)
+
+	var panel = Panel.new()
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	panel.self_modulate = Color(0.05, 0.04, 0.02, 0.97)
+	var ps = StyleBoxFlat.new()
+	ps.bg_color = Color(0.05, 0.04, 0.02, 0.97)
+	ps.border_color = PALETTE.gold
+	ps.border_width_left = 2
+	ps.border_width_right = 2
+	ps.border_width_top = 2
+	ps.border_width_bottom = 2
+	panel.add_theme_stylebox_override("panel", ps)
+	achievement_notification_ui.add_child(panel)
+
+	var icon_lbl = Label.new()
+	icon_lbl.set_anchors_preset(Control.PRESET_CENTER)
+	icon_lbl.position = Vector2(-165, 0)
+	icon_lbl.text = ach["icon"]
+	icon_lbl.add_theme_font_size_override("font_size", 28)
+	panel.add_child(icon_lbl)
+
+	var name_lbl = Label.new()
+	name_lbl.set_anchors_preset(Control.PRESET_CENTER)
+	name_lbl.position = Vector2(-10, -15)
+	name_lbl.text = "🏆 成就解锁: " + ach["name"]
+	name_lbl.add_theme_color_override("font_color", PALETTE.gold)
+	name_lbl.add_theme_font_size_override("font_size", 16)
+	panel.add_child(name_lbl)
+
+	var desc_lbl = Label.new()
+	desc_lbl.set_anchors_preset(Control.PRESET_CENTER)
+	desc_lbl.position = Vector2(-10, 12)
+	desc_lbl.text = ach["desc"]
+	desc_lbl.add_theme_color_override("font_color", Color(0.75, 0.75, 0.65))
+	desc_lbl.add_theme_font_size_override("font_size", 13)
+	panel.add_child(desc_lbl)
+
+	# 3秒后自动消失
+	var tween = create_tween()
+	tween.tween_interval(3.0)
+	tween.tween_callback(Callable(self, "_dismiss_achievement_notification"))
+
+func _dismiss_achievement_notification():
+	if achievement_notification_ui != null:
+		achievement_notification_ui.queue_free()
+		achievement_notification_ui = null
+
+func _open_achievement_log():
+	if achievement_log_open:
+		return
+	achievement_log_open = true
+	if minimap_container:
+		minimap_container.visible = false
+	_create_achievement_log_ui()
+	show_message("成就 (按 K 或 ESC 关闭)")
+
+func _close_achievement_log():
+	if achievement_log_ui != null:
+		achievement_log_ui.queue_free()
+		achievement_log_ui = null
+	for btn in achievement_log_buttons:
+		if btn != null and is_instance_valid(btn):
+			btn.queue_free()
+	achievement_log_buttons.clear()
+	achievement_log_open = false
+	if minimap_container:
+		minimap_container.visible = true
+	show_message("")
+
+func _create_achievement_log_ui():
+	if achievement_log_ui != null:
+		achievement_log_ui.queue_free()
+	achievement_log_buttons.clear()
+
+	achievement_log_ui = Control.new()
+	achievement_log_ui.name = "AchievementLogUI"
+	achievement_log_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(achievement_log_ui)
+
+	var overlay = ColorRect.new()
+	overlay.size = SCREEN_SIZE
+	overlay.color = Color(0, 0, 0, 0.82)
+	overlay.gui_input.connect(_on_achievement_overlay_click)
+	achievement_log_ui.add_child(overlay)
+
+	var ach_panel = Panel.new()
+	ach_panel.name = "AchievementPanel"
+	ach_panel.position = Vector2(280, 50)
+	ach_panel.size = Vector2(720, 660)
+	ach_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
+	var ps = StyleBoxFlat.new()
+	ps.bg_color = Color(0.04, 0.04, 0.08, 0.95)
+	ps.border_color = PALETTE.gold
+	ps.border_width_left = 2
+	ps.border_width_right = 2
+	ps.border_width_top = 2
+	ps.border_width_bottom = 2
+	ach_panel.add_theme_stylebox_override("panel", ps)
+	achievement_log_ui.add_child(ach_panel)
+
+	var title = Label.new()
+	title.position = Vector2(20, 15)
+	title.text = "🏆 成就 (%d/%d)" % [unlocked_achievements.size(), ACHIEVEMENTS.size()]
+	title.add_theme_color_override("font_color", PALETTE.gold)
+	title.add_theme_font_size_override("font_size", 22)
+	ach_panel.add_child(title)
+
+	# 成就列表（滚动区域）
+	var scroll = ScrollContainer.new()
+	scroll.name = "AchievementScroll"
+	scroll.position = Vector2(20, 55)
+	scroll.size = Vector2(680, 585)
+	ach_panel.add_child(scroll)
+
+	var list_container = VBoxContainer.new()
+	list_container.name = "ListContainer"
+	scroll.add_child(list_container)
+
+	var y_offset = 10
+	for ach_id in ACHIEVEMENTS.keys():
+		var ach = ACHIEVEMENTS[ach_id]
+		var unlocked = ach_id in unlocked_achievements
+		var row = HBoxContainer.new()
+		row.name = "AchRow_" + ach_id
+		list_container.add_child(row)
+
+		var icon_lbl = Label.new()
+		icon_lbl.text = ach["icon"]
+		icon_lbl.add_theme_font_size_override("font_size", 20)
+		icon_lbl.custom_minimum_size = Vector2(40, 30)
+		row.add_child(icon_lbl)
+
+		var name_lbl = Label.new()
+		name_lbl.text = ach["name"]
+		name_lbl.add_theme_color_override("font_color", PALETTE.gold if unlocked else Color(0.3, 0.3, 0.3))
+		name_lbl.add_theme_font_size_override("font_size", 14)
+		name_lbl.custom_minimum_size = Vector2(160, 0)
+		row.add_child(name_lbl)
+
+		var desc_lbl = Label.new()
+		desc_lbl.text = ach["desc"]
+		desc_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.5) if unlocked else Color(0.25, 0.25, 0.25))
+		desc_lbl.add_theme_font_size_override("font_size", 13)
+		desc_lbl.custom_minimum_size = Vector2(320, 0)
+		row.add_child(desc_lbl)
+
+		var status_lbl = Label.new()
+		status_lbl.text = "✓" if unlocked else "🔒"
+		status_lbl.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3) if unlocked else Color(0.3, 0.3, 0.3))
+		status_lbl.add_theme_font_size_override("font_size", 16)
+		status_lbl.custom_minimum_size = Vector2(30, 0)
+		row.add_child(status_lbl)
+
+		y_offset += 35
+
+func _on_achievement_overlay_click(event: InputEvent):
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_close_achievement_log()
 
 # ==================== 任务日志系统 ====================
 
@@ -2621,6 +3105,7 @@ func _on_shop_item_clicked(item: Dictionary):
 			show_message("金钱不足！")
 			return
 		player_data.gold -= item["price"]
+		achievement_stats["total_gold_spent"] += item["price"]
 		var found = false
 		for inv in player_data.inventory:
 			if inv.get("type") == item["name"]:
@@ -2633,7 +3118,8 @@ func _on_shop_item_clicked(item: Dictionary):
 		if audio_manager:
 			audio_manager.play_sfx("purchase")
 		_update_shop_ui()
-		return
+	_check_achievements()
+	return
 
 	# 强化材料购买
 	if item.has("material"):
@@ -2641,6 +3127,7 @@ func _on_shop_item_clicked(item: Dictionary):
 			show_message("金钱不足！")
 			return
 		player_data.gold -= item["price"]
+		achievement_stats["total_gold_spent"] += item["price"]
 		var mat_name = item["material"]
 		var found = false
 		for inv in player_data.inventory:
@@ -2654,6 +3141,7 @@ func _on_shop_item_clicked(item: Dictionary):
 		if audio_manager:
 			audio_manager.play_sfx("purchase")
 		_update_shop_ui()
+		_check_achievements()
 		return
 
 	# 装备：显示比较面板
@@ -2834,6 +3322,7 @@ func _confirm_equipment_purchase():
 		return
 
 	player_data.gold -= item["price"]
+	achievement_stats["total_gold_spent"] += item["price"]
 	match selected_shop_tab:
 		0: player_data.weapon = item
 		1: player_data.armor = item
@@ -2844,6 +3333,7 @@ func _confirm_equipment_purchase():
 	_close_compare_panel()
 	_update_shop_ui()
 	_update_ui()
+	_check_achievements()
 
 func _close_compare_panel():
 	_selected_shop_item = {}
@@ -3007,6 +3497,7 @@ func _on_enhance_clicked(slot: String):
 
 	# 扣钱扣材料
 	player_data.gold -= cost
+	achievement_stats["total_gold_spent"] += cost
 	_remove_inventory_item(mat_name, mat_info[1])
 
 	# 判定成功率
@@ -3043,6 +3534,7 @@ func _on_enhance_clicked(slot: String):
 
 	_update_shop_ui()
 	_update_ui()
+	_check_achievements()
 
 func _calc_enhance_bonus(grade: int, enhance_level: int) -> int:
 	# 复刻 player.gd 中的强化属性加成计算
@@ -3095,6 +3587,7 @@ func _start_battle():
 	battle_cry_turns = 0
 	battle_cry_atk_boost = 0
 	battle_cry_team_boost = 0
+	enemy_hit_this_battle = false  # 重置本场战斗命中记录
 	# 法师T2状态重置
 	meteor_burn_turns = 0
 	meteor_burn_dmg = 0
@@ -5916,6 +6409,12 @@ func _spawn_player_damage(text: String, type: String = "damage"):
 	var player_panel = battle_ui.get_node_or_null("PlayerPanel")
 	if not player_panel:
 		return
+	# 追踪本层受到的伤害和本场战斗命中（用于成就）
+	if type == "damage" and text.is_valid_int():
+		var dmg_val = text.to_int()
+		if dmg_val > 0:
+			_floor_damage_taken += dmg_val
+			enemy_hit_this_battle = true  # 敌人命中了玩家
 	var base_pos = player_panel.position + Vector2(100, 60)
 	_spawn_floating_text(battle_ui, base_pos, text, FLOAT_COLORS.get(type, FLOAT_COLORS["damage"]), 1.2)
 
@@ -7455,6 +7954,33 @@ async func _check_battle_end() -> bool:
 		player_data.gold += gold_gain
 		_check_quest_objectives("defeat_enemy", {"enemy_id": current_enemy.get("id", ""), "enemy_name": current_enemy.get("name", ""), "floor": current_floor})
 
+		# 成就追踪
+		achievement_stats["enemies_defeated"] += 1
+		achievement_stats["total_gold_earned"] += gold_gain
+		if current_enemy.get("is_elite", false):
+			achievement_stats["elite_enemies_defeated"] += 1
+
+		# Boss击败成就
+		if current_enemy.get("is_boss", false):
+			achievement_stats["bosses_defeated"] += 1
+			var job_id = player_data.job
+			var job_boss_wins_key = ["warrior_boss_wins", "mage_boss_wins", "hunter_boss_wins", "thief_boss_wins", "priest_boss_wins", "knight_boss_wins", "bard_boss_wins", "summoner_boss_wins"][job_id]
+			achievement_stats[job_boss_wins_key] += 1
+
+			# 计算有多少个职业至少赢过一次Boss
+			var unique_jobs = 0
+			for k in ["warrior_boss_wins", "mage_boss_wins", "hunter_boss_wins", "thief_boss_wins", "priest_boss_wins", "knight_boss_wins", "bard_boss_wins", "summoner_boss_wins"]:
+				if achievement_stats[k] >= 1:
+					unique_jobs += 1
+			achievement_stats["unique_jobs_boss_wins"] = unique_jobs
+
+		# 完美胜利成就（敌人本回合没打中玩家）
+		if current_enemy.get("is_boss", false) == false and not enemy_hit_this_battle:
+			achievement_stats["perfect_victories"] += 1
+
+		# 无伤通关成就检测（如果本层没受伤且击败了本层所有敌人则由下楼梯时触发）
+		_check_achievements()
+
 		# Boss击败特殊提示
 		if current_enemy.get("is_boss", false):
 			_battle_add_log("🏆⭐ BOSS击破！⭐+%d EXP，+%d 金币！" % [exp_gain, gold_gain])
@@ -7576,6 +8102,10 @@ func _exp_check():
 		_battle_add_log("⬆️ 升级！Lv.%d → Lv.%d" % [player_data.level - 1, player_data.level])
 		if audio_manager:
 			audio_manager.play_sfx("levelup")
+		# 成就追踪：最高等级
+		if player_data.level > achievement_stats["max_level_reached"]:
+			achievement_stats["max_level_reached"] = player_data.level
+		_check_achievements()
 	show_message("升级了！Lv.%d" % player_data.level)
 
 # 肖像动画更新（每帧调用）
@@ -7812,6 +8342,10 @@ func save_game(slot: int) -> bool:
 			"summoner_fusion_turns": summoner_fusion_turns,
 			"summoner_fusion_power": summoner_fusion_power,
 			"summoner_fusion_hp": summoner_fusion_hp
+		},
+		"achievements": {
+			"stats": achievement_stats,
+			"unlocked": unlocked_achievements
 		}
 	}
 
@@ -7892,6 +8426,17 @@ func load_game(slot: int) -> bool:
 	summoner_fusion_turns = gst.get("summoner_fusion_turns", 0)
 	summoner_fusion_power = gst.get("summoner_fusion_power", 0)
 	summoner_fusion_hp = gst.get("summoner_fusion_hp", 0)
+
+	# 恢复成就数据
+	var ach_data = save_data.get("achievements", {})
+	achievement_stats = ach_data.get("stats", achievement_stats.duplicate(true))
+	unlocked_achievements = ach_data.get("unlocked", [])
+	_floor_damage_taken = 0  # 重置本层受伤计数
+
+	# 关闭可能残留的通知UI
+	if achievement_notification_ui:
+		achievement_notification_ui.queue_free()
+		achievement_notification_ui = null
 
 	show_message("📂 读档成功！%s Lv.%d" % [player_data.get_job_name(), player_data.level])
 	if audio_manager:
