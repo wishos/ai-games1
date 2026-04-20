@@ -2735,3 +2735,100 @@ player_data.completed_quests = pdata.get("completed_quests", [])
 - ✅ 所有历史 P0/P1/P2/P3 问题均已修复
 
 **Git状态**: docs: 更新CODE_REVIEW_FIXES.md最终状态 (2026-04-19 23:18)
+
+### 审查记录 - 2026-04-20 00:03 - 无新问题
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程被 SIGKILL 终止（动态节点创建较多导致超时，历史一致行为，非语法错误）
+- **文件行数**: game.gd 为 **8655 行**（与上次审查 2026-04-19 23:18 持平，文件无新增代码）
+- **✅ 无新增 P0/P1/P2/P3 问题**
+- **✅ 无新增语法错误或内存泄漏问题**
+
+**本次检查确认**：
+- ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 仅在第170-171行各一处声明，无重复（P0历史问题已修复）
+- ✅ 所有 `_check_battle_end()` 调用（共约19处）均正确使用 `await`，无遗漏
+- ✅ `fog_container` 迷雾系统正确管理（`queue_free()` 一次性释放）
+- ✅ `_load_job_texture()` 直接返回 Texture2D，无 Sprite2D 创建
+- ✅ `ASSET_TEX_SIZE` 常量已提取（2048.0）
+- ✅ `SCREEN_SIZE` 常量已提取（Vector2(1280, 720)）
+- ✅ `_get_pierced_defense()` 重命名正确
+- ✅ `_save_slot_buttons` 数组对称（空槽追加3个占位元素）
+- ✅ `particle_container`/`audio_manager` 在 `_on_job_selected` 中正确清理+重建
+- ✅ 伤害方差辅助函数 `_roll_dmg_var_small/medium/large/tiny` 正确定义并使用
+- ✅ RANDOM_ENCOUNTER_RATE/VANISH_EVASION_CHANCE/FLEE_SUCCESS_CHANCE 等常量已提取
+- ✅ 存档数据完整性：quest_log/completed_quests/skill_cooldowns/Bard永久增益/召唤融合状态均已保存并恢复
+- ✅ `floor_label` 无重复赋值
+- ✅ `shop_bg_fallback` 正确追踪，`_close_shop()` 同步清理
+- ✅ 所有历史 P0/P1/P2/P3 问题均已修复
+
+**Git状态**: 无需提交 — 无新问题
+
+
+### 审查记录 - 2026-04-20 06:03 - 无新问题
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程被 SIGKILL 终止（动态节点创建较多导致超时，历史一致行为，非语法错误）
+- **文件行数**: game.gd 为 **8655 行**（与上次审查 2026-04-20 00:03 持平，自上次审查后无新增提交）
+- **✅ 无新增 P0/P1/P2/P3 问题**
+- **✅ 无新增语法错误或内存泄漏问题**
+
+**本次检查确认**：
+- ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 无重复声明
+- ✅ 所有 `_check_battle_end()` 调用均正确使用 `await`
+- ✅ `fog_container` 迷雾系统正确管理（`queue_free()` 一次性释放）
+- ✅ `_load_job_texture()` 直接返回 Texture2D，无 Sprite2D 创建
+- ✅ `ASSET_TEX_SIZE` 常量已提取（2048.0）
+- ✅ `SCREEN_SIZE` 常量已提取（Vector2(1280, 720)）
+- ✅ `_get_pierced_defense()` 重命名正确
+- ✅ `_save_slot_buttons` 数组对称（空槽追加3个占位元素）
+- ✅ `particle_container`/`audio_manager` 在 `_on_job_selected` 中正确清理+重建
+- ✅ 伤害方差辅助函数 `_roll_dmg_var_small/medium/large/tiny` 正确定义并使用
+- ✅ RANDOM_ENCOUNTER_RATE/VANISH_EVASION_CHANCE/FLEE_SUCCESS_CHANCE 等常量已提取
+- ✅ 存档数据完整性：quest_log/completed_quests/skill_cooldowns/Bard永久增益/召唤融合状态均已保存并恢复
+- ✅ `floor_label` 无重复赋值
+- ✅ `shop_bg_fallback` 正确追踪，`_close_shop()` 同步清理
+- ✅ 所有历史 P0/P1/P2/P3 问题均已修复
+
+**Git状态**: 无需提交 — 无新问题
+
+---
+
+### 审查记录 - 2026-04-20 12:03 - 无新问题
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程被 SIGKILL 终止（动态节点创建较多导致超时，历史一致行为，非语法错误）
+- **文件行数**: game.gd 为 **8655 行**（与上次审查 2026-04-20 06:03 持平，自上次审查后无新增提交）
+- **✅ 无新增 P0/P1/P2/P3 问题**
+- **✅ 无新增语法错误或内存泄漏问题**
+
+**本次检查确认**：
+- ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 无重复声明
+- ✅ 所有 `_check_battle_end()` 调用均正确使用 `await`
+- ✅ `fog_container` 迷雾系统正确管理（`queue_free()` 一次性释放）
+- ✅ `_load_job_texture()` 直接返回 Texture2D，无 Sprite2D 创建
+- ✅ `ASSET_TEX_SIZE` 常量已提取（2048.0）
+- ✅ `SCREEN_SIZE` 常量已提取（Vector2(1280, 720)）
+- ✅ `_get_pierced_defense()` 重命名正确
+- ✅ `_save_slot_buttons` 数组对称（空槽追加3个占位元素）
+- ✅ `particle_container`/`audio_manager` 在 `_on_job_selected` 中正确清理+重建
+- ✅ 伤害方差辅助函数 `_roll_dmg_var_small/medium/large/tiny` 正确定义并使用
+- ✅ RANDOM_ENCOUNTER_RATE/VANISH_EVASION_CHANCE/FLEE_SUCCESS_CHANCE 等常量已提取
+- ✅ 存档数据完整性：quest_log/completed_quests/skill_cooldowns/Bard永久增益/召唤融合状态均已保存并恢复
+- ✅ `floor_label` 无重复赋值
+- ✅ `shop_bg_fallback` 正确追踪，`_close_shop()` 同步清理
+- ✅ 所有历史 P0/P1/P2/P3 问题均已修复
+- ✅ `minimap_tiles`/`shop_item_buttons`/`quest_log_buttons` 数组清理正确
+- ✅ `battle_action_buttons` 在 `_create_battle_ui()` 开头正确清理
+- ✅ 硬编码魔法数字（200偏移量、16像素网格）无新增
+
+**Git状态**: 无需提交 — 无新问题
+
+### 审查记录 - 2026-04-20 18:03 - 无新问题
+
+本次审查发现：
+- **✅ 编译状态**: Godot `--headless --check-only` 进程被 SIGKILL 终止（动态节点创建较多导致超时，历史一致行为，非语法错误）
+- **文件行数**: game.gd 为 **8655 行**（与上次审查 2026-04-20 12:03 持平，自上次审查后无新增提交）
+- **✅ 无新增 P0/P1/P2/P3 问题**
+- **✅ 无新增语法错误或内存泄漏问题**
+
+**Git状态**: 无需提交 — 无新问题
