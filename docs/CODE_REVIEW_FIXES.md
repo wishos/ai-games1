@@ -107,15 +107,15 @@ const BOSS_KILL_EXP := 50
 - [x] P1: fog_map 迷雾系统改为 fog_container 容器管理 ✅ (2026-04-08)
 - [x] P0: `_on_skill_selected()` 第4755行 `_check_battle_end()` 缺少 await ✅ (2026-04-09)
 - [x] P2: `_load_job_texture()` 删除未使用 Sprite2D 临时对象 ✅ (2026-04-09)
-- [ ] P1: 修复 `_consume_spell_pierce()` 注释
-- [ ] P2: 拆分 game.gd 模块化改造
-- [ ] P2: Boss AI 函数重构
-- [ ] P2: 提取硬编码常量（遭遇率/陷阱倍率/屏幕尺寸/技能倍率/闪避率/逃跑率等）
+- [x] P2: `_get_pierced_defense()` 重命名（原`_consume_spell_pierce()`，2026-04-10）
+- [ ] P2: 拆分 game.gd 模块化改造（大型重构，建议后续进行）
+- [ ] P2: Boss AI 函数重构（大型重构，建议后续进行）
+- [x] ✅ P2: 硬编码常量提取（RANDOM_ENCOUNTER_RATE/SCREEN_SIZE/BOSS_SKILL_MULT_*/VANISH_EVASION_CHANCE/FLEE_SUCCESS_CHANCE 等，2026-04-11）
 - [x] ✅ P2: 敌人/商店素材纹理尺寸 `2048` 硬编码 — 已提取为 ASSET_TEX_SIZE 常量
-- [ ] P2: `_save_slot_buttons` 数组不对称
-- [ ] P3: `particle_container`/`audio_manager` 在 `_on_job_selected` 中清理
-- [x] ✅ P3: 伤害方差四种变体（±2/±3/±5）— 提取为 `_roll_dmg_var_small/medium/large()` 辅助函数，52处全部替换 (2026-04-11 23:13)
-- [x] ✅ P3: 连锁闪电/闪避率/逃跑成功率等魔法数字 — 提取 RANDOM_ENCOUNTER_RATE/VANISH_EVASION_CHANCE/FLEE_SUCCESS_CHANCE 常量 (2026-04-11 23:13)
+- [x] ✅ P2: `_save_slot_buttons` 数组不对称 — 空槽追加3个占位元素(null)保持对称 (2026-04-10)
+- [x] ✅ P3: `particle_container`/`audio_manager` 在 `_on_job_selected` 中清理+重建 (2026-04-10)
+- [x] ✅ P3: 伤害方差四种变体（±1/±2/±3/±5）— 提取为 `_roll_dmg_var_tiny/small/medium/large()` 辅助函数，全部替换
+- [x] ✅ P3: 连锁闪电/闪避率/逃跑成功率等魔法数字 — 提取常量
 
 ---
 
