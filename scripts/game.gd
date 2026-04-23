@@ -675,6 +675,14 @@ func _setup_audio():
 	# 播放标题音乐
 	audio_manager.play_bgm("title")
 
+# ==================== 标题画面系统 ====================
+# 标题画面子状态
+enum TitleState { MAIN_MENU, SLOT_SELECT, HOW_TO_PLAY, CLASS_SELECT, SLOT_CONFIRM }
+var _title_state: TitleState = TitleState.MAIN_MENU
+var _slot_select_is_new_game: bool = true  # true=新的江湖, false=继续游戏
+var _confirm_slot: int = -1  # 确认覆盖的存档槽
+var _init_slot: int = 0      # 当前选择的存档槽
+
 func _show_title_screen():
 	# 全屏背景
 	var bg = ColorRect.new()
@@ -720,15 +728,700 @@ func _show_title_screen():
 	subtitle.add_theme_font_size_override("font_size", 14)
 	title_panel.add_child(subtitle)
 
-	# 选择职业标签
-	var select_label = Label.new()
-	select_label.position = Vector2(0, 115)
-	select_label.size = Vector2(1000, 35)
-	select_label.text = "━━━━━━  选择你的职业  ━━━━━━"
-	select_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	select_label.add_theme_color_override("font_color", Color(0.7, 0.6, 0.3))
-	select_label.add_theme_font_size_override("font_size", 16)
-	title_panel.add_child(select_label)
+	_title_state = TitleState.MAIN_MENU
+	_show_main_menu(title_panel)
+
+func _show_main_menu(parent: Panel):
+	# 清空现有子节点
+	for child in parent.get_children():
+		child.queue_free()
+
+	# 装饰线
+	var sep1 = Label.new()
+	sep1.position = Vector2(0, 100)
+	sep1.size = Vector2(1000, 20)
+	sep1.text = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	sep1.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sep1.add_theme_color_override("font_color", Color(0.4, 0.35, 0.2))
+	sep1.add_theme_font_size_override("font_size", 12)
+	parent.add_child(sep1)
+
+	# 版本信息
+	var version = Label.new()
+	version.position = Vector2(0, 580)
+	version.size = Vector2(1000, 25)
+	version.text = "v0.4 · 武侠Roguelike · HD-2D像素风格"
+	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	version.add_theme_color_override("font_color", Color(0.35, 0.35, 0.38))
+	version.add_theme_font_size_override("font_size", 12)
+	parent.add_child(version)
+
+	var credit = Label.new()
+	credit.position = Vector2(0, 605)
+	credit.size = Vector2(1000, 20)
+	credit.text = "制作: 张吉彬 · 引擎: Godot 4"
+	credit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	credit.add_theme_color_override("font_color", Color(0.3, 0.3, 0.33))
+	credit.add_theme_font_size_override("font_size", 11)
+	parent.add_child(credit)
+
+	# 菜单按钮
+	var menu_start_y = 140
+	var btn_w = 320
+	var btn_h = 60
+	var start_x = (1000 - btn_w) / 2
+
+	# 按钮1: 新的江湖
+	var new_btn = _create_menu_button("🗡️ 新的江湖", Vector2(start_x, menu_start_y), Vector2(btn_w, btn_h), PALETTE.gold)
+	new_btn.pressed.connect(_on_new_game_pressed)
+	parent.add_child(new_btn)
+
+	var new_desc = Label.new()
+	new_desc.position = Vector2(start_x + 20, menu_start_y + 62)
+	new_desc.size = Vector2(btn_w - 40, 20)
+	new_desc.text = "开始全新的江湖冒险"
+	new_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	new_desc.add_theme_color_override("font_color", Color(0.5, 0.5, 0.55))
+	new_desc.add_theme_font_size_override("font_size", 11)
+	parent.add_child(new_desc)
+
+	# 按钮2: 江湖旧梦（继续）
+	var has_any_save = has_save(0) or has_save(1) or has_save(2)
+	var cont_btn = _create_menu_button("📜 江湖旧梦", Vector2(start_x, menu_start_y + 100), Vector2(btn_w, btn_h), Color(0.3, 0.7, 0.9))
+	cont_btn.pressed.connect(_on_continue_pressed)
+	if not has_any_save:
+		# 无存档时显示为禁用
+		var disabled_style = StyleBoxFlat.new()
+		disabled_style.bg_color = Color(0.05, 0.05, 0.08, 0.8)
+		disabled_style.border_color = Color(0.2, 0.2, 0.25)
+		disabled_style.border_width_left = 1; disabled_style.border_width_top = 1
+		disabled_style.border_width_right = 1; disabled_style.border_width_bottom = 1
+		disabled_style.corner_radius_top_left = 5; disabled_style.corner_radius_top_right = 5
+		disabled_style.corner_radius_bottom_right = 5; disabled_style.corner_radius_bottom_left = 5
+		cont_btn.add_theme_stylebox_override("disabled", disabled_style)
+		cont_btn.disabled = true
+	parent.add_child(cont_btn)
+
+	var cont_desc = Label.new()
+	cont_desc.position = Vector2(start_x + 20, menu_start_y + 162)
+	cont_desc.size = Vector2(btn_w - 40, 20)
+	cont_desc.text = "继续上次的冒险" if has_any_save else "（暂无存档）"
+	cont_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cont_desc.add_theme_color_override("font_color", Color(0.4, 0.4, 0.45))
+	cont_desc.add_theme_font_size_override("font_size", 11)
+	parent.add_child(cont_desc)
+
+	# 按钮3: 江湖秘籍（游戏说明）
+	var how_btn = _create_menu_button("📖 江湖秘籍", Vector2(start_x, menu_start_y + 200), Vector2(btn_w, btn_h), Color(0.5, 0.8, 0.5))
+	how_btn.pressed.connect(_on_how_to_play_pressed)
+	parent.add_child(how_btn)
+
+	var how_desc = Label.new()
+	how_desc.position = Vector2(start_x + 20, menu_start_y + 262)
+	how_desc.size = Vector2(btn_w - 40, 20)
+	how_desc.text = "查看操作说明与游戏指南"
+	how_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	how_desc.add_theme_color_override("font_color", Color(0.5, 0.5, 0.55))
+	how_desc.add_theme_font_size_override("font_size", 11)
+	parent.add_child(how_desc)
+
+	# 装饰线
+	var sep2 = Label.new()
+	sep2.position = Vector2(0, 340)
+	sep2.size = Vector2(1000, 20)
+	sep2.text = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	sep2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sep2.add_theme_color_override("font_color", Color(0.4, 0.35, 0.2))
+	sep2.add_theme_font_size_override("font_size", 12)
+	parent.add_child(sep2)
+
+	# 底部提示
+	var hint = Label.new()
+	hint.position = Vector2(0, 360)
+	hint.size = Vector2(1000, 30)
+	hint.text = "↑↓ 选择  ·  Enter确认  ·  ESC返回"
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_color_override("font_color", Color(0.45, 0.45, 0.5))
+	hint.add_theme_font_size_override("font_size", 12)
+	parent.add_child(hint)
+
+	# 底部说明
+	var tip = Label.new()
+	tip.position = Vector2(0, 560)
+	tip.size = Vector2(1000, 25)
+	tip.text = "WASD移动 · 撞墙遇敌 · 下楼梯(F) · 商店(E) · 背包(I) · 任务(Q) · 成就(K) · F2存档"
+	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tip.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+	tip.add_theme_font_size_override("font_size", 13)
+	parent.add_child(tip)
+
+func _create_menu_button(text: String, pos: Vector2, size: Vector2, color: Color) -> Button:
+	var btn = Button.new()
+	btn.position = pos
+	btn.size = size
+	btn.text = text
+	btn.add_theme_font_size_override("font_size", 18)
+
+	var nstyle = StyleBoxFlat.new()
+	nstyle.bg_color = Color(0.06, 0.06, 0.1, 0.95)
+	nstyle.border_color = color
+	nstyle.border_width_left = 2; nstyle.border_width_top = 2
+	nstyle.border_width_right = 2; nstyle.border_width_bottom = 2
+	nstyle.corner_radius_top_left = 6; nstyle.corner_radius_top_right = 6
+	nstyle.corner_radius_bottom_right = 6; nstyle.corner_radius_bottom_left = 6
+	btn.add_theme_stylebox_override("normal", nstyle)
+
+	var hstyle = StyleBoxFlat.new()
+	hstyle.bg_color = Color(0.12, 0.10, 0.04, 0.95)
+	hstyle.border_color = PALETTE.gold
+	hstyle.border_width_left = 2; hstyle.border_width_top = 2
+	hstyle.border_width_right = 2; hstyle.border_width_bottom = 2
+	hstyle.corner_radius_top_left = 6; hstyle.corner_radius_top_right = 6
+	hstyle.corner_radius_bottom_right = 6; hstyle.corner_radius_bottom_left = 6
+	btn.add_theme_stylebox_override("hover", hstyle)
+
+	var pstyle = StyleBoxFlat.new()
+	pstyle.bg_color = Color(0.03, 0.03, 0.06, 0.95)
+	pstyle.border_color = PALETTE.gold
+	pstyle.border_width_left = 2; pstyle.border_width_top = 2
+	pstyle.border_width_right = 2; pstyle.border_width_bottom = 2
+	pstyle.corner_radius_top_left = 6; pstyle.corner_radius_top_right = 6
+	pstyle.corner_radius_bottom_right = 6; pstyle.corner_radius_bottom_left = 6
+	btn.add_theme_stylebox_override("pressed", pstyle)
+
+	return btn
+
+func _on_new_game_pressed():
+	_slot_select_is_new_game = true
+	_title_state = TitleState.SLOT_SELECT
+	_show_slot_select(true)
+
+func _on_continue_pressed():
+	_slot_select_is_new_game = false
+	_title_state = TitleState.SLOT_SELECT
+	_show_slot_select(false)
+
+func _on_how_to_play_pressed():
+	_title_state = TitleState.HOW_TO_PLAY
+	_show_how_to_play()
+
+func _show_slot_select(is_new_game: bool):
+	var title_panel = get_node("TitlePanel")
+	# 清空面板
+	for child in title_panel.get_children():
+		child.queue_free()
+
+	# 标题
+	var title_lbl = Label.new()
+	title_lbl.position = Vector2(0, 15)
+	title_lbl.size = Vector2(1000, 40)
+	title_lbl.text = "🗂️ 选择存档位" if is_new_game else "📜 继续冒险"
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.add_theme_color_override("font_color", PALETTE.gold)
+	title_lbl.add_theme_font_size_override("font_size", 24)
+	title_panel.add_child(title_lbl)
+
+	var sub = Label.new()
+	sub.position = Vector2(0, 55)
+	sub.size = Vector2(1000, 25)
+	sub.text = "选择要覆盖的存档" if is_new_game else "选择要读取的存档"
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_color_override("font_color", Color(0.6, 0.6, 0.65))
+	sub.add_theme_font_size_override("font_size", 13)
+	title_panel.add_child(sub)
+
+	# 装饰线
+	var sep = Label.new()
+	sep.position = Vector2(0, 85)
+	sep.size = Vector2(1000, 15)
+	sep.text = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	sep.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sep.add_theme_color_override("font_color", Color(0.35, 0.3, 0.18))
+	sep.add_theme_font_size_override("font_size", 11)
+	title_panel.add_child(sep)
+
+	# 存档槽列表
+	var slots_per_col = 3
+	var slot_w = 280
+	var slot_h = 120
+	var start_x = (1000 - slot_w * 3 - 40) / 2
+	var start_y = 115
+
+	for i in range(SAVE_SLOTS):
+		var col = i % 3
+		var row = i / 3
+		var sx = start_x + col * (slot_w + 20)
+		var sy = start_y + row * (slot_h + 15)
+
+		var slot_exists = has_save(i)
+		var slot_color = PALETTE.gold if slot_exists else Color(0.25, 0.25, 0.3)
+		var slot_bg = Color(0.04, 0.04, 0.07, 0.95) if slot_exists else Color(0.03, 0.03, 0.05, 0.85)
+
+		var slot_btn = Button.new()
+		slot_btn.name = "SlotBtn_%d" % i
+		slot_btn.position = Vector2(sx, sy)
+		slot_btn.size = Vector2(slot_w, slot_h)
+
+		var sn = StyleBoxFlat.new()
+		sn.bg_color = slot_bg
+		sn.border_color = slot_color
+		sn.border_width_left = 2; sn.border_width_top = 2
+		sn.border_width_right = 2; sn.border_width_bottom = 2
+		sn.corner_radius_top_left = 6; sn.corner_radius_top_right = 6
+		sn.corner_radius_bottom_right = 6; sn.corner_radius_bottom_left = 6
+		slot_btn.add_theme_stylebox_override("normal", sn)
+
+		var sh = StyleBoxFlat.new()
+		sh.bg_color = Color(0.1, 0.08, 0.03, 0.95)
+		sh.border_color = PALETTE.gold
+		sh.border_width_left = 2; sh.border_width_top = 2
+		sh.border_width_right = 2; sh.border_width_bottom = 2
+		sh.corner_radius_top_left = 6; sh.corner_radius_top_right = 6
+		sh.corner_radius_bottom_right = 6; sh.corner_radius_bottom_left = 6
+		slot_btn.add_theme_stylebox_override("hover", sh)
+
+		var sp = StyleBoxFlat.new()
+		sp.bg_color = Color(0.03, 0.03, 0.06, 0.95)
+		sp.border_color = PALETTE.gold
+		sp.border_width_left = 2; sp.border_width_top = 2
+		sp.border_width_right = 2; sp.border_width_bottom = 2
+		sp.corner_radius_top_left = 6; sp.corner_radius_top_right = 6
+		sp.corner_radius_bottom_right = 6; sp.corner_radius_bottom_left = 6
+		slot_btn.add_theme_stylebox_override("pressed", sp)
+
+		slot_btn.pressed.connect(_on_slot_selected.bind(i))
+		title_panel.add_child(slot_btn)
+
+		# 槽位标签
+		var slot_lbl = Label.new()
+		slot_lbl.name = "SlotLbl_%d" % i
+		slot_lbl.position = Vector2(sx + 10, sy + 8)
+		slot_lbl.size = Vector2(slot_w - 20, 22)
+		slot_lbl.text = "存档位 %d" % (i + 1)
+		slot_lbl.add_theme_color_override("font_color", slot_color)
+		slot_lbl.add_theme_font_size_override("font_size", 14)
+		title_panel.add_child(slot_lbl)
+
+		# 存档信息
+		if slot_exists:
+			var save_info = _get_save_info_text(i)
+			var info_lbl = Label.new()
+			info_lbl.name = "SlotInfo_%d" % i
+			info_lbl.position = Vector2(sx + 10, sy + 35)
+			info_lbl.size = Vector2(slot_w - 20, 70)
+			info_lbl.text = save_info
+			info_lbl.add_theme_color_override("font_color", Color(0.65, 0.65, 0.6))
+			info_lbl.add_theme_font_size_override("font_size", 12)
+			info_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+			title_panel.add_child(info_lbl)
+		else:
+			var empty_lbl = Label.new()
+			empty_lbl.name = "SlotEmpty_%d" % i
+			empty_lbl.position = Vector2(sx + 10, sy + 40)
+			empty_lbl.size = Vector2(slot_w - 20, 60)
+			empty_lbl.text = "（空）\n尚未在此存档"
+			empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			empty_lbl.add_theme_color_override("font_color", Color(0.35, 0.35, 0.4))
+			empty_lbl.add_theme_font_size_override("font_size", 12)
+			title_panel.add_child(empty_lbl)
+
+	# 返回按钮
+	var back_btn = _create_small_button("← 返回", Vector2(20, 630))
+	back_btn.pressed.connect(_on_slot_back_pressed)
+	title_panel.add_child(back_btn)
+
+	var hint_lbl = Label.new()
+	hint_lbl.position = Vector2(0, 630)
+	hint_lbl.size = Vector2(1000, 25)
+	hint_lbl.text = "点击存档位进入游戏"
+	hint_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint_lbl.add_theme_color_override("font_color", Color(0.4, 0.4, 0.45))
+	hint_lbl.add_theme_font_size_override("font_size", 12)
+	title_panel.add_child(hint_lbl)
+
+func _get_save_info_text(slot: int) -> String:
+	var path = _get_save_path(slot)
+	if not FileAccess.file_exists(path):
+		return "（空）"
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return "（读取失败）"
+	var json_str = file.get_as_text()
+	file.close()
+	var json = JSON.new()
+	if json.parse(json_str) != OK:
+		return "（数据损坏）"
+	var data = json.get_data()
+	if typeof(data) != TYPE_DICTIONARY:
+		return "（格式错误）"
+	var pdata = data.get("player", {})
+	var progress = data.get("progress", {})
+	var ts = data.get("timestamp", "")
+	var job_name = pdata.get("job_name", "?")
+	var level = pdata.get("level", 1)
+	var floor = progress.get("current_floor", 1)
+	var gold = pdata.get("gold", 0)
+	# 简化时间戳
+	var short_ts = ts.substr(5, 11) if ts.length() > 11 else ts
+	return "%s Lv.%d · 第%d层 · %d金\n%s" % [job_name, level, floor, gold, short_ts]
+
+func _show_save_confirm(slot: int):
+	_confirm_slot = slot
+	_title_state = TitleState.SLOT_CONFIRM
+	var title_panel = get_node("TitlePanel")
+	# 清空面板
+	for child in title_panel.get_children():
+		child.queue_free()
+
+	var confirm_lbl = Label.new()
+	confirm_lbl.position = Vector2(0, 200)
+	confirm_lbl.size = Vector2(1000, 50)
+	confirm_lbl.text = "⚠️ 确认覆盖存档？"
+	confirm_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	confirm_lbl.add_theme_color_override("font_color", Color(1.0, 0.5, 0.2))
+	confirm_lbl.add_theme_font_size_override("font_size", 22)
+	title_panel.add_child(confirm_lbl)
+
+	var info_lbl = Label.new()
+	info_lbl.position = Vector2(0, 270)
+	info_lbl.size = Vector2(1000, 30)
+	info_lbl.text = "存档位 %d 的数据将被永久覆盖！" % (slot + 1)
+	info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.75))
+	info_lbl.add_theme_font_size_override("font_size", 14)
+	title_panel.add_child(info_lbl)
+
+	var old_save = _get_save_info_text(slot)
+	var old_lbl = Label.new()
+	old_lbl.position = Vector2(200, 320)
+	old_lbl.size = Vector2(600, 80)
+	old_lbl.text = "当前存档：\n" + old_save
+	old_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	old_lbl.add_theme_color_override("font_color", Color(0.55, 0.55, 0.6))
+	old_lbl.add_theme_font_size_override("font_size", 13)
+	old_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+	title_panel.add_child(old_lbl)
+
+	var btn_y = 430
+	var yes_btn = _create_menu_button("⚔️ 确认，开始新的江湖！", Vector2(250, btn_y), Vector2(500, 55), Color(0.9, 0.3, 0.3))
+	yes_btn.pressed.connect(_on_confirm_new_game.bind(slot))
+	title_panel.add_child(yes_btn)
+
+	var no_btn = _create_small_button("← 返回", Vector2(20, 630))
+	no_btn.pressed.connect(_on_slot_back_pressed)
+	title_panel.add_child(no_btn)
+
+func _on_slot_selected(slot: int):
+	_init_slot = slot
+	if _slot_select_is_new_game:
+		if has_save(slot):
+			# 有存档，弹出确认
+			_show_save_confirm(slot)
+		else:
+			# 空存档，先选职业再开始
+			_title_state = TitleState.CLASS_SELECT
+			_show_class_select_for_new_game()
+	else:
+		# 继续游戏，直接加载
+		_start_continue_game(slot)
+
+func _on_confirm_new_game(slot: int):
+	_init_slot = slot
+	_title_state = TitleState.CLASS_SELECT
+	_show_class_select_for_new_game()
+
+func _show_class_select_for_new_game():
+	# 创建新的标题面板（替换存档选择面板）
+	var old_panel = get_node_or_null("TitlePanel")
+	if old_panel:
+		old_panel.queue_free()
+	var bg = get_node_or_null("TitleBG")
+	var ov = get_node_or_null("TitleOverlay")
+	# 保留背景和遮罩
+	var title_panel = Panel.new()
+	title_panel.name = "TitlePanel"
+	title_panel.position = Vector2(140, 20)
+	title_panel.size = Vector2(1000, 680)
+	title_panel.self_modulate = Color(0.04, 0.04, 0.08, 0.95)
+	title_panel.add_theme_stylebox_override("panel", _create_stylebox())
+	add_child(title_panel)
+
+	# 调用通用的职业选择界面
+	_show_class_select_ui(title_panel)
+
+func _on_slot_back_pressed():
+	_title_state = TitleState.MAIN_MENU
+	var title_panel = get_node("TitlePanel")
+	for child in title_panel.get_children():
+		child.queue_free()
+	_show_main_menu(title_panel)
+
+func _start_new_game(slot: int, job_id: int = Job.WARRIOR):
+	# 清空标题画面
+	var title_bg = get_node_or_null("TitleBG")
+	var title_ov = get_node_or_null("TitleOverlay")
+	var title_pn = get_node_or_null("TitlePanel")
+	if title_bg: title_bg.queue_free()
+	if title_ov: title_ov.queue_free()
+	if title_pn: title_pn.queue_free()
+
+	# 清理旧游戏
+	if particle_container:
+		particle_container.queue_free()
+	if audio_manager:
+		audio_manager.queue_free()
+
+	# 重新初始化
+	particle_container = Node2D.new()
+	particle_container.name = "ParticleContainer"
+	add_child(particle_container)
+	_setup_audio()
+
+	# 重置游戏数据
+	_reset_game_data()
+	_setup_ui()
+	_generate_map()
+	_setup_walls()
+	_setup_player_data(job_id)  # 使用选定的职业
+	_setup_player()
+
+	# 保存新存档
+	save_game(slot)
+
+	game_state = State.EXPLORE
+	_update_minimap()
+	audio_manager.play_bgm("explore")
+	show_message("欢迎，%s！你的冒险开始了..." % player_data.get_job_name())
+
+func _start_continue_game(slot: int):
+	# 清空标题画面
+	var title_bg = get_node_or_null("TitleBG")
+	var title_ov = get_node_or_null("TitleOverlay")
+	var title_pn = get_node_or_null("TitlePanel")
+	if title_bg: title_bg.queue_free()
+	if title_ov: title_ov.queue_free()
+	if title_pn: title_pn.queue_free()
+
+	if not load_game(slot):
+		# 加载失败，回到标题
+		get_tree().reload_current_scene()
+		return
+
+	# 清理旧游戏
+	if particle_container:
+		particle_container.queue_free()
+	if audio_manager:
+		audio_manager.queue_free()
+
+	particle_container = Node2D.new()
+	particle_container.name = "ParticleContainer"
+	add_child(particle_container)
+	_setup_audio()
+	_setup_ui()
+	_generate_map()
+	_setup_walls()
+	_setup_player()
+	_update_minimap()
+
+	game_state = State.EXPLORE
+	audio_manager.play_bgm("explore")
+	show_message("继续冒险... %s (第%d层)" % [player_data.get_job_name(), current_floor])
+
+func _reset_game_data():
+	"""重置游戏数据（新游戏时调用）"""
+	achievement_stats = {
+		"enemies_defeated": 0, "bosses_defeated": 0, "elite_enemies_defeated": 0,
+		"max_floor_reached": 1, "total_gold_earned": 0, "total_gold_spent": 0,
+		"perfect_victories": 0, "no_damage_floors": 0, "max_level_reached": 1,
+		"quests_completed": 0,
+		"warrior_boss_wins": 0, "mage_boss_wins": 0,
+		"hunter_boss_wins": 0, "thief_boss_wins": 0,
+		"priest_boss_wins": 0, "knight_boss_wins": 0,
+		"bard_boss_wins": 0, "summoner_boss_wins": 0,
+		"unique_jobs_boss_wins": 0
+	}
+	unlocked_achievements = []
+	_floor_damage_taken = 0
+
+func _show_how_to_play():
+	var title_panel = get_node("TitlePanel")
+	for child in title_panel.get_children():
+		child.queue_free()
+
+	# 标题
+	var title_lbl = Label.new()
+	title_lbl.position = Vector2(0, 10)
+	title_lbl.size = Vector2(1000, 40)
+	title_lbl.text = "📖 江湖秘籍"
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.add_theme_color_override("font_color", PALETTE.gold)
+	title_lbl.add_theme_font_size_override("font_size", 24)
+	title_panel.add_child(title_lbl)
+
+	var sub_lbl = Label.new()
+	sub_lbl.position = Vector2(0, 50)
+	sub_lbl.size = Vector2(1000, 22)
+	sub_lbl.text = "八方旅人 · 操作指南"
+	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.65))
+	sub_lbl.add_theme_font_size_override("font_size", 13)
+	title_panel.add_child(sub_lbl)
+
+	var sep = Label.new()
+	sep.position = Vector2(0, 78)
+	sep.size = Vector2(1000, 12)
+	sep.text = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	sep.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sep.add_theme_color_override("font_color", Color(0.35, 0.3, 0.18))
+	sep.add_theme_font_size_override("font_size", 11)
+	title_panel.add_child(sep)
+
+	# 说明内容（两栏布局）
+	var content = [
+		["【基础操作】", [
+			"WASD ··· 移动角色",
+			"F ······ 进入下一层（踩楼梯点）",
+			"E ······ 打开商店",
+			"I ······ 打开背包/道具",
+			"Q ······ 任务日志",
+			"K ······ 成就面板",
+			"F2 ····· 存档/读档",
+		]],
+		["【战斗操作】", [
+			"点击 ⚔️攻击 · 普通攻击",
+			"点击 ✨技能 · 打开技能菜单",
+			"点击 💚道具 · 使用背包道具",
+			"点击 🛡️防御 · 减少50%%伤害+回蓝",
+			"点击 🏃逃跑 · 尝试脱离战斗",
+		]],
+		["【游戏目标】", [
+			"· 挑战8层地牢，击败各层Boss",
+			"· 从草寇山贼到武当真人，逐层深入",
+			"· 收集装备、强化道具、提升等级",
+			"· 完成途中遭遇的任务与事件",
+		]],
+		["【职业系统】", [
+			"战士：高血量，物理伤害",
+			"法师：高魔攻，元素魔法",
+			"猎人：高速度，陷阱狙击",
+			"盗贼：高暴击，暗影刺杀",
+			"牧师：治疗与辅助复活",
+			"骑士：高防御，格挡反击",
+			"吟游诗人：战斗乐章辅助",
+			"召唤师：契约召唤兽助战",
+		]],
+	]
+
+	var col_w = 440
+	var col_start_x = [80, 540]
+	var row_start_y = 98
+	var row_h = 105
+
+	for idx in range(content.size()):
+		var col = idx % 2
+		var row = idx / 2
+		var cx = col_start_x[col]
+		var cy = row_start_y + row * row_h
+
+		# 小标题
+		var heading = Label.new()
+		heading.position = Vector2(cx, cy)
+		heading.size = Vector2(col_w, 20)
+		heading.text = content[idx][0]
+		heading.add_theme_color_override("font_color", PALETTE.gold)
+		heading.add_theme_font_size_override("font_size", 13)
+		title_panel.add_child(heading)
+
+		# 内容
+		for j in range(content[idx][1].size()):
+			var line_lbl = Label.new()
+			line_lbl.position = Vector2(cx, cy + 22 + j * 18)
+			line_lbl.size = Vector2(col_w, 18)
+			line_lbl.text = content[idx][1][j]
+			line_lbl.add_theme_color_override("font_color", Color(0.65, 0.65, 0.6))
+			line_lbl.add_theme_font_size_override("font_size", 12)
+			title_panel.add_child(line_lbl)
+
+	# 返回按钮
+	var back_btn = _create_small_button("← 返回", Vector2(20, 630))
+	back_btn.pressed.connect(_on_slot_back_pressed)
+	title_panel.add_child(back_btn)
+
+func _create_small_button(text: String, pos: Vector2) -> Button:
+	var btn = Button.new()
+	btn.position = pos
+	btn.size = Vector2(120, 36)
+	btn.text = text
+	btn.add_theme_font_size_override("font_size", 13)
+	var nstyle = StyleBoxFlat.new()
+	nstyle.bg_color = Color(0.05, 0.05, 0.08, 0.95)
+	nstyle.border_color = Color(0.4, 0.35, 0.3)
+	nstyle.border_width_left = 1; nstyle.border_width_top = 1
+	nstyle.border_width_right = 1; nstyle.border_width_bottom = 1
+	nstyle.corner_radius_top_left = 4; nstyle.corner_radius_top_right = 4
+	nstyle.corner_radius_bottom_right = 4; nstyle.corner_radius_bottom_left = 4
+	btn.add_theme_stylebox_override("normal", nstyle)
+	var hstyle = StyleBoxFlat.new()
+	hstyle.bg_color = Color(0.1, 0.08, 0.03, 0.95)
+	hstyle.border_color = PALETTE.gold
+	hstyle.border_width_left = 1; hstyle.border_width_top = 1
+	hstyle.border_width_right = 1; hstyle.border_width_bottom = 1
+	hstyle.corner_radius_top_left = 4; hstyle.corner_radius_top_right = 4
+	hstyle.corner_radius_bottom_right = 4; hstyle.corner_radius_bottom_left = 4
+	btn.add_theme_stylebox_override("hover", hstyle)
+	var pstyle = StyleBoxFlat.new()
+	pstyle.bg_color = Color(0.03, 0.03, 0.06, 0.95)
+	pstyle.border_color = PALETTE.gold
+	pstyle.border_width_left = 1; pstyle.border_width_top = 1
+	pstyle.border_width_right = 1; pstyle.border_width_bottom = 1
+	pstyle.corner_radius_top_left = 4; pstyle.corner_radius_top_right = 4
+	pstyle.corner_radius_bottom_right = 4; pstyle.corner_radius_bottom_left = 4
+	btn.add_theme_stylebox_override("pressed", pstyle)
+	return btn
+
+func _show_class_select():
+	"""显示职业选择界面（从存档选择后调用）- 兼容旧调用"""
+	var title_panel = get_node_or_null("TitlePanel")
+	if not title_panel:
+		return
+	# 清空面板
+	for child in title_panel.get_children():
+		child.queue_free()
+	_show_class_select_ui(title_panel)
+
+func _show_class_select_ui(title_panel: Panel):
+	"""填充职业选择界面到给定面板"""
+	# 清空面板（确保干净）
+	for child in title_panel.get_children():
+		child.queue_free()
+
+	# 标题
+	var game_title = Label.new()
+	game_title.position = Vector2(0, 15)
+	game_title.size = Vector2(1000, 50)
+	game_title.text = "⚔️ 八方旅人 ⚔️"
+	game_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	game_title.add_theme_color_override("font_color", PALETTE.gold)
+	game_title.add_theme_font_size_override("font_size", 30)
+	title_panel.add_child(game_title)
+
+	var subtitle = Label.new()
+	subtitle.position = Vector2(0, 60)
+	subtitle.size = Vector2(1000, 25)
+	subtitle.text = "选择你的职业"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_color_override("font_color", Color(0.7, 0.6, 0.3))
+	subtitle.add_theme_font_size_override("font_size", 15)
+	title_panel.add_child(subtitle)
+
+	var sep = Label.new()
+	sep.position = Vector2(0, 90)
+	sep.size = Vector2(1000, 15)
+	sep.text = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	sep.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sep.add_theme_color_override("font_color", Color(0.35, 0.3, 0.18))
+	sep.add_theme_font_size_override("font_size", 11)
+	title_panel.add_child(sep)
 
 	# 职业数据
 	var job_list: Array = [
@@ -744,7 +1437,7 @@ func _show_title_screen():
 
 	# 职业按钮网格 (4×2)
 	var start_x = 60
-	var start_y = 160
+	var start_y = 120
 	var btn_w = 210
 	var btn_h = 110
 	var cols = 4
@@ -786,7 +1479,6 @@ func _show_title_screen():
 		pstyle.corner_radius_bottom_right = 5; pstyle.corner_radius_bottom_left = 5
 		job_btn.add_theme_stylebox_override("pressed", pstyle)
 
-		# 职业名称
 		var jname = Label.new()
 		jname.position = Vector2(10, 8)
 		jname.text = job["name"]
@@ -794,7 +1486,6 @@ func _show_title_screen():
 		jname.add_theme_font_size_override("font_size", 16)
 		job_btn.add_child(jname)
 
-		# 职业描述
 		var jdesc = Label.new()
 		jdesc.position = Vector2(10, 38)
 		jdesc.text = job["desc"]
@@ -802,7 +1493,6 @@ func _show_title_screen():
 		jdesc.add_theme_font_size_override("font_size", 12)
 		job_btn.add_child(jdesc)
 
-		# 提示
 		var jhint = Label.new()
 		jhint.position = Vector2(10, 75)
 		jhint.text = "[ 点击选择 ]"
@@ -824,58 +1514,8 @@ func _show_title_screen():
 	title_panel.add_child(tip)
 
 func _on_job_selected(job_id: int):
-	# 清理旧游戏节点（重新开始时防止节点/资源泄漏）
-	if particle_container:
-		particle_container.queue_free()
-	if audio_manager:
-		audio_manager.queue_free()
-	# 重新初始化（_ready只执行一次，需在每次开始新游戏时重建）
-	particle_container = Node2D.new()
-	particle_container.name = "ParticleContainer"
-	add_child(particle_container)
-	_setup_audio()
-	# 清理标题画面
-	var title_bg = get_node_or_null("TitleBG")
-	var title_ov = get_node_or_null("TitleOverlay")
-	var title_pn = get_node_or_null("TitlePanel")
-	if title_bg: title_bg.queue_free()
-	if title_ov: title_ov.queue_free()
-	if title_pn: title_pn.queue_free()
-
-	# 设置职业
-	_setup_player_data(job_id)
-	# 重置成就统计（新游戏）
-	achievement_stats = {
-		"enemies_defeated": 0,
-		"bosses_defeated": 0,
-		"elite_enemies_defeated": 0,
-		"max_floor_reached": 1,
-		"total_gold_earned": 0,
-		"total_gold_spent": 0,
-		"perfect_victories": 0,
-		"no_damage_floors": 0,
-		"max_level_reached": 1,
-		"quests_completed": 0,
-		"warrior_boss_wins": 0, "mage_boss_wins": 0,
-		"hunter_boss_wins": 0, "thief_boss_wins": 0,
-		"priest_boss_wins": 0, "knight_boss_wins": 0,
-		"bard_boss_wins": 0, "summoner_boss_wins": 0,
-		"unique_jobs_boss_wins": 0
-	}
-	unlocked_achievements = []
-	_floor_damage_taken = 0
-	_setup_ui()
-	_generate_map()
-	_setup_walls()
-	_setup_player()
-	game_state = State.EXPLORE
-	_update_minimap()  # 初始化小地图
-	# 切换到探索BGM
-	audio_manager.play_bgm("explore")
-	print("八方旅人 - Octopath Adventure 已启动!")
-	print("当前职业: " + player_data.get_job_name())
-	print("技能: " + str(player_data.skills))
-	show_message("欢迎，%s！你的冒险开始了..." % player_data.get_job_name())
+	# 从职业选择界面启动新游戏（使用已选的存档槽）
+	_start_new_game(_init_slot, job_id)
 
 func _setup_player_data(job_id: int = Job.WARRIOR):
 	player_data = _get_player_data().new()
