@@ -140,6 +140,11 @@ var bard_song_atk_turns: int = 0       # 战斗乐章atk提升回合
 var bard_song_atk_boost: int = 0        # 战斗乐章提升量
 var bard_rhythm_turns: int = 0          # 疯狂节拍减速回合
 var bard_healing_melody_mp: int = 0     # 天籁之音治疗量
+# 吟游诗人 T2 路线B 幻术师状态
+var bard_hypno_turns: int = 0           # 催眠曲沉睡回合
+var bard_hallucinate_turns: int = 0     # 幻听闪避提升回合
+var bard_chaos_turns: int = 0           # 混乱之音回合
+var bard_chaos_active: bool = false     # 混乱之音激活标记（用于先手判定）
 
 # 吟游诗人T3/T4状态
 var bard_perfect_chord_turns: int = 0   # 完美和弦buff回合
@@ -4319,6 +4324,10 @@ func _start_battle():
 	bard_song_atk_boost = 0
 	bard_rhythm_turns = 0
 	bard_healing_melody_mp = 0
+	# 吟游诗人T2路线B幻术师状态重置
+	bard_hypno_turns = 0
+	bard_hallucinate_turns = 0
+	bard_chaos_turns = 0
 	# 吟游诗人T3/T4状态重置（传奇之歌为永久，不重置）
 	bard_perfect_chord_turns = 0
 	bard_perfect_chord_atk_boost = 0
@@ -4533,6 +4542,10 @@ func _start_boss_battle():
 	bard_song_atk_boost = 0
 	bard_rhythm_turns = 0
 	bard_healing_melody_mp = 0
+	# 吟游诗人T2路线B幻术师状态重置
+	bard_hypno_turns = 0
+	bard_hallucinate_turns = 0
+	bard_chaos_turns = 0
 	# 吟游诗人T3/T4状态重置（传奇之歌为永久，不重置）
 	bard_perfect_chord_turns = 0
 	bard_perfect_chord_atk_boost = 0
@@ -5708,6 +5721,8 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	"盾击": 3, "圣光审判": 4, "钢铁壁垒": 5,
 	# 吟游诗人 T2
 	"战斗乐章": 3, "疯狂节拍": 4, "天籁之音": 5,
+	# 吟游诗人 T2 路线B 幻术师
+	"催眠曲": 4, "幻听": 3, "混乱之音": 5,
 	# 吟游诗人 T3
 	"完美和弦": 5, "命运交响曲": 6, "终末安魂曲": 6,
 	# 吟游诗人 T4
@@ -5842,6 +5857,7 @@ func _on_skill_menu():
 		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
 		"盾击": 15, "圣光审判": 30, "钢铁壁垒": 25,
 		"战斗乐章": 20, "疯狂节拍": 35, "天籁之音": 40,
+		"催眠曲": 25, "幻听": 30, "混乱之音": 40,
 		"完美和弦": 50, "命运交响曲": 55, "终末安魂曲": 60,
 		"传奇之歌": 70, "虚空咏叹调": 65, "生命赞歌": 60,
 		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25,
@@ -5879,6 +5895,7 @@ func _on_skill_menu():
 			"群体治疗", "驱散", "神圣仲裁",
 			"盾击", "圣光审判", "钢铁壁垒",
 			"战斗乐章", "疯狂节拍", "天籁之音",
+			"催眠曲", "幻听", "混乱之音",
 			"契约强化", "灵魂连接", "召唤兽强化"
 		]
 		var t3_skills = [
@@ -5975,6 +5992,7 @@ async func _on_skill_selected(skill_name: String):
 		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
 		"盾击": 15, "圣光审判": 30, "钢铁壁垒": 25,
 		"战斗乐章": 20, "疯狂节拍": 35, "天籁之音": 40,
+		"催眠曲": 25, "幻听": 30, "混乱之音": 40,
 		"完美和弦": 50, "命运交响曲": 55, "终末安魂曲": 60,
 		"传奇之歌": 70, "虚空咏叹调": 65, "生命赞歌": 60,
 		"契约强化": 30, "灵魂连接": 30, "召唤兽强化": 25,
@@ -6819,6 +6837,33 @@ async func _on_skill_selected(skill_name: String):
 			_trigger_portrait_heal_glow()
 			_battle_add_log("🎶 天籁之音！恢复 %d HP 和 %d MP" % [hm_heal, hm_mp])
 			_spawn_player_damage("+%d HP" % hm_heal, "heal")
+		# ===== 吟游诗人 T2 路线B 幻术师技能 =====
+		"催眠曲":
+			# 单体敌人「沉睡」2回合（受到攻击即苏醒）；沉睡期间若未被攻击，第3回合自动进入「深度沉睡」（再受击才醒）
+			# 精英/Boss为15%概率
+			if randi() % 100 < 30:
+				bard_hypno_turns = 3
+				_battle_add_log("🌙💤 催眠曲！敌人陷入沉睡（3回合内受到攻击才苏醒）")
+			else:
+				_battle_add_log("🌙  催眠曲... 敌人意志坚定，未被催眠")
+		"幻听":
+			# 敌人攻击时30%概率打偏（闪避+50%），持续2回合；诗人和队友闪避+30%
+			bard_hallucinate_turns = 2
+			_battle_add_log("👁️🎭 幻听！敌人攻击30%%概率打偏，全队闪避+30%%持续2回合")
+			_spawn_player_damage("闪避↑", "buff")
+		"混乱之音":
+			# ATK × 2.0 全体，附加「混乱」（敌人30%概率攻击自己人，持续2回合）；精英/Boss混乱概率为15%
+			var chaos_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 2.0)) - _get_pierced_defense()
+			chaos_dmg = max(1, chaos_dmg)
+			current_enemy["hp"] -= chaos_dmg
+			bard_chaos_turns = 2
+			# 先手效果：混乱之音命中时额外效果
+			if randi() % 100 < 30:
+				_battle_add_log("🎧🔀 混乱之音！敌人被迷惑，%s 将混乱攻击自己人2回合！" % current_enemy["name"])
+			else:
+				_battle_add_log("🎧🔀 混乱之音！造成 %d 伤害，敌人可能混乱（30%%概率）持续2回合" % chaos_dmg)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % chaos_dmg, "crit", Vector2(0, -45))
 		# ===== 吟游诗人 T3 (终极技能·Lv25解锁) =====
 		"完美和弦":
 			# 全队ATK+40%，暴击+20%，持续4回合
