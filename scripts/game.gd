@@ -4834,6 +4834,7 @@ func _create_battle_ui():
 var portrait_breath_time: float = 0.0
 var portrait_damage_flash: float = 0.0  # 受伤害闪红
 var portrait_heal_glow: float = 0.0     # 治疗绿光
+var _last_portrait_hp_ratio: float = -1.0  # HP阈值追踪，避免每帧重建StyleBoxFlat
 
 func _create_battle_portrait_panel(parent: Control):
 	# 整体肖像面板 (右上角，敌方面板下方)
@@ -8849,10 +8850,16 @@ func _update_portrait_bars(portrait_panel: Panel):
 	if php_bar:
 		php_bar.max_value = player_data.max_hp
 		php_bar.value = max(0, player_data.hp)
-		# HP条颜色随血量变化
+		# HP条颜色随血量变化（仅在阈值跨越时重建StyleBoxFlat，避免每帧创建新对象）
 		var hp_ratio = float(player_data.hp) / float(player_data.max_hp)
-		var hp_fill = php_bar.get_theme_stylebox("fill")
-		if hp_fill:
+		var threshold_crossed = (
+			(_last_portrait_hp_ratio > 0.5 and hp_ratio <= 0.5) or
+			(_last_portrait_hp_ratio > 0.25 and hp_ratio <= 0.25) or
+			(_last_portrait_hp_ratio <= 0.5 and hp_ratio > 0.5) or
+			(_last_portrait_hp_ratio <= 0.25 and hp_ratio > 0.25) or
+			_last_portrait_hp_ratio < 0  # 初始值
+		)
+		if threshold_crossed:
 			var new_fill = StyleBoxFlat.new()
 			if hp_ratio > 0.5:
 				new_fill.bg_color = Color(0.85, 0.15, 0.15)
@@ -8863,6 +8870,7 @@ func _update_portrait_bars(portrait_panel: Panel):
 			new_fill.corner_radius_top_left = 2; new_fill.corner_radius_top_right = 2
 			new_fill.corner_radius_bottom_right = 2; new_fill.corner_radius_bottom_left = 2
 			php_bar.add_theme_stylebox_override("fill", new_fill)
+		_last_portrait_hp_ratio = hp_ratio
 	if php_val:
 		php_val.text = "%d / %d" % [max(0, player_data.hp), player_data.max_hp]
 	if pmp_bar:
