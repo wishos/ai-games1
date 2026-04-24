@@ -3327,3 +3327,36 @@ func _update_portrait_bars(portrait_panel: Panel):
 - ✅ 所有历史 P0/P1/P2 问题均已修复
 
 **Git状态**: 建议提交修复 — 1个P3问题（StyleBoxFlat 每帧泄漏）
+
+---
+
+### 审查记录 - 2026-04-24 23:18
+
+本次审查发现：
+- **✅ 编译通过**: Godot `--headless --check-only --quit` exit code 0，无语法错误
+- **文件行数**: game.gd 为 **9307 行**（+12行：新增 `_last_portrait_hp_ratio` 实例变量 + 阈值跨越判定逻辑）
+- **✅ 无新增 P0/P1/P2 问题**
+- **✅ 无新增语法错误或内存泄漏问题**
+
+**本次修复确认**（1个P3问题）：
+- ✅ `_update_portrait_bars()` StyleBoxFlat 每帧重建 — 新增 `_last_portrait_hp_ratio` 实例变量追踪HP阈值，仅在阈值跨越（>0.5/<=0.5 或 >0.25/<=0.25）时重建StyleBoxFlat，大幅减少每帧GC压力
+
+**本次检查确认**：
+- ✅ `warrior_shatter_turns`/`warrior_shatter_defdebuff` 无重复声明
+- ✅ 所有 `_check_battle_end()` 调用均正确使用 `await`
+- ✅ `fog_container` 迷雾系统正确管理（`queue_free()` 一次性释放）
+- ✅ `_load_job_texture()` 直接返回 Texture2D，无 Sprite2D 创建
+- ✅ `ASSET_TEX_SIZE` 常量已提取（2048.0）
+- ✅ `SCREEN_SIZE` 常量已提取（Vector2(1280, 720)）
+- ✅ `_get_pierced_defense()` 重命名正确
+- ✅ `_save_slot_buttons` 数组对称（空槽追加3个占位元素）
+- ✅ `particle_container`/`audio_manager` 在 `_on_job_selected` 中正确清理+重建
+- ✅ 伤害方差辅助函数 `_roll_dmg_var_small/medium/large/tiny` 正确定义并使用
+- ✅ RANDOM_ENCOUNTER_RATE/VANISH_EVASION_CHANCE/FLEE_SUCCESS_CHANCE 等常量已提取
+- ✅ 存档数据完整性：quest_log/completed_quests/skill_cooldowns/Bard永久增益/召唤融合状态均已保存并恢复
+- ✅ `floor_label` 无重复赋值
+- ✅ `shop_bg_fallback` 正确追踪，`_close_shop()` 同步清理
+- ✅ `_last_portrait_hp_ratio` 实例变量正确追踪HP阈值
+- ✅ 所有历史 P0/P1/P2/P3 问题均已修复
+
+**Git状态**: 9ba6258 — fix: 修复CODE_REVIEW P3 _update_portrait_bars每帧重建StyleBoxFlat问题
