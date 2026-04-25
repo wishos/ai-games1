@@ -166,7 +166,7 @@ func _fade_out_bgm(duration: float):
 	
 	fade_tween = create_tween()
 	fade_tween.tween_property(bgm_player, "volume_db", linear_to_db(0), duration)
-	fade_tween.tween_callback Callable(self, "_on_bgm_fade_out_complete")
+	fade_tween.tween_callback(Callable(self, "_on_bgm_fade_out_complete"))
 
 func _on_bgm_fade_out_complete():
 	bgm_player.stop()
