@@ -40,3 +40,58 @@
 | mage.png | 法师 |
 | ninja.png | 忍者 |
 | archer.png | 弓箭手 |
+
+## 音频素材 (audio/)
+来源：需自行录制或使用开源音频资源
+
+### BGM 音乐 (audio/bgm/)
+| 文件名 | 用途 | 时长参考 |
+|--------|------|----------|
+| title_theme.ogg | 标题画面 | ~90秒循环 |
+| explore_theme.ogg | 探索地图背景 | ~120秒循环 |
+| battle_theme.ogg | 普通战斗 | ~90秒循环 |
+| boss_theme.ogg | Boss战 | ~180秒循环 |
+| victory_theme.ogg | 胜利画面 | ~30秒 |
+| inn_theme.ogg | 客栈休息 | ~60秒循环 |
+| shop_theme.ogg | 商店界面 | ~60秒循环 |
+| chapter_intro.ogg | 章节intro | ~15秒 |
+| game_over_theme.ogg | 游戏结束 | ~30秒 |
+
+### SFX 音效 (audio/sfx/)
+| 文件名 | 触发时机 |
+|--------|----------|
+| attack.ogg | 玩家普通攻击 |
+| crit.ogg | 暴击命中 |
+| skill_cast.ogg | 释放技能 |
+| enemy_hit.ogg | 敌人受到伤害 |
+| enemy_death.ogg | 敌人死亡 |
+| player_death.ogg | 玩家死亡 |
+| player_hurt.ogg | 玩家受伤 |
+| level_up.ogg | 升级 |
+| heal.ogg | 治疗 |
+| shield.ogg | 护盾获得 |
+| buff.ogg | 获得增益 |
+| debuff.ogg | 获得减益 |
+| purchase.ogg | 购买物品 |
+| flee.ogg | 逃跑成功 |
+| door_open.ogg | 开 door/楼梯 |
+| footstep.ogg | 移动脚步声 |
+| coin.ogg | 获得金币 |
+| potion.ogg | 使用药水 |
+| equip.ogg | 装备穿戴 |
+| quest_complete.ogg | 任务完成 |
+| boss_intro.ogg | Boss登场 |
+| boss_victory.ogg | Boss击败 |
+| enhance_success.ogg | 强化成功 |
+| enhance_fail.ogg | 强化失败 |
+| skill_ice.ogg | 冰系技能 |
+| skill_fire.ogg | 火系技能 |
+| skill_lightning.ogg | 雷系技能 |
+| skill_poison.ogg | 毒系技能 |
+| trap_trigger.ogg | 陷阱触发 |
+| summon.ogg | 召唤物登场 |
+| floor_transition.ogg | 切换楼层 |
+| menu_select.ogg | 菜单选择 |
+| menu_confirm.ogg | 菜单确认 |
+| menu_cancel.ogg | 菜单取消 |
+| victory.ogg | 普通战斗胜利 |
