@@ -3935,6 +3935,8 @@ const ELITE_FLOOR_MAX: int = 7  # BOSS层(7+)不出精英
 
 **严重程度**: P3 — 游戏平衡参数，不影响编译/运行，属可接受技术债务
 
+**修复状态**: ✅ 已修复 (2026-04-28 23:06) — 提取为 ELITE_SPAWN_CHANCE/ELITE_HP_MULT/ELITE_ATK_MULT/ELITE_DEF_MULT/ELITE_EXP_MULT/ELITE_GOLD_MULT/ELITE_FLOOR_MAX 常量，全部硬编码已替换
+
 **审查记录 - 2026-04-28 06:08 - 无新问题（本次仅发现1个P3）**
 
 ### 审查记录 - 2026-04-28 12:04 - 无新问题

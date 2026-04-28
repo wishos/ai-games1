@@ -19,7 +19,7 @@ var player: CharacterBody2D
 var tile_map: TileMap
 var current_floor: int = 1
 var fog_map: Dictionary = {}
-var fog_container: Node2D  # 迷雾容器，统一管理所有迷雾节点，避免逐个queue_free
+var fog_container: Node2D  # 迷雾容器,统一管理所有迷雾节点,避免逐个queue_free
 
 # 战斗
 var current_enemy: Dictionary = {}
@@ -47,28 +47,28 @@ var berserk_turns: int = 0      # 血之狂暴buff回合数
 var berserk_atk_boost: int = 0  # 狂暴ATK加成值
 var battle_cry_turns: int = 0   # 战吼buff回合数
 var battle_cry_atk_boost: int = 0  # 战吼自身ATK加成
-var battle_cry_team_boost: int = 0  # 战吼队友ATK加成（对玩家=自身）
+var battle_cry_team_boost: int = 0  # 战吼队友ATK加成(对玩家=自身)
 # 法师T2状态
 var meteor_burn_turns: int = 0     # 流星火雨灼烧回合
 var meteor_burn_dmg: int = 0        # 流星火雨每回合灼烧伤害
 var frost_slow_turns: int = 0       # 霜冻领域减速回合
 var arcane_shield_mp: int = 0      # 魔法盾MP值
-var spell_pierce_turns: int = 0     # 法术穿透回合（无视DEF）
+var spell_pierce_turns: int = 0     # 法术穿透回合(无视DEF)
 var mana_drain_turns: int = 0       # 魔力回旋回合
 var mana_drain_amount: int = 0      # 魔力回旋每次吸取量
 # 法师T3状态
 var absolute_zero_turns: int = 0    # 绝对零度冰冻回合
-var meteor_turns: int = 0           # 陨石术灼烧回合（独立标记）
+var meteor_turns: int = 0           # 陨石术灼烧回合(独立标记)
 var meteor_dmg: int = 0             # 陨石术每回合灼烧伤害
 var elemental_storm_turns: int = 0   # 元素风暴持续回合
 var elemental_storm_dmg: int = 0     # 元素风暴每回合元素伤害
-var time_stop_active: bool = false  # 时间静止激活（本回合敌人跳过）
+var time_stop_active: bool = false  # 时间静止激活(本回合敌人跳过)
 var time_stop_turns: int = 0        # 时间静止剩余回合
-var arcane_truth_turns: int = 0     # 奥术真理持续回合（所有属性伤害+50%)
+var arcane_truth_turns: int = 0     # 奥术真理持续回合(所有属性伤害+50%)
 var arcane_truth_active: bool = false  # 奥术真理本场战斗标记
 # 法师T4状态
-var arcane_weaving_history: Array = []  # 秘法编织：记录最后使用的技能（最多3个）
-var elemental_annihilation_weak_mult: float = 2.0  # 元素湮灭：弱点伤害倍率（持续到战斗结束）
+var arcane_weaving_history: Array = []  # 秘法编织:记录最后使用的技能(最多3个)
+var elemental_annihilation_weak_mult: float = 2.0  # 元素湮灭:弱点伤害倍率(持续到战斗结束)
 
 # 猎人T2状态
 var hunter_evasion_turns: int = 0    # 猎豹加速闪避回合
@@ -78,7 +78,7 @@ var hunter_trap_dot_dmg: int = 0     # 致命陷阱每回合伤害
 var hunter_trap_turns: int = 0        # 致命陷阱持续回合
 var hunter_trap_slow: int = 0         # 致命陷阱减速量
 # 猎人T3状态
-var hunter_one_hit_escape: bool = false  # 一击脱离：下次攻击必闪避
+var hunter_one_hit_escape: bool = false  # 一击脱离:下次攻击必闪避
 var hunter_mark_turns: int = 0          # 猎杀时刻标记回合
 var hunter_mark_mult: float = 1.0       # 猎杀时刻伤害倍率
 var hunter_beast_turns: int = 0        # 野兽之力召唤回合
@@ -95,46 +95,46 @@ var thief_choke_turns: int = 0        # 锁喉眩晕回合
 var thief_combo_count: int = 0         # 致命连击连击计数
 var thief_combo_dmg: int = 0           # 致命连击累计伤害
 # 盗贼T3状态
-var thief_shadow_clone_turns: int = 0  # 影分身：分身持续回合
-var thief_shadow_fang_turns: int = 0   # 暗影之牙：敌人DEF降低回合
-var thief_shadow_fang_defdebuff: int = 0 # 暗影之牙：DEF降低量
+var thief_shadow_clone_turns: int = 0  # 影分身:分身持续回合
+var thief_shadow_fang_turns: int = 0   # 暗影之牙:敌人DEF降低回合
+var thief_shadow_fang_defdebuff: int = 0 # 暗影之牙:DEF降低量
 # 盗贼T4状态
-var thief_thousand_faces_turns: int = 0  # 千面杀手：持续回合
-var thief_shadow_devour_turns: int = 0   # 暗影吞噬：持续回合
-var thief_illusion_domain_turns: int = 0  # 幻惑领域：持续回合
+var thief_thousand_faces_turns: int = 0  # 千面杀手:持续回合
+var thief_shadow_devour_turns: int = 0   # 暗影吞噬:持续回合
+var thief_illusion_domain_turns: int = 0  # 幻惑领域:持续回合
 # 牧师T2状态
-var priest_mass_heal_mp: int = 0      # 群体治疗MP量（用于分摊护盾）
+var priest_mass_heal_mp: int = 0      # 群体治疗MP量(用于分摊护盾)
 var priest_dispel_done: bool = false  # 驱散本回合已用
 var priest_smite_turns: int = 0        # 神圣仲裁atk降低回合
 var priest_smite_defdebuff: int = 0    # 神圣仲裁降低def量
 # 牧师T3状态
-var priest_resurrection_uses: int = 0     # 复活术：剩余复活次数（每战斗2次）
-var priest_divine_domain_turns: int = 0   # 神圣领域：持续回合
-var priest_divine_domain_heal: int = 0  # 神圣领域：每回合治疗量
-var priest_life_fountain_turns: int = 0  # 生命之泉：持续回合
-var priest_life_fountain_heal: int = 0   # 生命之泉：每回合治疗量
-var priest_divine_judgment_turns: int = 0  # 神圣裁定：持续回合（对邪恶生物增伤）
+var priest_resurrection_uses: int = 0     # 复活术:剩余复活次数(每战斗2次)
+var priest_divine_domain_turns: int = 0   # 神圣领域:持续回合
+var priest_divine_domain_heal: int = 0  # 神圣领域:每回合治疗量
+var priest_life_fountain_turns: int = 0  # 生命之泉:持续回合
+var priest_life_fountain_heal: int = 0   # 生命之泉:每回合治疗量
+var priest_divine_judgment_turns: int = 0  # 神圣裁定:持续回合(对邪恶生物增伤)
 # 牧师T4状态
-var priest_divine_miracle_used: bool = false  # 神迹：是否已使用
-var priest_holy_sentinel_active: bool = false  # 永恒庇护：是否激活
-var priest_holy_sentinel_hp_threshold: int = 0  # 永恒庇护：触发阈值
+var priest_divine_miracle_used: bool = false  # 神迹:是否已使用
+var priest_holy_sentinel_active: bool = false  # 永恒庇护:是否激活
+var priest_holy_sentinel_hp_threshold: int = 0  # 永恒庇护:触发阈值
 # 骑士T2状态
-var knight_shield_bang_dmg: int = 0   # 盾击伤害量（溢出为盾）
+var knight_shield_bang_dmg: int = 0   # 盾击伤害量(溢出为盾)
 var knight_judgment_turns: int = 0     # 圣光审判降低防御回合
 var knight_judgment_defdebuff: int = 0 # 圣光审判降低防御量
 var knight_iron_wall_turns: int = 0    # 钢铁壁垒持续回合
 var knight_iron_wall_defboost: int = 0 # 钢铁壁垒防御加成
-var knight_holy_avenger_turns: int = 0  # 神圣复仇持续回合（DOT）
+var knight_holy_avenger_turns: int = 0  # 神圣复仇持续回合(DOT)
 var knight_holy_avenger_dmg: int = 0    # 神圣复仇每回合伤害
-var knight_eternal_guard_turns: int = 0  # 永恒守卫：替队友承受伤害的回合数
+var knight_eternal_guard_turns: int = 0  # 永恒守卫:替队友承受伤害的回合数
 var knight_eternal_guard_target: int = -1  # 永恒守卫保护的目标队友索引
 var knight_judgment_aoe_turns: int = 0  # 圣光审判AOE持续回合
 var knight_judgment_aoe_dmg: int = 0    # 圣光审判AOE每回合伤害
-var knight_angel_guard_turns: int = 0    # 天使守护：全队HP不降至1以下
+var knight_angel_guard_turns: int = 0    # 天使守护:全队HP不降至1以下
 var knight_angel_guard_triggered: bool = false  # 天使守护是否已触发过
 var knight_holy_hammer_turns: int = 0   # 神圣之锤印记回合
 var knight_holy_hammer_mult: float = 2.0  # 神圣之锤暴击倍率
-var knight_execution_turns: int = 0      # 正义执行：斩杀生效回合
+var knight_execution_turns: int = 0      # 正义执行:斩杀生效回合
 # 吟游诗人T2状态
 var bard_song_atk_turns: int = 0       # 战斗乐章atk提升回合
 var bard_song_atk_boost: int = 0        # 战斗乐章提升量
@@ -144,7 +144,7 @@ var bard_healing_melody_mp: int = 0     # 天籁之音治疗量
 var bard_hypno_turns: int = 0           # 催眠曲沉睡回合
 var bard_hallucinate_turns: int = 0     # 幻听闪避提升回合
 var bard_chaos_turns: int = 0           # 混乱之音回合
-var bard_chaos_active: bool = false     # 混乱之音激活标记（用于先手判定）
+var bard_chaos_active: bool = false     # 混乱之音激活标记(用于先手判定)
 
 # 吟游诗人T3/T4状态
 var bard_perfect_chord_turns: int = 0   # 完美和弦buff回合
@@ -165,32 +165,32 @@ var summoner_soul_link_dmg: int = 0          # 灵魂连接每回合伤害
 var summoner_beast_boost_turns: int = 0       # 召唤兽强化回合
 # 召唤师T3/T4状态 - 召唤物系统
 var active_summons: Array = []  # [{name, hp, max_hp, atk, turns, type}]
-var summoner_fusion_active: bool = false  # 召唤融合：当前是否处于融合状态
+var summoner_fusion_active: bool = false  # 召唤融合:当前是否处于融合状态
 var summoner_fusion_turns: int = 0        # 召唤融合持续回合
 var summoner_fusion_power: int = 0         # 融合召唤物的攻击力
 var summoner_fusion_hp: int = 0            # 融合召唤物的HP
-var summoner_soul_contract_turns: int = 0   # 契约之魂：召唤物自动攻击持续回合
-var summoner_soul_contract_dmg_boost: int = 0  # 契约之魂：召唤物伤害加成
+var summoner_soul_contract_turns: int = 0   # 契约之魂:召唤物自动攻击持续回合
+var summoner_soul_contract_dmg_boost: int = 0  # 契约之魂:召唤物伤害加成
 # 战士T3状态
-var warrior_shatter_turns: int = 0          # 碎甲：敌人DEF降低回合
-var warrior_shatter_defdebuff: int = 0       # 碎甲：敌人DEF降低量
-var warrior_shatter_orig_def: int = 0         # 碎甲：敌人原始DEF（用于恢复）
+var warrior_shatter_turns: int = 0          # 碎甲:敌人DEF降低回合
+var warrior_shatter_defdebuff: int = 0       # 碎甲:敌人DEF降低量
+var warrior_shatter_orig_def: int = 0         # 碎甲:敌人原始DEF(用于恢复)
 var warrior_domain_turns: int = 0            # 战神领域持续回合
 var warrior_domain_atk_boost: int = 0        # 战神领域ATK加成
 var warrior_domain_def_boost: int = 0        # 战神领域DEF加成
-var warrior_guard_active: bool = false       # 援护：是否已援护过
-var warrior_guard_target_hp_pct: float = 0.0  # 援护：目标HP百分比
-var warrior_undying_used: bool = false       # 不死不灭：是否已触发
-var warrior_bloodlust_active: bool = false  # 浴血奋战：激活状态
-var warrior_wargod_mark_turns: int = 0      # 战神之力：战神印记持续回合
-var warrior_wargod_mark_dmg_boost: int = 0   # 战神之力：受伤加成量
-var warrior_absolute_def_turns: int = 0      # 绝对防御：持续回合
-var warrior_conqueror_fear_turns: int = 0   # 征服者怒吼：恐惧持续回合
-var warrior_conqueror_fear_atkdebuff: int = 0  # 征服者怒吼：ATK降低量
+var warrior_guard_active: bool = false       # 援护:是否已援护过
+var warrior_guard_target_hp_pct: float = 0.0  # 援护:目标HP百分比
+var warrior_undying_used: bool = false       # 不死不灭:是否已触发
+var warrior_bloodlust_active: bool = false  # 浴血奋战:激活状态
+var warrior_wargod_mark_turns: int = 0      # 战神之力:战神印记持续回合
+var warrior_wargod_mark_dmg_boost: int = 0   # 战神之力:受伤加成量
+var warrior_absolute_def_turns: int = 0      # 绝对防御:持续回合
+var warrior_conqueror_fear_turns: int = 0   # 征服者怒吼:恐惧持续回合
+var warrior_conqueror_fear_atkdebuff: int = 0  # 征服者怒吼:ATK降低量
 
 # 技能冷却系统
 var skill_cooldowns: Dictionary = {}  # {skill_name: remaining_turns}
-var battle_started: bool = false     # 战斗是否已开始（用于陷阱被动）
+var battle_started: bool = false     # 战斗是否已开始(用于陷阱被动)
 var enemy_hit_this_battle: bool = false  # 敌人本场战斗是否命中过玩家
 
 # 相机抖动
@@ -267,17 +267,17 @@ const SHOP_POTIONS = [
 ]
 
 # 装备强化系统
-# 强化成功率（+10开始有失败风险）
+# 强化成功率(+10开始有失败风险)
 const ENHANCE_SUCCESS_RATES = {
 	10: 80, 11: 65, 12: 50, 13: 35, 14: 20, 15: 10
 }
-# 强化费用（金币）
+# 强化费用(金币)
 const ENHANCE_COSTS = {
 	1: 100, 2: 100, 3: 100, 4: 300, 5: 300, 6: 300,
 	7: 600, 8: 600, 9: 600, 10: 1200, 11: 1800,
 	12: 2500, 13: 3500, 14: 5000, 15: 8000
 }
-# 强化所需材料（按装备品质grade）
+# 强化所需材料(按装备品质grade)
 const ENHANCE_MATERIALS = {
 	# grade: [材料名称, 数量]
 	1: ["普通强化石", 1],
@@ -363,7 +363,7 @@ const ACHIEVEMENTS = {
 	},
 	"floor_8": {
 		"name": "江湖至尊",
-		"desc": "抵达第8层（通关）",
+		"desc": "抵达第8层(通关)",
 		"icon": "👑",
 		"category": "explore",
 		"condition": "max_floor_reached >= 8"
@@ -399,7 +399,7 @@ const ACHIEVEMENTS = {
 	},
 	"boss_final": {
 		"name": "天下无敌",
-		"desc": "击败武当真人·张三丰，通关游戏",
+		"desc": "击败武当真人·张三丰,通关游戏",
 		"icon": "🏮",
 		"category": "boss",
 		"condition": "bosses_defeated >= 5"
@@ -512,7 +512,7 @@ const BOSS_DATA = {
 		"color": Color(0.55, 0.25, 0.1),
 		"phase_hp": 0.3,  # 30%血量触发狂暴
 		"skills": ["普通攻击", "战吼", "召集喽啰", "狂暴化"],
-		"description": "盘踞在黑风寨的山贼首领，刀法霸道，据说曾是某个门派的弃徒。"
+		"description": "盘踞在黑风寨的山贼首领,刀法霸道,据说曾是某个门派的弃徒。"
 	},
 	3: {
 		"id": "boss_blood_sect",
@@ -523,7 +523,7 @@ const BOSS_DATA = {
 		"color": Color(0.65, 0.1, 0.1),
 		"phase_hp": 0.2,  # 20%血量触发血战到底
 		"skills": ["一线斩", "血雾", "血刀斩", "嗜血狂刀", "血战到底"],
-		"description": "血刀门四大护法之一，双手染满江湖人士的鲜血，绝学「血战到底」一旦施展必死无疑。"
+		"description": "血刀门四大护法之一,双手染满江湖人士的鲜血,绝学「血战到底」一旦施展必死无疑。"
 	},
 	5: {
 		"id": "boss_traitors",
@@ -534,7 +534,7 @@ const BOSS_DATA = {
 		"color": Color(0.25, 0.2, 0.5),
 		"phase_hp": 0.0,
 		"skills": ["御剑术", "剑气纵横", "夺命十三剑", "金蝉脱壳"],
-		"description": "原为某正派长老，盗取门派秘籍叛逃江湖，所学武功已入化境。"
+		"description": "原为某正派长老,盗取门派秘籍叛逃江湖,所学武功已入化境。"
 	},
 	7: {
 		"id": "boss_yue_bucun",
@@ -545,7 +545,7 @@ const BOSS_DATA = {
 		"color": Color(0.85, 0.7, 0.3),
 		"phase_hp": 0.0,
 		"skills": ["紫霞神功", "独孤九剑", "吸星大法", "辟邪剑法", "伪君子真面目"],
-		"description": "华山派掌门，外号「君子剑」，实则城府极深，为夺葵花宝典不择手段。"
+		"description": "华山派掌门,外号「君子剑」,实则城府极深,为夺葵花宝典不择手段。"
 	},
 	8: {
 		"id": "boss_zhang_sanfeng",
@@ -557,7 +557,7 @@ const BOSS_DATA = {
 		"phase_hp": 0.6,  # 60%进入第二阶段
 		"phase2_hp": 0.3,  # 30%进入第三阶段
 		"skills": ["太极拳", "太极剑", "梯云纵", "纯阳无极功", "武当九阳功", "一代宗师"],
-		"description": "武当派开山祖师，百年修为已臻化境，一套太极拳法无敌于天下。今日亲临，是考验也是收徒。"
+		"description": "武当派开山祖师,百年修为已臻化境,一套太极拳法无敌于天下。今日亲临,是考验也是收徒。"
 	}
 }
 
@@ -630,7 +630,7 @@ var achievement_notification_ui: Control = null  # 成就通知UI
 var achievement_log_open: bool = false
 var achievement_log_ui: Control = null
 var achievement_log_buttons: Array = []
-var _floor_damage_taken: int = 0  # 本层受到的伤害（用于计算无伤通关成就）
+var _floor_damage_taken: int = 0  # 本层受到的伤害(用于计算无伤通关成就)
 var boss_phase: int = 1  # Boss战阶段
 var boss_enraged: bool = false  # Boss狂暴标记
 var boss_shield_stacks: int = 0  # Boss护盾层数
@@ -790,7 +790,7 @@ func _show_main_menu(parent: Panel):
 	new_desc.add_theme_font_size_override("font_size", 11)
 	parent.add_child(new_desc)
 
-	# 按钮2: 江湖旧梦（继续）
+	# 按钮2: 江湖旧梦(继续)
 	var has_any_save = has_save(0) or has_save(1) or has_save(2)
 	var cont_btn = _create_menu_button("📜 江湖旧梦", Vector2(start_x, menu_start_y + 100), Vector2(btn_w, btn_h), Color(0.3, 0.7, 0.9))
 	cont_btn.pressed.connect(_on_continue_pressed)
@@ -810,13 +810,13 @@ func _show_main_menu(parent: Panel):
 	var cont_desc = Label.new()
 	cont_desc.position = Vector2(start_x + 20, menu_start_y + 162)
 	cont_desc.size = Vector2(btn_w - 40, 20)
-	cont_desc.text = "继续上次的冒险" if has_any_save else "（暂无存档）"
+	cont_desc.text = "继续上次的冒险" if has_any_save else "(暂无存档)"
 	cont_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cont_desc.add_theme_color_override("font_color", Color(0.4, 0.4, 0.45))
 	cont_desc.add_theme_font_size_override("font_size", 11)
 	parent.add_child(cont_desc)
 
-	# 按钮3: 江湖秘籍（游戏说明）
+	# 按钮3: 江湖秘籍(游戏说明)
 	var how_btn = _create_menu_button("📖 江湖秘籍", Vector2(start_x, menu_start_y + 200), Vector2(btn_w, btn_h), Color(0.5, 0.8, 0.5))
 	how_btn.pressed.connect(_on_how_to_play_pressed)
 	parent.add_child(how_btn)
@@ -1024,7 +1024,7 @@ func _show_slot_select(is_new_game: bool):
 			empty_lbl.name = "SlotEmpty_%d" % i
 			empty_lbl.position = Vector2(sx + 10, sy + 40)
 			empty_lbl.size = Vector2(slot_w - 20, 60)
-			empty_lbl.text = "（空）\n尚未在此存档"
+			empty_lbl.text = "(空)\n尚未在此存档"
 			empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			empty_lbl.add_theme_color_override("font_color", Color(0.35, 0.35, 0.4))
 			empty_lbl.add_theme_font_size_override("font_size", 12)
@@ -1047,18 +1047,18 @@ func _show_slot_select(is_new_game: bool):
 func _get_save_info_text(slot: int) -> String:
 	var path = _get_save_path(slot)
 	if not FileAccess.file_exists(path):
-		return "（空）"
+		return "(空)"
 	var file = FileAccess.open(path, FileAccess.READ)
 	if not file:
-		return "（读取失败）"
+		return "(读取失败)"
 	var json_str = file.get_as_text()
 	file.close()
 	var json = JSON.new()
 	if json.parse(json_str) != OK:
-		return "（数据损坏）"
+		return "(数据损坏)"
 	var data = json.get_data()
 	if typeof(data) != TYPE_DICTIONARY:
-		return "（格式错误）"
+		return "(格式错误)"
 	var pdata = data.get("player", {})
 	var progress = data.get("progress", {})
 	var ts = data.get("timestamp", "")
@@ -1081,7 +1081,7 @@ func _show_save_confirm(slot: int):
 	var confirm_lbl = Label.new()
 	confirm_lbl.position = Vector2(0, 200)
 	confirm_lbl.size = Vector2(1000, 50)
-	confirm_lbl.text = "⚠️ 确认覆盖存档？"
+	confirm_lbl.text = "⚠️ 确认覆盖存档?"
 	confirm_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	confirm_lbl.add_theme_color_override("font_color", Color(1.0, 0.5, 0.2))
 	confirm_lbl.add_theme_font_size_override("font_size", 22)
@@ -1090,7 +1090,7 @@ func _show_save_confirm(slot: int):
 	var info_lbl = Label.new()
 	info_lbl.position = Vector2(0, 270)
 	info_lbl.size = Vector2(1000, 30)
-	info_lbl.text = "存档位 %d 的数据将被永久覆盖！" % (slot + 1)
+	info_lbl.text = "存档位 %d 的数据将被永久覆盖!" % (slot + 1)
 	info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	info_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.75))
 	info_lbl.add_theme_font_size_override("font_size", 14)
@@ -1100,7 +1100,7 @@ func _show_save_confirm(slot: int):
 	var old_lbl = Label.new()
 	old_lbl.position = Vector2(200, 320)
 	old_lbl.size = Vector2(600, 80)
-	old_lbl.text = "当前存档：\n" + old_save
+	old_lbl.text = "当前存档:\n" + old_save
 	old_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	old_lbl.add_theme_color_override("font_color", Color(0.55, 0.55, 0.6))
 	old_lbl.add_theme_font_size_override("font_size", 13)
@@ -1108,7 +1108,7 @@ func _show_save_confirm(slot: int):
 	title_panel.add_child(old_lbl)
 
 	var btn_y = 430
-	var yes_btn = _create_menu_button("⚔️ 确认，开始新的江湖！", Vector2(250, btn_y), Vector2(500, 55), Color(0.9, 0.3, 0.3))
+	var yes_btn = _create_menu_button("⚔️ 确认,开始新的江湖!", Vector2(250, btn_y), Vector2(500, 55), Color(0.9, 0.3, 0.3))
 	yes_btn.pressed.connect(_on_confirm_new_game.bind(slot))
 	title_panel.add_child(yes_btn)
 
@@ -1120,14 +1120,14 @@ func _on_slot_selected(slot: int):
 	_init_slot = slot
 	if _slot_select_is_new_game:
 		if has_save(slot):
-			# 有存档，弹出确认
+			# 有存档,弹出确认
 			_show_save_confirm(slot)
 		else:
-			# 空存档，先选职业再开始
+			# 空存档,先选职业再开始
 			_title_state = TitleState.CLASS_SELECT
 			_show_class_select_for_new_game()
 	else:
-		# 继续游戏，直接加载
+		# 继续游戏,直接加载
 		_start_continue_game(slot)
 
 func _on_confirm_new_game(slot: int):
@@ -1136,7 +1136,7 @@ func _on_confirm_new_game(slot: int):
 	_show_class_select_for_new_game()
 
 func _show_class_select_for_new_game():
-	# 创建新的标题面板（替换存档选择面板）
+	# 创建新的标题面板(替换存档选择面板)
 	var old_panel = get_node_or_null("TitlePanel")
 	if old_panel:
 		old_panel.queue_free()
@@ -1196,7 +1196,7 @@ func _start_new_game(slot: int, job_id: int = Job.WARRIOR):
 	game_state = State.EXPLORE
 	_update_minimap()
 	audio_manager.play_bgm("explore")
-	show_message("欢迎，%s！你的冒险开始了..." % player_data.get_job_name())
+	show_message("欢迎,%s!你的冒险开始了..." % player_data.get_job_name())
 
 func _start_continue_game(slot: int):
 	# 清空标题画面
@@ -1208,7 +1208,7 @@ func _start_continue_game(slot: int):
 	if title_pn: title_pn.queue_free()
 
 	if not load_game(slot):
-		# 加载失败，回到标题
+		# 加载失败,回到标题
 		get_tree().reload_current_scene()
 		return
 
@@ -1233,7 +1233,7 @@ func _start_continue_game(slot: int):
 	show_message("继续冒险... %s (第%d层)" % [player_data.get_job_name(), current_floor])
 
 func _reset_game_data():
-	"""重置游戏数据（新游戏时调用）"""
+	"""重置游戏数据(新游戏时调用)"""
 	achievement_stats = {
 		"enemies_defeated": 0, "bosses_defeated": 0, "elite_enemies_defeated": 0,
 		"max_floor_reached": 1, "total_gold_earned": 0, "total_gold_spent": 0,
@@ -1281,11 +1281,11 @@ func _show_how_to_play():
 	sep.add_theme_font_size_override("font_size", 11)
 	title_panel.add_child(sep)
 
-	# 说明内容（两栏布局）
+	# 说明内容(两栏布局)
 	var content = [
 		["【基础操作】", [
 			"WASD ··· 移动角色",
-			"F ······ 进入下一层（踩楼梯点）",
+			"F ······ 进入下一层(踩楼梯点)",
 			"E ······ 打开商店",
 			"I ······ 打开背包/道具",
 			"Q ······ 任务日志",
@@ -1300,20 +1300,20 @@ func _show_how_to_play():
 			"点击 🏃逃跑 · 尝试脱离战斗",
 		]],
 		["【游戏目标】", [
-			"· 挑战8层地牢，击败各层Boss",
-			"· 从草寇山贼到武当真人，逐层深入",
+			"· 挑战8层地牢,击败各层Boss",
+			"· 从草寇山贼到武当真人,逐层深入",
 			"· 收集装备、强化道具、提升等级",
 			"· 完成途中遭遇的任务与事件",
 		]],
 		["【职业系统】", [
-			"战士：高血量，物理伤害",
-			"法师：高魔攻，元素魔法",
-			"猎人：高速度，陷阱狙击",
-			"盗贼：高暴击，暗影刺杀",
-			"牧师：治疗与辅助复活",
-			"骑士：高防御，格挡反击",
-			"吟游诗人：战斗乐章辅助",
-			"召唤师：契约召唤兽助战",
+			"战士:高血量,物理伤害",
+			"法师:高魔攻,元素魔法",
+			"猎人:高速度,陷阱狙击",
+			"盗贼:高暴击,暗影刺杀",
+			"牧师:治疗与辅助复活",
+			"骑士:高防御,格挡反击",
+			"吟游诗人:战斗乐章辅助",
+			"召唤师:契约召唤兽助战",
 		]],
 	]
 
@@ -1385,7 +1385,7 @@ func _create_small_button(text: String, pos: Vector2) -> Button:
 	return btn
 
 func _show_class_select():
-	"""显示职业选择界面（从存档选择后调用）- 兼容旧调用"""
+	"""显示职业选择界面(从存档选择后调用)- 兼容旧调用"""
 	var title_panel = get_node_or_null("TitlePanel")
 	if not title_panel:
 		return
@@ -1396,7 +1396,7 @@ func _show_class_select():
 
 func _show_class_select_ui(title_panel: Panel):
 	"""填充职业选择界面到给定面板"""
-	# 清空面板（确保干净）
+	# 清空面板(确保干净)
 	for child in title_panel.get_children():
 		child.queue_free()
 
@@ -1519,7 +1519,7 @@ func _show_class_select_ui(title_panel: Panel):
 	title_panel.add_child(tip)
 
 func _on_job_selected(job_id: int):
-	# 从职业选择界面启动新游戏（使用已选的存档槽）
+	# 从职业选择界面启动新游戏(使用已选的存档槽)
 	_start_new_game(_init_slot, job_id)
 
 func _setup_player_data(job_id: int = Job.WARRIOR):
@@ -1667,7 +1667,7 @@ func _setup_player():
 	sprite.centered = false
 	sprite.offset = Vector2(-16, -16)  # 居中偏移
 
-	# 使用PNG素材（256x256缩小到32x32）
+	# 使用PNG素材(256x256缩小到32x32)
 	var tex = _load_job_texture(player_data.job)
 	if tex:
 		sprite.texture = tex
@@ -1963,7 +1963,7 @@ var map_ground: ColorRect
 var grass_pattern: Node2D  # 草地纹理节点
 
 func _generate_map():
-	# 清理旧地图资源（防止内存泄漏）
+	# 清理旧地图资源(防止内存泄漏)
 	if map_bg:
 		map_bg.queue_free()
 	if map_ground:
@@ -1971,14 +1971,14 @@ func _generate_map():
 	if grass_pattern:
 		grass_pattern.queue_free()
 
-	# 背景（天空）
+	# 背景(天空)
 	map_bg = ColorRect.new()
 	map_bg.size = SCREEN_SIZE
 	map_bg.position = Vector2(0, 0)
 	map_bg.color = PALETTE.sky_top
 	add_child(map_bg)
 
-	# 地面（草地）
+	# 地面(草地)
 	map_ground = ColorRect.new()
 	map_ground.size = SCREEN_SIZE
 	map_ground.position = Vector2(0, 0)
@@ -1990,7 +1990,7 @@ func _generate_map():
 	grass_pattern.position = Vector2(0, 0)
 	add_child(grass_pattern)
 
-	# 迷雾（使用fog_container统一管理，一次queue_free即可释放所有子节点）
+	# 迷雾(使用fog_container统一管理,一次queue_free即可释放所有子节点)
 	_clear_fog()
 	fog_container = Node2D.new()
 	fog_container.name = "FogContainer"
@@ -2011,7 +2011,7 @@ func _generate_map():
 func _create_grass_pattern() -> Node2D:
 	var container = Node2D.new()
 
-	# 创建草地纹理（16x16像素砖块排列）
+	# 创建草地纹理(16x16像素砖块排列)
 	for tx in range(0, 80):
 		for ty in range(0, 45):
 			var tile = ColorRect.new()
@@ -2028,7 +2028,7 @@ func _create_grass_pattern() -> Node2D:
 
 
 func _clear_fog():
-	# 使用fog_container统一释放，一次queue_free即可释放所有子节点
+	# 使用fog_container统一释放,一次queue_free即可释放所有子节点
 	if fog_container and is_instance_valid(fog_container):
 		fog_container.queue_free()
 	fog_container = null
@@ -2047,7 +2047,7 @@ func _reveal_area(cx: int, cy: int, radius: int):
 					var key = str(x) + "_" + str(y)
 					if fog_map.has(key):
 						var fog = fog_map[key]
-						# 完全透明在中心，边缘渐变到50%不透明度
+						# 完全透明在中心,边缘渐变到50%不透明度
 						var alpha = max(0.0, 0.5 - (dist / radius) * 0.5)
 						fog.color = Color(0.02, 0.02, 0.04, alpha)
 
@@ -2156,7 +2156,7 @@ func _process_explore(delta):
 
 func _next_floor():
 	if current_floor >= 8:
-		show_message("这是最后一层！")
+		show_message("这是最后一层!")
 		return
 	if is_transitioning:
 		return
@@ -2179,11 +2179,11 @@ func _next_floor():
 	player.position = Vector2(640, 400)
 	_check_quest_objectives("explore_floor", {"floor": current_floor})
 
-	# 成就追踪：探索新层
+	# 成就追踪:探索新层
 	if current_floor > achievement_stats["max_floor_reached"]:
 		achievement_stats["max_floor_reached"] = current_floor
 
-		# 检查无伤通关成就（从上一层切换时检测）
+		# 检查无伤通关成就(从上一层切换时检测)
 		if _floor_damage_taken == 0 and current_floor > 1:
 			achievement_stats["no_damage_floors"] += 1
 
@@ -2219,7 +2219,7 @@ func _next_floor():
 	is_transitioning = false
 	is_player_turn = true
 
-	# 如果是Boss层，短暂提示后开始Boss战
+	# 如果是Boss层,短暂提示后开始Boss战
 	if boss_key > 0:
 		await get_tree().create_timer(1.5).timeout
 		_start_boss_encounter()
@@ -2509,7 +2509,7 @@ func _create_inventory_ui():
 	close_btn.size = Vector2(160, 55)
 	inv_panel.add_child(close_btn)
 
-	# 角色装备信息（底部）
+	# 角色装备信息(底部)
 	var equip_panel = Panel.new()
 	equip_panel.name = "EquipPanel"
 	equip_panel.position = Vector2(20, 420)
@@ -2688,7 +2688,7 @@ func _on_inventory_item_used(inv_item: Dictionary):
 			if player_data.inventory[item_idx]["count"] <= 0:
 				player_data.inventory.remove_at(item_idx)
 
-		show_message("使用了 %s！" % item_name)
+		show_message("使用了 %s!" % item_name)
 		_update_ui()
 
 		# 刷新背包UI
@@ -2704,11 +2704,11 @@ func _on_inventory_item_used(inv_item: Dictionary):
 			if count_lbl:
 				count_lbl.text = "物品数: %d" % player_data.inventory.size()
 	else:
-		show_message("状态已满，无法使用！")
+		show_message("状态已满,无法使用!")
 
 # ==================== 小地图系统 ====================
 
-# 小地图尺寸 (80x45 地图，缩小显示)
+# 小地图尺寸 (80x45 地图,缩小显示)
 const MINIMAP_COLS: int = 80
 const MINIMAP_ROWS: int = 45
 const MINIMAP_CELL: int = 2  # 每个小地图格子的像素大小
@@ -2737,6 +2737,15 @@ const BOSS_SKILL_MULT_2D8: float = 2.8   # 2.8倍
 const BOSS_SKILL_MULT_3D0: float = 3.0   # 3.0倍
 const BOSS_SKILL_MULT_1D8: float = 1.8   # 1.8倍
 const BOSS_SKILL_MULT_0D6: float = 0.6   # 0.6倍
+
+# 精英敌人参数
+const ELITE_SPAWN_CHANCE: float = 0.15      # 精英生成概率
+const ELITE_HP_MULT: float = 1.5            # 精英HP倍率
+const ELITE_ATK_MULT: float = 1.3           # 精英ATK倍率
+const ELITE_DEF_MULT: float = 1.2           # 精英DEF倍率
+const ELITE_EXP_MULT: float = 1.5           # 精英EXP倍率
+const ELITE_GOLD_MULT: float = 1.5          # 精英GOLD倍率
+const ELITE_FLOOR_MAX: int = 7              # BOSS层(7+)不出精英
 
 # 伤害方差辅助函数 (避免硬编码散落)
 ## base_dmg ±2 波动 (用于敌人普攻/连锁闪电第2段)
@@ -2885,7 +2894,7 @@ func _check_quest_objectives(event_type: String, event_data: Dictionary):
 							obj_done = true
 
 				"goto":
-					# 前往特定场景/位置（目前通过探索触发）
+					# 前往特定场景/位置(目前通过探索触发)
 					if event_type == "goto" and obj_target == event_data.get("target", ""):
 						obj_done = true
 
@@ -2927,7 +2936,7 @@ func _check_quest_objectives(event_type: String, event_data: Dictionary):
 				var quest_title = quest.get("title", "未知任务")
 				show_message("📜 任务完成: %s" % quest_title)
 
-	# 如果有已完成的自动接受任务，触发它们
+	# 如果有已完成的自动接受任务,触发它们
 	if updated:
 		_trigger_accepted_quests()
 
@@ -2991,7 +3000,7 @@ func _unlock_achievement(ach_id: String):
 	_show_achievement_notification(ach)
 
 func _show_achievement_notification(ach: Dictionary):
-	"""显示成就解锁通知（屏幕中央弹出）"""
+	"""显示成就解锁通知(屏幕中央弹出)"""
 	# 移除已有通知
 	if achievement_notification_ui != null:
 		achievement_notification_ui.queue_free()
@@ -3108,7 +3117,7 @@ func _create_achievement_log_ui():
 	title.add_theme_font_size_override("font_size", 22)
 	ach_panel.add_child(title)
 
-	# 成就列表（滚动区域）
+	# 成就列表(滚动区域)
 	var scroll = ScrollContainer.new()
 	scroll.name = "AchievementScroll"
 	scroll.position = Vector2(20, 55)
@@ -3258,7 +3267,7 @@ func _draw_quest_list(quest_area: Panel):
 	if quests.size() == 0:
 		var empty_lbl = Label.new()
 		empty_lbl.name = "EmptyQuestLabel"
-		empty_lbl.text = "暂无进行中的任务\n去客栈打听消息，获得新任务"
+		empty_lbl.text = "暂无进行中的任务\n去客栈打听消息,获得新任务"
 		empty_lbl.position = Vector2(150, 100)
 		empty_lbl.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
 		empty_lbl.add_theme_font_size_override("font_size", 16)
@@ -3293,7 +3302,7 @@ func _draw_quest_list(quest_area: Panel):
 		var qid_lbl = Label.new()
 		qid_lbl.name = "qid_%d" % idx
 		qid_lbl.text = quest.get("id", "?")
-		qid_lbl.visible = false  # 隐藏，只用于标识
+		qid_lbl.visible = false  # 隐藏,只用于标识
 		qid_lbl.position = Vector2(start_x, by)
 		quest_area.add_child(qid_lbl)
 
@@ -3387,7 +3396,7 @@ func _get_shop_items_by_tab(tab: int) -> Array:
 	return []
 
 var shop_bg_sprite: Sprite2D  # 商店背景精灵
-var shop_bg_fallback: ColorRect  # 商店背景fallback（加载失败时使用）
+var shop_bg_fallback: ColorRect  # 商店背景fallback(加载失败时使用)
 
 func _open_shop():
 	game_state = State.SHOP
@@ -3395,7 +3404,7 @@ func _open_shop():
 		minimap_container.visible = false
 	_create_shop_bg()  # 添加商店背景
 	_create_shop_ui()
-	show_message("欢迎光临商店！")
+	show_message("欢迎光临商店!")
 	if audio_manager:
 		audio_manager.play_bgm("shop")
 
@@ -3405,7 +3414,7 @@ func _create_shop_bg():
 	if shop_bg_sprite:
 		shop_bg_sprite.queue_free()
 
-	# 创建背景精灵（使用酒馆场景）
+	# 创建背景精灵(使用酒馆场景)
 	shop_bg_sprite = Sprite2D.new()
 	shop_bg_sprite.name = "ShopBG"
 	shop_bg_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -3455,7 +3464,7 @@ func _close_shop():
 	game_state = State.EXPLORE
 	if minimap_container:
 		minimap_container.visible = true
-	show_message("下次再来！")
+	show_message("下次再来!")
 	if audio_manager:
 		audio_manager.play_bgm("explore")
 
@@ -3528,7 +3537,7 @@ func _create_shop_ui():
 	close_btn.size = Vector2(180, 55)
 	shop_panel.add_child(close_btn)
 
-	# 玩家装备信息（右侧）
+	# 玩家装备信息(右侧)
 	var equip_panel = Panel.new()
 	equip_panel.name = "EquipPanel"
 	equip_panel.position = Vector2(780, 120)
@@ -3747,7 +3756,7 @@ func _on_shop_item_clicked(item: Dictionary):
 	# 药水直接购买
 	if item.has("heal_hp"):
 		if player_data.gold < item["price"]:
-			show_message("金钱不足！")
+			show_message("金钱不足!")
 			return
 		player_data.gold -= item["price"]
 		achievement_stats["total_gold_spent"] += item["price"]
@@ -3769,7 +3778,7 @@ func _on_shop_item_clicked(item: Dictionary):
 	# 强化材料购买
 	if item.has("material"):
 		if player_data.gold < item["price"]:
-			show_message("金钱不足！")
+			show_message("金钱不足!")
 			return
 		player_data.gold -= item["price"]
 		achievement_stats["total_gold_spent"] += item["price"]
@@ -3789,9 +3798,9 @@ func _on_shop_item_clicked(item: Dictionary):
 		_check_achievements()
 		return
 
-	# 装备：显示比较面板
+	# 装备:显示比较面板
 	if player_data.gold < item["price"]:
-		show_message("金钱不足！")
+		show_message("金钱不足!")
 		return
 
 	_selected_shop_item = item
@@ -3962,7 +3971,7 @@ func _confirm_equipment_purchase():
 		return
 	var item = _selected_shop_item
 	if player_data.gold < item["price"]:
-		show_message("金钱不足！")
+		show_message("金钱不足!")
 		_close_compare_panel()
 		return
 
@@ -3972,7 +3981,7 @@ func _confirm_equipment_purchase():
 		0: player_data.weapon = item
 		1: player_data.armor = item
 		2: player_data.accessory = item
-	show_message("购买了 %s 并装备！" % item["name"])
+	show_message("购买了 %s 并装备!" % item["name"])
 	if audio_manager:
 		audio_manager.play_sfx("purchase")
 	_close_compare_panel()
@@ -4007,7 +4016,7 @@ func _draw_enhance_items(shop_panel: Panel):
 	var info_lbl = Label.new()
 	info_lbl.name = "EnhanceInfo"
 	info_lbl.position = Vector2(20, 120)
-	info_lbl.text = "🔨 装备强化\n\n强化可提升装备的基础属性\n+1~+9 强化成功率 100%%\n+10 开始有失败风险（失败不退级）\n所需材料由装备品质决定"
+	info_lbl.text = "🔨 装备强化\n\n强化可提升装备的基础属性\n+1~+9 强化成功率 100%%\n+10 开始有失败风险(失败不退级)\n所需材料由装备品质决定"
 	info_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.6))
 	info_lbl.add_theme_font_size_override("font_size", 13)
 	shop_panel.add_child(info_lbl)
@@ -4047,20 +4056,20 @@ func _draw_enhance_items(shop_panel: Panel):
 		# 检查是否已达最大强化
 		if next_lvl > 15:
 			can_enhance = false
-			reason = "已达最大强化等级！"
+			reason = "已达最大强化等级!"
 		else:
 			# 检查金币
 			var cost = ENHANCE_COSTS.get(next_lvl, 1000)
 			if player_data.gold < cost:
 				can_enhance = false
-				reason = "金币不足（需 %d）" % cost
+				reason = "金币不足(需 %d)" % cost
 			# 检查材料
 			var mat_info = ENHANCE_MATERIALS.get(eq_grade, ["未知材料", 1])
 			var mat_name = mat_info[0]
 			var mat_count = _count_inventory(mat_name)
 			if mat_count < mat_info[1]:
 				can_enhance = false
-				reason = "缺少%s（持有 %d/%d）" % [mat_name, mat_count, mat_info[1]]
+				reason = "缺少%s(持有 %d/%d)" % [mat_name, mat_count, mat_info[1]]
 
 		# 成功率
 		var success_rate = 100
@@ -4127,12 +4136,12 @@ func _on_enhance_clicked(slot: String):
 			enhance_lvl = player_data.accessory_enhance
 
 	if eq_data.size() == 0:
-		show_message("该装备栏为空！")
+		show_message("该装备栏为空!")
 		return
 
 	var next_lvl = enhance_lvl + 1
 	if next_lvl > 15:
-		show_message("已达最大强化等级！")
+		show_message("已达最大强化等级!")
 		return
 
 	var eq_grade = eq_data.get("grade", 1)
@@ -4169,7 +4178,7 @@ func _on_enhance_clicked(slot: String):
 			old_atk_def = player_data.defense()
 			new_atk_def = player_data.def + eq_data.get("def", 0) + _calc_enhance_bonus(eq_grade, next_lvl)
 
-		show_message("🎉 强化成功！%s → +%d" % [eq_data.get("name", "装备"), next_lvl])
+		show_message("🎉 强化成功!%s → +%d" % [eq_data.get("name", "装备"), next_lvl])
 		if audio_manager:
 			audio_manager.play_sfx("enhance_success")
 	else:
@@ -4328,7 +4337,7 @@ func _start_battle():
 	bard_hypno_turns = 0
 	bard_hallucinate_turns = 0
 	bard_chaos_turns = 0
-	# 吟游诗人T3/T4状态重置（传奇之歌为永久，不重置）
+	# 吟游诗人T3/T4状态重置(传奇之歌为永久,不重置)
 	bard_perfect_chord_turns = 0
 	bard_perfect_chord_atk_boost = 0
 	bard_perfect_chord_crit_boost = 0
@@ -4366,31 +4375,31 @@ func _start_battle():
 	warrior_conqueror_fear_turns = 0
 	warrior_conqueror_fear_atkdebuff = 0
 
-	# 生成敌人（根据层数选择敌人类型）
+	# 生成敌人(根据层数选择敌人类型)
 	var enemy_data_class = _get_enemy_data()
 	var enemy_pool = enemy_data_class.get_floor_enemies(current_floor)
 	var etype = enemy_pool[randi() % enemy_pool.size()]
 	var edata = enemy_data_class.new(etype, current_floor)
-	
+
 	# 精英敌人检测（15%概率，BOSS层除外）
 	var is_elite = false
-	var elite_mult = 1.0
-	if current_floor < 7 and randf() < 0.15:
+	var elite_mult: float = 1.0
+	if current_floor < ELITE_FLOOR_MAX and randf() < ELITE_SPAWN_CHANCE:
 		is_elite = true
-		elite_mult = 1.5  # 精英加成倍率
-	
+		elite_mult = ELITE_HP_MULT
+
 	var elite_name_prefix = "" if not is_elite else "精英·"
-	var elite_exp_mult = 1.5 if is_elite else 1.0
-	var elite_gold_mult = 1.5 if is_elite else 1.0
-	
+	var elite_exp_mult: float = ELITE_EXP_MULT if is_elite else 1.0
+	var elite_gold_mult: float = ELITE_GOLD_MULT if is_elite else 1.0
+
 	current_enemy = {
 		"name": elite_name_prefix + edata.name,
 		"id": etype,  # 敌人类型ID，用于任务追踪
 		"type": etype,  # 保存敌人类型用于选择素材
 		"hp": int(edata.hp * elite_mult),
 		"max_hp": int(edata.hp * elite_mult),
-		"atk": int(edata.atk * (1.3 if is_elite else 1.0)),
-		"def": int(edata.def * (1.2 if is_elite else 1.0)),
+		"atk": int(edata.atk * (ELITE_ATK_MULT if is_elite else 1.0)),
+		"def": int(edata.def * (ELITE_DEF_MULT if is_elite else 1.0)),
 		"spd": edata.spd,
 		"exp": int(edata.exp_reward * elite_exp_mult),
 		"gold": int(edata.gold_reward * elite_gold_mult),
@@ -4401,9 +4410,9 @@ func _start_battle():
 	}
 
 	if is_elite:
-		show_message("⚠️ 遭遇了精英敌人 " + current_enemy["name"] + "！")
+		show_message("⚠️ 遭遇了精英敌人 " + current_enemy["name"] + "!")
 	else:
-		show_message("遭遇了 " + current_enemy["name"] + "！")
+		show_message("遭遇了 " + current_enemy["name"] + "!")
 	_create_battle_ui()
 	# 重置技能冷却
 	skill_cooldowns.clear()
@@ -4427,7 +4436,7 @@ func _start_battle():
 		await get_tree().create_timer(0.5).timeout
 		var trap_dmg = int(player_data.attack_power() * 1.5)
 		current_enemy["hp"] -= trap_dmg
-		_battle_add_log("⚡ 陷阱触发！造成 %d 伤害" % trap_dmg)
+		_battle_add_log("⚡ 陷阱触发!造成 %d 伤害" % trap_dmg)
 		_spawn_enemy_damage("%d" % trap_dmg, "damage", Vector2(0, -25))
 		_update_enemy_hp_bar()
 		await _check_battle_end()
@@ -4546,7 +4555,7 @@ func _start_boss_battle():
 	bard_hypno_turns = 0
 	bard_hallucinate_turns = 0
 	bard_chaos_turns = 0
-	# 吟游诗人T3/T4状态重置（传奇之歌为永久，不重置）
+	# 吟游诗人T3/T4状态重置(传奇之歌为永久,不重置)
 	bard_perfect_chord_turns = 0
 	bard_perfect_chord_atk_boost = 0
 	bard_perfect_chord_crit_boost = 0
@@ -4591,7 +4600,7 @@ func _start_boss_battle():
 	current_enemy = current_boss_data.duplicate()
 	current_enemy["is_boss"] = true
 
-	show_message("⚠️ Boss战: " + current_enemy["name"] + "！")
+	show_message("⚠️ Boss战: " + current_enemy["name"] + "!")
 	_create_battle_ui()
 	# 重置技能冷却
 	skill_cooldowns.clear()
@@ -4606,7 +4615,7 @@ func _start_boss_battle():
 		await get_tree().create_timer(0.5).timeout
 		var trap_dmg = int(player_data.attack_power() * 1.0)  # Boss战陷阱伤害降低
 		current_enemy["hp"] -= trap_dmg
-		_battle_add_log("⚡ 陷阱触发！对Boss造成 %d 伤害" % trap_dmg)
+		_battle_add_log("⚡ 陷阱触发!对Boss造成 %d 伤害" % trap_dmg)
 		_spawn_enemy_damage("%d" % trap_dmg, "damage", Vector2(0, -25))
 		_update_enemy_hp_bar()
 		await _check_battle_end()
@@ -4657,7 +4666,7 @@ func _create_battle_ui():
 	else:
 		enemy_name_label.add_theme_color_override("font_color", Color(1, 0.8, 0.5))
 	enemy_panel.add_child(enemy_name_label)
-	
+
 	# 精英标签
 	if is_elite_enemy:
 		var elite_label = Label.new()
@@ -4728,9 +4737,9 @@ func _create_battle_ui():
 	battle_log.position = Vector2(15, 15)
 	battle_log.size = Vector2(370, 130)
 	if is_elite_enemy:
-		battle_log.text = ">>> ⚠️精英战斗！\n"
+		battle_log.text = ">>> ⚠️精英战斗!\n"
 	else:
-		battle_log.text = ">>> 战斗开始！\n"
+		battle_log.text = ">>> 战斗开始!\n"
 	battle_log.add_theme_color_override("font_color", Color(0.85, 0.85, 0.75))
 	battle_log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	log_panel.add_child(battle_log)
@@ -4834,10 +4843,10 @@ func _create_battle_ui():
 var portrait_breath_time: float = 0.0
 var portrait_damage_flash: float = 0.0  # 受伤害闪红
 var portrait_heal_glow: float = 0.0     # 治疗绿光
-var _last_portrait_hp_ratio: float = -1.0  # HP阈值追踪，避免每帧重建StyleBoxFlat
+var _last_portrait_hp_ratio: float = -1.0  # HP阈值追踪,避免每帧重建StyleBoxFlat
 
 func _create_battle_portrait_panel(parent: Control):
-	# 整体肖像面板 (右上角，敌方面板下方)
+	# 整体肖像面板 (右上角,敌方面板下方)
 	var portrait_panel = Panel.new()
 	portrait_panel.name = "PortraitPanel"
 	portrait_panel.position = Vector2(560, 155)
@@ -4856,7 +4865,7 @@ func _create_battle_portrait_panel(parent: Control):
 	portrait_panel.add_theme_stylebox_override("panel", frame_style)
 	parent.add_child(portrait_panel)
 
-	# 内部装饰背景（肖像区域）
+	# 内部装饰背景(肖像区域)
 	var portrait_bg = Panel.new()
 	portrait_bg.name = "PortraitBG"
 	portrait_bg.position = Vector2(10, 10)
@@ -4872,7 +4881,7 @@ func _create_battle_portrait_panel(parent: Control):
 	portrait_bg.add_theme_stylebox_override("panel", bg_style)
 	portrait_panel.add_child(portrait_bg)
 
-	# 肖像精灵容器（用于动画）
+	# 肖像精灵容器(用于动画)
 	var portrait_container = Node2D.new()
 	portrait_container.name = "PortraitContainer"
 	portrait_container.position = Vector2(75, 75)
@@ -5009,7 +5018,7 @@ func _create_battle_portrait_panel(parent: Control):
 	attr_lbl.add_theme_font_size_override("font_size", 12)
 	portrait_panel.add_child(attr_lbl)
 
-	# 状态效果标签（文字版，备用）
+	# 状态效果标签(文字版,备用)
 	var effect_lbl = Label.new()
 	effect_lbl.name = "PortraitEffect"
 	effect_lbl.position = Vector2(10, 215)
@@ -5071,7 +5080,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			_set_line(img, 62, 20, 68, 14, Color(0.7, 0.7, 0.8))
 			_set_line(img, 63, 21, 67, 21, Color(1.0, 0.8, 0.2))  # 剑格
 		Job.MAGE:
-			# 法师: 蓝袍，手持法杖
+			# 法师: 蓝袍,手持法杖
 			_set_box(img, 22, 35, 58, 74, Color(0.15, 0.15, 0.45))  # 深蓝法袍
 			_set_box(img, 24, 37, 56, 72, Color(0.2, 0.2, 0.55))  # 法袍高光
 			_set_box(img, 18, 36, 26, 73, Color(0.15, 0.15, 0.4))  # 左侧袍
@@ -5089,7 +5098,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			_set_circle(img, 65, 8, 5, Color(0.3, 0.6, 1.0))  # 魔法球
 			_set_circle(img, 65, 8, 3, white)  # 魔法球高光
 		Job.HUNTER:
-			# 猎人: 绿棕猎装，背弓
+			# 猎人: 绿棕猎装,背弓
 			_set_box(img, 24, 35, 56, 72, Color(0.25, 0.4, 0.2))  # 绿色猎装
 			_set_box(img, 26, 37, 54, 70, Color(0.3, 0.45, 0.25))
 			_set_box(img, 24, 35, 56, 72, Color(0.35, 0.25, 0.15))  # 棕色皮甲
@@ -5105,7 +5114,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			_set_line(img, 2, 15, 2, 65, Color(0.4, 0.25, 0.1))
 			_set_line(img, 2, 15, 2, 65, Color(0.5, 0.35, 0.15), 2)  # 弓弦
 		Job.THIEF:
-			# 盗贼: 黑色夜行衣，双刃
+			# 盗贼: 黑色夜行衣,双刃
 			_set_box(img, 24, 35, 56, 72, Color(0.12, 0.12, 0.2))  # 黑色夜衣
 			_set_box(img, 26, 37, 54, 70, Color(0.18, 0.18, 0.28))  # 夜衣高光
 			_set_box(img, 16, 38, 24, 68, Color(0.15, 0.15, 0.25))  # 斗篷左
@@ -5122,7 +5131,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			_set_line(img, 6, 35, 6, 55, Color(0.7, 0.7, 0.8))
 			_set_line(img, 74, 35, 74, 55, Color(0.7, 0.7, 0.8))
 		Job.PRIEST:
-			# 牧师: 白色长袍，金色圣徽
+			# 牧师: 白色长袍,金色圣徽
 			_set_box(img, 22, 35, 58, 74, Color(0.9, 0.9, 0.95))  # 白色法袍
 			_set_box(img, 24, 37, 56, 72, Color(0.95, 0.95, 1.0))  # 法袍高光
 			_set_box(img, 18, 36, 26, 73, Color(0.85, 0.85, 0.9))  # 左袖
@@ -5142,7 +5151,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			_set_line(img, 40, 37, 40, 47, Color(1.0, 0.85, 0.2), 3)
 			_set_line(img, 36, 41, 44, 41, Color(1.0, 0.85, 0.2), 3)
 		Job.KNIGHT:
-			# 骑士: 全身板甲，蓝披风
+			# 骑士: 全身板甲,蓝披风
 			_set_box(img, 20, 35, 60, 74, Color(0.4, 0.45, 0.55))  # 银色板甲
 			_set_box(img, 22, 37, 58, 72, Color(0.5, 0.55, 0.65))  # 板甲高光
 			_set_box(img, 15, 40, 22, 72, cape_col)  # 蓝色披风
@@ -5159,7 +5168,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			_set_line(img, 2, 40, 2, 65, Color(0.35, 0.4, 0.5), 10)
 			_set_line(img, 4, 42, 4, 63, cape_col, 6)  # 盾牌蓝心
 		Job.BARD:
-			# 吟游诗人: 彩色斗篷，琵琶
+			# 吟游诗人: 彩色斗篷,琵琶
 			_set_box(img, 22, 35, 58, 74, Color(0.7, 0.35, 0.2))  # 棕色外套
 			_set_box(img, 24, 37, 56, 72, Color(0.8, 0.4, 0.25))  # 外套高光
 			_set_box(img, 18, 38, 26, 72, cape_col)  # 彩色斗篷
@@ -5180,7 +5189,7 @@ func _create_job_portrait_texture(job: int) -> ImageTexture:
 			_set_circle(img, 16, 22, 3, Color(0.8, 0.7, 0.2))
 			_set_line(img, 19, 19, 19, 24, Color(0.8, 0.7, 0.2), 2)
 		Job.SUMMONER:
-			# 召唤师: 暗紫袍，符文，魔法球
+			# 召唤师: 暗紫袍,符文,魔法球
 			_set_box(img, 22, 35, 58, 74, Color(0.3, 0.1, 0.35))  # 暗紫色袍
 			_set_box(img, 24, 37, 56, 72, Color(0.4, 0.15, 0.45))  # 紫袍高光
 			_set_box(img, 18, 36, 26, 73, Color(0.25, 0.08, 0.3))  # 左侧袍
@@ -5407,24 +5416,24 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 	img.fill(Color(0, 0, 0, 0))
 
 	match current_enemy["name"]:
-		# ===== 1-2层：草寇势力 =====
+		# ===== 1-2层:草寇势力 =====
 		"劫道山贼":
-			# 劫道山贼（粗犷黑衣人）
+			# 劫道山贼(粗犷黑衣人)
 			_set_pixel_line(img, 10, 4, 22, 4, col)  # 头巾
 			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
-			img.set_pixel(14, 10, Color.BLACK)  # 眉毛（凶）
+			img.set_pixel(14, 10, Color.BLACK)  # 眉毛(凶)
 			img.set_pixel(18, 10, Color.BLACK)
 			img.set_pixel(14, 12, Color.YELLOW)  # 眼睛
 			img.set_pixel(18, 12, Color.YELLOW)
 			_set_pixel_line(img, 12, 16, 20, 16, col)  # 络腮胡
-			_set_pixel_line(img, 8, 20, 24, 20, col)  # 身（短打）
+			_set_pixel_line(img, 8, 20, 24, 20, col)  # 身(短打)
 			_set_pixel_line(img, 6, 28, 12, 28, col)  # 腿
 			_set_pixel_line(img, 20, 28, 26, 28, col)
 			img.set_pixel(2, 22, col)  # 朴刀
 			img.set_pixel(4, 20, col)
 			img.set_pixel(4, 24, col)
 		"荒野土匪":
-			# 荒野土匪（体毛旺盛的大汉）
+			# 荒野土匪(体毛旺盛的大汉)
 			_set_pixel_line(img, 8, 4, 24, 4, col)  # 乱发
 			_set_pixel_line(img, 10, 8, 22, 8, col)  # 头顶
 			img.set_pixel(13, 10, Color.RED)  # 凶狠眼
@@ -5440,8 +5449,8 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(28, 14, col)
 			img.set_pixel(28, 18, col)
 		"逃兵":
-			# 逃兵（破损铠甲的士兵）
-			_set_pixel_line(img, 12, 4, 20, 4, col)  # 头盔（歪）
+			# 逃兵(破损铠甲的士兵)
+			_set_pixel_line(img, 12, 4, 20, 4, col)  # 头盔(歪)
 			img.set_pixel(10, 6, col)
 			_set_pixel_line(img, 10, 10, 22, 10, col)  # 脸
 			img.set_pixel(13, 12, Color.GRAY)  # 惊恐眼神
@@ -5452,9 +5461,9 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			_set_pixel_line(img, 20, 24, 26, 24, col)
 			img.set_pixel(14, 28, col)  # 跛脚
 			img.set_pixel(16, 28, col)
-		# ===== 3-4层：邪派势力 =====
+		# ===== 3-4层:邪派势力 =====
 		"血刀门弟子":
-			# 血刀门弟子（血红披风）
+			# 血刀门弟子(血红披风)
 			_set_pixel_line(img, 14, 4, 18, 4, col)  # 发髻
 			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
 			img.set_pixel(14, 11, Color.BLACK)  # 眼
@@ -5471,7 +5480,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(4, 16, Color.SILVER)
 			img.set_pixel(4, 20, Color.SILVER)
 		"日月神教教徒":
-			# 日月神教教徒（金黑袍）
+			# 日月神教教徒(金黑袍)
 			_set_pixel_line(img, 14, 4, 18, 4, Color.GOLD)  # 金冠
 			img.set_pixel(14, 4, Color.GOLD)
 			img.set_pixel(18, 4, Color.GOLD)
@@ -5484,7 +5493,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			_set_pixel_line(img, 6, 26, 26, 26, col)  # 袍下
 			img.set_pixel(16, 8, Color.GOLD)  # 太阳纹
 		"五毒教教徒":
-			# 五毒教教徒（青绿毒师）
+			# 五毒教教徒(青绿毒师)
 			_set_pixel_line(img, 12, 4, 20, 4, col)  # 蛇形头饰
 			img.set_pixel(10, 4, col)
 			img.set_pixel(22, 4, col)
@@ -5498,9 +5507,9 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			_set_pixel_line(img, 6, 24, 12, 24, col)  # 袍
 			_set_pixel_line(img, 20, 24, 26, 24, col)
 			img.set_pixel(16, 4, Color.LIME_GREEN)  # 蛇眼
-		# ===== 5-6层：江湖散人 =====
+		# ===== 5-6层:江湖散人 =====
 		"江湖刺客":
-			# 江湖刺客（黑衣蒙面）
+			# 江湖刺客(黑衣蒙面)
 			_set_pixel_line(img, 12, 4, 20, 4, col)  # 兜帽顶
 			_set_pixel_line(img, 10, 8, 22, 8, col)  # 兜帽
 			img.set_pixel(14, 11, Color.RED)  # 杀气红眼
@@ -5515,7 +5524,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(30, 20, Color.SILVER)
 			img.set_pixel(28, 18, Color.SILVER)
 		"赏金猎人":
-			# 赏金猎人（皮甲猎装）
+			# 赏金猎人(皮甲猎装)
 			_set_pixel_line(img, 12, 4, 20, 4, Color.BROWN)  # 皮帽
 			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
 			img.set_pixel(14, 11, Color.GREEN)  # 锐利眼
@@ -5528,7 +5537,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(30, 12, Color.GRAY)
 			img.set_pixel(30, 16, Color.GRAY)
 		"擂台霸主":
-			# 擂台霸主（肌肉猛男）
+			# 擂台霸主(肌肉猛男)
 			_set_pixel_line(img, 14, 4, 18, 4, col)  # 短发
 			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
 			img.set_pixel(14, 10, Color.ORANGE)  # 怒目
@@ -5541,9 +5550,9 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(4, 24, col)
 			img.set_pixel(26, 22, col)
 			img.set_pixel(26, 24, col)
-		# ===== 7-8层：门派精英 =====
+		# ===== 7-8层:门派精英 =====
 		"少林弟子":
-			# 少林弟子（黄色僧袍）
+			# 少林弟子(黄色僧袍)
 			_set_pixel_line(img, 14, 4, 18, 4, Color.GOLD)  # 僧帽
 			img.set_pixel(12, 4, Color.GOLD)
 			img.set_pixel(20, 4, Color.GOLD)
@@ -5560,7 +5569,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(4, 20, Color.BROWN)
 			img.set_pixel(4, 22, Color.BROWN)
 		"武当弟子":
-			# 武当弟子（青白道袍）
+			# 武当弟子(青白道袍)
 			_set_pixel_line(img, 14, 4, 18, 4, col)  # 发髻
 			img.set_pixel(16, 4, Color.WHITE)
 			_set_pixel_line(img, 12, 8, 20, 8, col)  # 头顶
@@ -5575,7 +5584,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(0, 16, Color.SILVER)
 			img.set_pixel(0, 20, Color.SILVER)
 		"隐世高手":
-			# 隐世高手（锦袍白发老者）
+			# 隐世高手(锦袍白发老者)
 			_set_pixel_line(img, 12, 4, 20, 4, Color.WHITE)  # 白发
 			img.set_pixel(10, 4, Color.WHITE)
 			img.set_pixel(22, 4, Color.WHITE)
@@ -5591,7 +5600,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(6, 20, Color.GOLD)
 		# ===== Boss敌人 =====
 		"山贼王·韩霸天":
-			# 山贼王（巨型光头大汉）
+			# 山贼王(巨型光头大汉)
 			_set_pixel_line(img, 10, 4, 22, 4, Color.BROWN)  # 头巾
 			_set_pixel_line(img, 8, 8, 24, 8, col)  # 光头
 			img.set_pixel(12, 10, Color.RED)  # 怒目
@@ -5605,7 +5614,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(2, 12, Color.GRAY)
 			img.set_pixel(2, 16, Color.GRAY)
 		"血刀门护法·血手赫连铁树":
-			# 血刀门护法（血红色霸气）
+			# 血刀门护法(血红色霸气)
 			_set_pixel_line(img, 12, 4, 20, 4, Color.BLACK)  # 发髻
 			img.set_pixel(16, 4, col)
 			_set_pixel_line(img, 10, 8, 22, 8, col)  # 头顶
@@ -5618,13 +5627,13 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			_set_pixel_line(img, 4, 22, 28, 22, col)  # 身
 			_set_pixel_line(img, 2, 28, 14, 28, col)  # 腿
 			_set_pixel_line(img, 18, 28, 30, 28, col)
-			img.set_pixel(0, 18, Color.SILVER)  # 血刀（巨）
+			img.set_pixel(0, 18, Color.SILVER)  # 血刀(巨)
 			img.set_pixel(2, 14, Color.SILVER)
 			img.set_pixel(2, 16, Color.SILVER)
 			img.set_pixel(2, 20, Color.SILVER)
 			img.set_pixel(2, 22, Color.SILVER)
 		"门派叛徒·司马青云":
-			# 门派叛徒（紫袍飘逸）
+			# 门派叛徒(紫袍飘逸)
 			_set_pixel_line(img, 14, 4, 18, 4, Color.PURPLE)  # 发冠
 			_set_pixel_line(img, 12, 8, 20, 8, Color.PURPLE)  # 头顶
 			img.set_pixel(14, 11, Color.PURPLE)  # 阴沉眼
@@ -5638,7 +5647,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(28, 22, Color.SILVER)  # 剑柄
 			img.set_pixel(30, 20, Color.SILVER)
 		"华山掌门·岳不群":
-			# 华山掌门（君子剑外表）
+			# 华山掌门(君子剑外表)
 			_set_pixel_line(img, 14, 4, 18, 4, Color.GOLD)  # 发冠
 			img.set_pixel(16, 4, Color.WHITE)
 			_set_pixel_line(img, 12, 8, 20, 8, Color.GOLD)  # 头顶
@@ -5646,7 +5655,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(18, 11, Color.CYAN)
 			img.set_pixel(14, 12, Color.WHITE)
 			img.set_pixel(18, 12, Color.WHITE)
-			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸（和善）
+			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸(和善)
 			_set_pixel_line(img, 10, 18, 22, 18, Color.WHITE)  # 白衫
 			_set_pixel_line(img, 8, 22, 24, 22, col)  # 君子袍
 			_set_pixel_line(img, 6, 28, 12, 28, col)  # 腿
@@ -5656,7 +5665,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(0, 20, Color.SILVER)
 			img.set_pixel(0, 22, Color.SILVER)
 		"武当真人·张三丰":
-			# 武当真人·张三丰（白发道袍仙风道骨）
+			# 武当真人·张三丰(白发道袍仙风道骨)
 			_set_pixel_line(img, 10, 4, 22, 4, Color.WHITE)  # 白发
 			img.set_pixel(8, 4, Color.WHITE)
 			img.set_pixel(24, 4, Color.WHITE)
@@ -5666,7 +5675,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 			img.set_pixel(18, 10, Color.CYAN)
 			img.set_pixel(14, 11, Color.WHITE)
 			img.set_pixel(18, 11, Color.WHITE)
-			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸（长须）
+			_set_pixel_line(img, 12, 14, 20, 14, col)  # 脸(长须)
 			_set_pixel_line(img, 12, 16, 20, 16, Color.WHITE)  # 胡须
 			_set_pixel_line(img, 8, 18, 24, 18, Color.WHITE)  # 白道袍
 			_set_pixel_line(img, 6, 22, 26, 22, col)  # 青道袍
@@ -5682,7 +5691,7 @@ func _create_enemy_texture(col: Color) -> Texture2D:
 
 var _skill_menu_open: bool = false
 
-# 技能冷却数据（回合数，0=无冷却）
+# 技能冷却数据(回合数,0=无冷却)
 var _SKILL_COOLDOWNS: Dictionary = {
 	# 战士 T1
 	"猛击": 1, "防御": 0, "冲锋": 3,
@@ -5756,7 +5765,7 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	"死标记": 7, "自然之力": 5, "狩猎领域": 6
 }
 
-# 计算战斗中有效的攻击力（含buff加成）
+# 计算战斗中有效的攻击力(含buff加成)
 func _get_effective_atk() -> int:
 	var atk = player_data.attack_power()
 	atk += battle_cry_atk_boost  # 战吼ATK加成
@@ -5766,11 +5775,11 @@ func _get_effective_atk() -> int:
 	atk += bard_legendary_song_atk_boost  # 传奇之歌永久ATK+20
 	atk += warrior_domain_atk_boost  # 战神领域ATK加成
 	if arcane_truth_turns > 0:
-		atk = int(atk * 1.5)  # 奥术真理：所有属性伤害+50%
+		atk = int(atk * 1.5)  # 奥术真理:所有属性伤害+50%
 	if hunter_nature_power_turns > 0:
-		atk = int(atk * hunter_nature_power_bonus)  # 自然之力：每召唤物+30%伤害
+		atk = int(atk * hunter_nature_power_bonus)  # 自然之力:每召唤物+30%伤害
 	if knight_holy_hammer_turns > 0:
-		atk = int(atk * knight_holy_hammer_mult)  # 神圣之锤：伤害×2持续3回合
+		atk = int(atk * knight_holy_hammer_mult)  # 神圣之锤:伤害×2持续3回合
 	return atk
 
 # 应用猎人标记伤害倍率
@@ -5779,12 +5788,12 @@ func _apply_hunter_mark(base_dmg: int) -> int:
 		return int(base_dmg * hunter_mark_mult)
 	return base_dmg
 
-# 获取穿透后的防御值（法术穿透：无视敌人防御，消耗1层）
+# 获取穿透后的防御值(法术穿透:无视敌人防御,消耗1层)
 func _get_pierced_defense() -> int:
-	# 穿甲箭：无视防御
+	# 穿甲箭:无视防御
 	if hunter_armor_pierce_turns > 0:
 		return 0
-	# 法术穿透：无视防御
+	# 法术穿透:无视防御
 	if spell_pierce_turns > 0:
 		spell_pierce_turns -= 1
 		if spell_pierce_turns <= 0:
@@ -5795,11 +5804,11 @@ func _get_pierced_defense() -> int:
 func _get_skill_cooldown(skill: String) -> int:
 	return _SKILL_COOLDOWNS.get(skill, 1)
 
-# 获取生命值最低的队友索引（用于骑士永恒守卫）
+# 获取生命值最低的队友索引(用于骑士永恒守卫)
 func _get_lowest_hp_ally_index() -> int:
 	var lowest_idx = -1
 	var lowest_hp_ratio = 999.0
-	# 检查队伍成员（player是索引0）
+	# 检查队伍成员(player是索引0)
 	var allies = []
 	if player_data.hp > 0:
 		allies.append([0, float(player_data.hp) / player_data.max_hp])
@@ -6018,7 +6027,7 @@ async func _on_skill_selected(skill_name: String):
 	}
 	var cost = mp_cost.get(skill_name, 0)
 	if player_data.mp < cost:
-		_battle_add_log("MP不足！")
+		_battle_add_log("MP不足!")
 		return
 	player_data.mp -= cost
 	pending_skill_index = -1
@@ -6027,7 +6036,7 @@ async func _on_skill_selected(skill_name: String):
 	var cd = _get_skill_cooldown(skill_name)
 	if cd > 0 and skill_cooldowns.get(skill_name, 0) > 0:
 		player_data.mp += cost  #  refunded
-		_battle_add_log("⚠️ %s 冷却中（还需%d回合）！" % [skill_name, skill_cooldowns[skill_name]])
+		_battle_add_log("⚠️ %s 冷却中(还需%d回合)!" % [skill_name, skill_cooldowns[skill_name]])
 		return
 
 	match skill_name:
@@ -6037,28 +6046,28 @@ async func _on_skill_selected(skill_name: String):
 			var dmg = _roll_dmg_var_medium(int(_get_effective_atk() * 1.5)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
-			_battle_add_log("⚔️ 猛击！造成 %d 伤害" % dmg)
+			_battle_add_log("⚔️ 猛击!造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg)
 		"防御":
 			player_defending = true
 			player_shield = int(player_data.defense() * 0.5)
 			player_data.mp = min(player_data.max_mp, player_data.mp + 5)
-			_battle_add_log("🛡️ 防御姿态！伤害减半，回复5MP")
+			_battle_add_log("🛡️ 防御姿态!伤害减半,回复5MP")
 		"冲锋":
 			var pierce_def = _get_pierced_defense()
 			var dmg = _roll_dmg_var_large(int(_get_effective_atk() * 2.5)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			enemy_stun_turns = 1
-			_battle_add_log("🐎 冲锋！造成 %d 伤害，敌人眩晕！" % dmg)
+			_battle_add_log("🐎 冲锋!造成 %d 伤害,敌人眩晕!" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(0, -25))
 		# 战士 T2 (狂战士路线)
 		"血之狂暴":
 			berserk_turns = 3
 			berserk_atk_boost = int(_get_effective_atk() * 0.3)
-			_battle_add_log("💢 血之狂暴！ATK+30%，每回合自损10HP，持续3回合")
+			_battle_add_log("💢 血之狂暴!ATK+30%,每回合自损10HP,持续3回合")
 			_spawn_player_damage("BERSERK!", "buff")
 		"旋风斩":
 			var hits = 2 + randi() % 3  # 2-4次攻击
@@ -6070,14 +6079,14 @@ async func _on_skill_selected(skill_name: String):
 				current_enemy["hp"] -= hit_dmg
 				total_dmg += hit_dmg
 				await get_tree().create_timer(0.2).timeout
-			_battle_add_log("🌀 旋风斩！连续攻击%d次，造成 %d 伤害！" % [hits, total_dmg])
+			_battle_add_log("🌀 旋风斩!连续攻击%d次,造成 %d 伤害!" % [hits, total_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % total_dmg, "crit", Vector2(0, -35))
 		"战吼":
 			battle_cry_turns = 2
 			battle_cry_atk_boost = int(_get_effective_atk() * 0.4)
 			battle_cry_team_boost = int(_get_effective_atk() * 0.15)
-			_battle_add_log("📢 战吼！自身ATK+40%，持续2回合")
+			_battle_add_log("📢 战吼!自身ATK+40%,持续2回合")
 			_spawn_player_damage("ATK+40%", "buff")
 		# 战士 T3 (毁灭者路线)
 		"毁天灭地":
@@ -6091,20 +6100,20 @@ async func _on_skill_selected(skill_name: String):
 			var execute_chance = 30
 			if current_enemy["hp"] < current_enemy["max_hp"] * 0.2 and randi() % 100 < execute_chance:
 				current_enemy["hp"] = 0
-				_battle_add_log("💀 毁天灭地！%s HP过低，被秒杀！" % current_enemy["name"])
+				_battle_add_log("💀 毁天灭地!%s HP过低,被秒杀!" % current_enemy["name"])
 				_critical_hit_effect()
 				_spawn_enemy_damage("秒杀!", "crit", Vector2(0, -40))
 			else:
 				current_enemy["hp"] -= dmg
-				_battle_add_log("💥 毁天灭地！造成 %d 伤害" % dmg)
+				_battle_add_log("💥 毁天灭地!造成 %d 伤害" % dmg)
 				_enemy_hit_effect()
 				_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -35))
 		"不死不灭":
 			if warrior_undying_used:
-				_battle_add_log("⚠️ 不死不灭本场战斗已触发！")
+				_battle_add_log("⚠️ 不死不灭本场战斗已触发!")
 			else:
 				warrior_undying_used = true
-				_battle_add_log("🛡️ 不死不灭！设置完成：本场战斗中HP降至1时自动回复30%%HP（限1次）")
+				_battle_add_log("🛡️ 不死不灭!设置完成:本场战斗中HP降至1时自动回复30%%HP(限1次)")
 				_spawn_player_damage("不!死!", "shield")
 		"碎甲":
 			var pierce_def = _get_pierced_defense()
@@ -6122,7 +6131,7 @@ async func _on_skill_selected(skill_name: String):
 			warrior_shatter_orig_def = current_enemy["def"]
 			warrior_shatter_defdebuff = int(warrior_shatter_orig_def * 0.5)
 			current_enemy["def"] = max(1, warrior_shatter_orig_def - warrior_shatter_defdebuff)
-			_battle_add_log("⚔️ 碎甲！造成 %d 伤害，敌人DEF-50%%持续2回合" % s_dmg)
+			_battle_add_log("⚔️ 碎甲!造成 %d 伤害,敌人DEF-50%%持续2回合" % s_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % s_dmg, "crit", Vector2(0, -35))
 		# 战士 T3 (团队领袖路线)
@@ -6130,12 +6139,12 @@ async func _on_skill_selected(skill_name: String):
 			warrior_domain_turns = 3
 			warrior_domain_atk_boost = int(_get_effective_atk() * 0.25)
 			warrior_domain_def_boost = int(player_data.defense() * 0.15)
-			_battle_add_log("⚔️ 战神领域！ATK+25%%、DEF+15%%持续3回合")
+			_battle_add_log("⚔️ 战神领域!ATK+25%%、DEF+15%%持续3回合")
 			_spawn_player_damage("战神领域!", "buff")
 		"浴血奋战":
 			warrior_bloodlust_active = true
 			var hp_pct = float(player_data.hp) / float(player_data.max_hp)
-			var bloodlust_mult = 1.0 + (1.0 - hp_pct) * 2.0  # HP越低倍率越高，最大3.0
+			var bloodlust_mult = 1.0 + (1.0 - hp_pct) * 2.0  # HP越低倍率越高,最大3.0
 			var batk = _get_effective_atk() + warrior_domain_atk_boost
 			# 战神T4: 战神印记 - 目标受伤+30%
 			if warrior_wargod_mark_turns > 0:
@@ -6143,35 +6152,35 @@ async func _on_skill_selected(skill_name: String):
 			var b_dmg = _roll_dmg_var_medium(int(batk * bloodlust_mult)) - _get_pierced_defense()
 			b_dmg = max(1, b_dmg)
 			current_enemy["hp"] -= b_dmg
-			_battle_add_log("🩸 浴血奋战！HP%d%%时ATK×%.1f，造成 %d 伤害" % [int(hp_pct*100), bloodlust_mult, b_dmg])
+			_battle_add_log("🩸 浴血奋战!HP%d%%时ATK×%.1f,造成 %d 伤害" % [int(hp_pct*100), bloodlust_mult, b_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % b_dmg, "crit", Vector2(0, -35))
 		"援护":
 			warrior_guard_active = true
 			warrior_guard_target_hp_pct = float(player_data.hp) / float(player_data.max_hp)
-			_battle_add_log("🛡️ 援护！已锁定目标，下一次致命伤害由你承受")
+			_battle_add_log("🛡️ 援护!已锁定目标,下一次致命伤害由你承受")
 			_spawn_player_damage("援护!", "shield")
 		# ===== 战士 T4 (觉醒技能·Lv40解锁) =====
 		"战神之力":
-			# ATK × 6.0，附带"战神印记"（使目标受伤+30%持续3回合）
+			# ATK × 6.0,附带"战神印记"(使目标受伤+30%持续3回合)
 			var wg_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 6.0)) - _get_pierced_defense()
 			wg_dmg = max(1, wg_dmg)
-			# 战神印记在受到伤害时额外加成，这里首次打击也附带标记
+			# 战神印记在受到伤害时额外加成,这里首次打击也附带标记
 			current_enemy["hp"] -= wg_dmg
 			warrior_wargod_mark_turns = 3
 			warrior_wargod_mark_dmg_boost = int(wg_dmg * 0.3)
-			_battle_add_log("⚔️💥 战神之力！造成 %d 伤害，敌人获得「战神印记」受伤+30%%持续3回合" % wg_dmg)
+			_battle_add_log("⚔️💥 战神之力!造成 %d 伤害,敌人获得「战神印记」受伤+30%%持续3回合" % wg_dmg)
 			_enemy_hit_effect()
 			_critical_hit_effect()
 			_spawn_enemy_damage("%d" % wg_dmg, "crit", Vector2(0, -55))
 		"绝对防御":
-			# 5回合内免疫所有伤害，但无法行动
+			# 5回合内免疫所有伤害,但无法行动
 			warrior_absolute_def_turns = 5
 			player_data.hp = max(1, player_data.hp)  # 确保HP不为0
-			_battle_add_log("🏰⚔️ 绝对防御！5回合内免疫所有伤害，但无法行动")
+			_battle_add_log("🏰⚔️ 绝对防御!5回合内免疫所有伤害,但无法行动")
 			_spawn_player_damage("绝对防御!", "shield")
 		"征服者怒吼":
-			# ATK × 2.5 全体，恐惧效果：敌人-30%ATK持续3回合
+			# ATK × 2.5 全体,恐惧效果:敌人-30%ATK持续3回合
 			var conqueror_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 2.5)) - _get_pierced_defense()
 			# 战神T4: 战神印记 - 目标受伤+30%
 			if warrior_wargod_mark_turns > 0:
@@ -6181,7 +6190,7 @@ async func _on_skill_selected(skill_name: String):
 			warrior_conqueror_fear_turns = 3
 			warrior_conqueror_fear_atkdebuff = int(current_enemy["atk"] * 0.3)
 			current_enemy["atk"] = max(1, current_enemy["atk"] - warrior_conqueror_fear_atkdebuff)
-			_battle_add_log("😱⚔️ 征服者怒吼！造成 %d 伤害，敌人ATK-%d持续3回合，陷入恐惧！" % [conqueror_dmg, warrior_conqueror_fear_atkdebuff])
+			_battle_add_log("😱⚔️ 征服者怒吼!造成 %d 伤害,敌人ATK-%d持续3回合,陷入恐惧!" % [conqueror_dmg, warrior_conqueror_fear_atkdebuff])
 			_enemy_hit_effect()
 			_critical_hit_effect()
 			_spawn_enemy_damage("%d" % conqueror_dmg, "crit", Vector2(0, -50))
@@ -6191,7 +6200,7 @@ async func _on_skill_selected(skill_name: String):
 			var dmg = _roll_dmg_var_large(int(_get_effective_atk() * 2.0)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
-			_battle_add_log("🔥 火球术！造成 %d 伤害" % dmg)
+			_battle_add_log("🔥 火球术!造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(randi()%20-10, -30))
 		"冰霜":
@@ -6200,7 +6209,7 @@ async func _on_skill_selected(skill_name: String):
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
 			current_enemy["spd"] = max(1, current_enemy["spd"] - 2)
-			_battle_add_log("❄️ 冰霜术！造成 %d 伤害，敌人速度降低！" % dmg)
+			_battle_add_log("❄️ 冰霜术!造成 %d 伤害,敌人速度降低!" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(0, -20))
 		"闪电":
@@ -6208,7 +6217,7 @@ async func _on_skill_selected(skill_name: String):
 			var dmg = _roll_dmg_var_large(int(_get_effective_atk() * 3.0)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
-			_battle_add_log("⚡ 闪电术！造成 %d 伤害" % dmg)
+			_battle_add_log("⚡ 闪电术!造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -35))
 		# 法师 T2 (元素大师路线)
@@ -6218,7 +6227,7 @@ async func _on_skill_selected(skill_name: String):
 			current_enemy["hp"] -= burn_dmg
 			meteor_burn_turns = 3
 			meteor_burn_dmg = burn_dmg
-			_battle_add_log("🌠 流星火雨！立即造成 %d 伤害，灼烧 %d 伤害/回合×3回合" % [burn_dmg, burn_dmg])
+			_battle_add_log("🌠 流星火雨!立即造成 %d 伤害,灼烧 %d 伤害/回合×3回合" % [burn_dmg, burn_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % burn_dmg, "crit", Vector2(0, -40))
 		"霜冻领域":
@@ -6227,7 +6236,7 @@ async func _on_skill_selected(skill_name: String):
 			f_dmg = max(1, f_dmg)
 			current_enemy["hp"] -= f_dmg
 			frost_slow_turns = 2
-			_battle_add_log("❄️ 霜冻领域！造成 %d 伤害，敌人速度-50%%持续2回合" % f_dmg)
+			_battle_add_log("❄️ 霜冻领域!造成 %d 伤害,敌人速度-50%%持续2回合" % f_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % f_dmg, "damage", Vector2(0, -25))
 		"连锁闪电":
@@ -6235,31 +6244,31 @@ async func _on_skill_selected(skill_name: String):
 			var chain_dmg1 = _roll_dmg_var_medium(int(_get_effective_atk() * 2.5)) - pierce_def
 			chain_dmg1 = max(1, chain_dmg1)
 			current_enemy["hp"] -= chain_dmg1
-			_battle_add_log("⚡ 连锁闪电！造成 %d 伤害" % chain_dmg1)
+			_battle_add_log("⚡ 连锁闪电!造成 %d 伤害" % chain_dmg1)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % chain_dmg1, "crit", Vector2(0, -35))
-			# 连锁效果：本回合内额外造成递减伤害
+			# 连锁效果:本回合内额外造成递减伤害
 			await get_tree().create_timer(0.3).timeout
 			var chain_dmg2_base = int(_get_effective_atk() * 1.5)
 			chain_dmg2 = _roll_dmg_var_small(chain_dmg2_base) - _get_pierced_defense()
 			chain_dmg2 = max(1, chain_dmg2)
 			current_enemy["hp"] -= chain_dmg2
-			_battle_add_log("⚡⚡ 闪电连锁！追加 %d 伤害" % chain_dmg2)
+			_battle_add_log("⚡⚡ 闪电连锁!追加 %d 伤害" % chain_dmg2)
 			_spawn_enemy_damage("%d" % chain_dmg2, "crit", Vector2(15, -20))
 		# 法师 T2 (奥术师路线)
 		"魔法盾":
 			arcane_shield_mp = int(player_data.max_mp * 0.8)
 			player_shield += arcane_shield_mp
-			_battle_add_log("🔮 魔法盾！消耗 %d MP，护盾值+%d（下次受击时优先消耗）" % [arcane_shield_mp, arcane_shield_mp])
+			_battle_add_log("🔮 魔法盾!消耗 %d MP,护盾值+%d(下次受击时优先消耗)" % [arcane_shield_mp, arcane_shield_mp])
 			_spawn_player_damage("+%d" % arcane_shield_mp, "shield")
 		"法术穿透":
 			spell_pierce_turns = 2
-			_battle_add_log("💠 法术穿透！下2次攻击无视敌人防御")
+			_battle_add_log("💠 法术穿透!下2次攻击无视敌人防御")
 			_spawn_player_damage("SPIERCE!", "buff")
 		"魔力回旋":
 			mana_drain_turns = 3
 			mana_drain_amount = int(player_data.max_mp * 0.15)
-			_battle_add_log("🌀 魔力回旋！持续3回合，每回合吸取 %d MP并恢复等量HP" % mana_drain_amount)
+			_battle_add_log("🌀 魔力回旋!持续3回合,每回合吸取 %d MP并恢复等量HP" % mana_drain_amount)
 			_spawn_player_damage("DRAIN x3", "buff")
 		# 猎人
 		"狙击":
@@ -6267,7 +6276,7 @@ async func _on_skill_selected(skill_name: String):
 			var dmg = _roll_dmg_var_medium(int(_get_effective_atk() * 2.0)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
-			_battle_add_log("🎯 狙击！必定命中，造成 %d 伤害" % dmg)
+			_battle_add_log("🎯 狙击!必定命中,造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "crit", Vector2(0, -30))
 		"毒箭":
@@ -6278,7 +6287,7 @@ async func _on_skill_selected(skill_name: String):
 			poison_stacks += 1
 			poison_damage = 5
 			poison_turns = 3
-			_battle_add_log("🏹 毒箭！造成 %d 伤害+每回合5毒性伤害×3回合" % dmg)
+			_battle_add_log("🏹 毒箭!造成 %d 伤害+每回合5毒性伤害×3回合" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "poison", Vector2(0, -25))
 		# 盗贼
@@ -6288,8 +6297,8 @@ async func _on_skill_selected(skill_name: String):
 			var base_dmg = _roll_dmg_var_medium(int(_get_effective_atk() * 2.2)) - pierce_def
 			var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 			current_enemy["hp"] -= dmg
-			var backstab_msg = "暴击！" if is_crit else ""
-			_battle_add_log("🗡️ 背刺！" + backstab_msg + "造成 %d 伤害" % dmg)
+			var backstab_msg = "暴击!" if is_crit else ""
+			_battle_add_log("🗡️ 背刺!" + backstab_msg + "造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			var backstab_dmg_type = "crit" if is_crit else "damage"
 			var backstab_offset_x = (randi() % 15) - 7
@@ -6298,111 +6307,111 @@ async func _on_skill_selected(skill_name: String):
 		"暗影":
 			var dmg = int(_get_effective_atk() * 1.8)
 			current_enemy["hp"] -= dmg
-			_battle_add_log("💀 暗影攻击！无视防御，造成 %d 伤害" % dmg)
+			_battle_add_log("💀 暗影攻击!无视防御,造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "damage", Vector2(0, -25))
 		"消失":
 			# 下回合必定先手+闪避
 			vanish_turns = 1
-			_battle_add_log("👤 消失！下回合敌人攻击时50%%几率闪避")
+			_battle_add_log("👤 消失!下回合敌人攻击时50%%几率闪避")
 		# 牧师
 		"治疗":
 			var heal = int(player_data.max_hp * 0.4)
 			player_data.hp = min(player_data.max_hp, player_data.hp + heal)
 			_trigger_portrait_heal_glow()
-			_battle_add_log("💚 治疗！恢复 %d HP" % heal)
+			_battle_add_log("💚 治疗!恢复 %d HP" % heal)
 			_spawn_player_damage("+%d" % heal, "heal")
 		"护盾":
 			player_shield = int(player_data.defense() * 1.5)
-			_battle_add_log("🛡️ 神圣护盾！获得 %d 护盾值" % player_shield)
+			_battle_add_log("🛡️ 神圣护盾!获得 %d 护盾值" % player_shield)
 			_spawn_player_damage("+%d" % player_shield, "shield")
 		"复活":
 			if player_data.hp <= 0:
 				player_data.hp = int(player_data.max_hp * 0.5)
 				_trigger_portrait_heal_glow()
-				_battle_add_log("✨ 复活！恢复50% HP")
+				_battle_add_log("✨ 复活!恢复50% HP")
 				_spawn_player_damage("REVIVE!", "heal")
 			else:
 				player_data.mp -= 10
-				_battle_add_log("💀 复活需要处于濒死状态！")
+				_battle_add_log("💀 复活需要处于濒死状态!")
 		# ===== 牧师 T3 =====
 		"复活术":
-			# 每战斗限2次复活，当前HP≤0时使用，满HP后恢复100%
+			# 每战斗限2次复活,当前HP≤0时使用,满HP后恢复100%
 			if priest_resurrection_uses <= 0:
-				_battle_add_log("⚠️ 复活次数已用尽！")
+				_battle_add_log("⚠️ 复活次数已用尽!")
 			elif player_data.hp > 0:
-				_battle_add_log("💀 复活术需要处于濒死状态！")
+				_battle_add_log("💀 复活术需要处于濒死状态!")
 			else:
 				priest_resurrection_uses -= 1
 				player_data.hp = player_data.max_hp  # 满HP复活
 				_trigger_portrait_heal_glow()
-				_battle_add_log("✨✨ 复活术！满HP复活！剩余%d次" % priest_resurrection_uses)
+				_battle_add_log("✨✨ 复活术!满HP复活!剩余%d次" % priest_resurrection_uses)
 				_spawn_player_damage("REVIVE 100%!", "heal")
 		"神圣领域":
-			# 3回合内每回合回复HP上限10%，清除所有debuff
+			# 3回合内每回合回复HP上限10%,清除所有debuff
 			priest_divine_domain_turns = 3
 			priest_divine_domain_heal = int(player_data.max_hp * 0.1)
 			player_data.hp = min(player_data.max_hp, player_data.hp + priest_divine_domain_heal)
 			_trigger_portrait_heal_glow()
-			_battle_add_log("⛪ 神圣领域！每回合回复%d HP持续3回合（清除所有debuff）" % priest_divine_domain_heal)
+			_battle_add_log("⛪ 神圣领域!每回合回复%d HP持续3回合(清除所有debuff)" % priest_divine_domain_heal)
 			_spawn_player_damage("+%d/回合!" % priest_divine_domain_heal, "heal")
 		"神圣裁定":
-			# ATK×3.5，对邪恶生物(邪派/叛门)+100%
+			# ATK×3.5,对邪恶生物(邪派/叛门)+100%
 			var is_evil = current_enemy.get("faction", "") in ["邪派", "叛门"]
 			var sj_base = 3.5 if not is_evil else 7.0
 			var sj_dmg = int(_get_effective_atk() * sj_base)
 			current_enemy["hp"] -= sj_dmg
 			priest_divine_judgment_turns = 3
-			_battle_add_log("⚡⚡ 神圣裁定！造成 %d 伤害（%s+100%%）" % [sj_dmg, "对邪恶生物" if is_evil else "普通"])
+			_battle_add_log("⚡⚡ 神圣裁定!造成 %d 伤害(%s+100%%)" % [sj_dmg, "对邪恶生物" if is_evil else "普通"])
 			_enemy_hit_effect()
 			_critical_hit_effect()
 			_spawn_enemy_damage("%d" % sj_dmg, "crit", Vector2(0, -45))
 		"生命之泉":
-			# 每回合回复HP上限15%，持续4回合
+			# 每回合回复HP上限15%,持续4回合
 			priest_life_fountain_turns = 4
 			priest_life_fountain_heal = int(player_data.max_hp * 0.15)
 			player_data.hp = min(player_data.max_hp, player_data.hp + priest_life_fountain_heal)
 			_trigger_portrait_heal_glow()
-			_battle_add_log("⛲ 生命之泉！每回合回复%d HP持续4回合" % priest_life_fountain_heal)
+			_battle_add_log("⛲ 生命之泉!每回合回复%d HP持续4回合" % priest_life_fountain_heal)
 			_spawn_player_damage("+%d/回合!" % priest_life_fountain_heal, "heal")
 		# ===== 牧师 T4 (觉醒技能·Lv40解锁) =====
 		"神迹":
-			# 全队HP回满，清除所有debuff，每战斗限1次
+			# 全队HP回满,清除所有debuff,每战斗限1次
 			if priest_divine_miracle_used:
-				_battle_add_log("⚠️ 神迹本场战斗已使用！")
+				_battle_add_log("⚠️ 神迹本场战斗已使用!")
 			else:
 				priest_divine_miracle_used = true
 				player_data.hp = player_data.max_hp
 				_trigger_portrait_heal_glow()
-				_battle_add_log("✨✨✨ 神迹！全队HP全满，清除所有 debuff！")
+				_battle_add_log("✨✨✨ 神迹!全队HP全满,清除所有 debuff!")
 				_spawn_player_damage("神迹!!! 全满!", "heal")
 		"神圣审判":
-			# ATK×6.0全体，附加「神判」禁止敌人回复HP持续5回合
+			# ATK×6.0全体,附加「神判」禁止敌人回复HP持续5回合
 			var sj_all_dmg = int(_get_effective_atk() * 6.0)
 			current_enemy["hp"] -= sj_all_dmg
 			priest_divine_judgment_turns = 5
-			_battle_add_log("⚡⚡⚡ 神圣审判！造成 %d 伤害全体，敌人无法回复HP持续5回合！" % sj_all_dmg)
+			_battle_add_log("⚡⚡⚡ 神圣审判!造成 %d 伤害全体,敌人无法回复HP持续5回合!" % sj_all_dmg)
 			_enemy_hit_effect()
 			_critical_hit_effect()
 			_spawn_enemy_damage("%d" % sj_all_dmg, "crit", Vector2(0, -50))
 		"永恒庇护":
-			# 全队获得「神圣之魂」buff：死亡时自动复活（限1次/每角色）
+			# 全队获得「神圣之魂」buff:死亡时自动复活(限1次/每角色)
 			priest_holy_sentinel_active = true
 			priest_holy_sentinel_hp_threshold = 1
-			_battle_add_log("🛡️✨ 永恒庇护！全队获得「神圣之魂」，死亡时自动复活（限1次）！")
+			_battle_add_log("🛡️✨ 永恒庇护!全队获得「神圣之魂」,死亡时自动复活(限1次)!")
 			_spawn_player_damage("🛡️ 神圣之魂!", "shield")
 		# 骑士
 		"格挡":
 			player_defending = true
 			player_shield = int(player_data.defense() * 1.2)
-			_battle_add_log("⚔️ 格挡！伤害减少，护盾+%d" % player_shield)
+			_battle_add_log("⚔️ 格挡!伤害减少,护盾+%d" % player_shield)
 			_spawn_player_damage("+%d" % player_shield, "shield")
 		"斩击":
 			var pierce_def = _get_pierced_defense()
 			var dmg = _roll_dmg_var_large(int(_get_effective_atk() * 1.8)) - pierce_def
 			dmg = max(1, dmg)
 			current_enemy["hp"] -= dmg
-			_battle_add_log("⚔️ 神圣斩击！造成 %d 伤害" % dmg)
+			_battle_add_log("⚔️ 神圣斩击!造成 %d 伤害" % dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg)
 		"神圣":
@@ -6412,7 +6421,7 @@ async func _on_skill_selected(skill_name: String):
 			current_enemy["hp"] -= dmg
 			var heal = int(player_data.max_hp * 0.15)
 			player_data.hp = min(player_data.max_hp, player_data.hp + heal)
-			_battle_add_log("✨ 神圣制裁！造成 %d 伤害并恢复 %d HP" % [dmg, heal])
+			_battle_add_log("✨ 神圣制裁!造成 %d 伤害并恢复 %d HP" % [dmg, heal])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % dmg, "buff", Vector2(0, -25))
 			_spawn_player_damage("+%d" % heal, "heal")
@@ -6420,7 +6429,7 @@ async func _on_skill_selected(skill_name: String):
 		"鼓舞":
 			var boost = 5
 			player_data.atk += boost
-			_battle_add_log("🎵 鼓舞！攻击力+%d 本场战斗" % boost)
+			_battle_add_log("🎵 鼓舞!攻击力+%d 本场战斗" % boost)
 			_spawn_player_damage("ATK+%d" % boost, "buff")
 		"旋律":
 			var heal = int(player_data.max_hp * 0.2)
@@ -6428,17 +6437,17 @@ async func _on_skill_selected(skill_name: String):
 			var heal2 = int(player_data.max_mp * 0.2)
 			player_data.mp = min(player_data.max_mp, player_data.mp + heal2)
 			_trigger_portrait_heal_glow()
-			_battle_add_log("🎶 治疗旋律！恢复 %d HP 和 %d MP" % [heal, heal2])
+			_battle_add_log("🎶 治疗旋律!恢复 %d HP 和 %d MP" % [heal, heal2])
 			_spawn_player_damage("+%d HP" % heal, "heal")
 		"沉默":
 			enemy_stun_turns = 2
-			_battle_add_log("🎵 沉默旋律！敌人无法使用技能2回合")
+			_battle_add_log("🎵 沉默旋律!敌人无法使用技能2回合")
 		# 召唤师
 		"召唤":
 			var summon_dmg = int(_get_effective_atk() * 1.3 + player_data.luk * 2)
 			current_enemy["hp"] -= summon_dmg
 			resonance_stacks += 1
-			_battle_add_log("🔥 召唤兽攻击！造成 %d 伤害（共鸣+%d层）" % [summon_dmg, resonance_stacks])
+			_battle_add_log("🔥 召唤兽攻击!造成 %d 伤害(共鸣+%d层)" % [summon_dmg, resonance_stacks])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % summon_dmg, "buff", Vector2(0, -25))
 		"契约":
@@ -6447,7 +6456,7 @@ async func _on_skill_selected(skill_name: String):
 			var contract_dmg = int(_get_effective_atk() * 1.2)
 			current_enemy["hp"] -= contract_dmg
 			current_enemy["atk"] = max(1, int(current_enemy["atk"] * BOSS_SKILL_MULT_XLOW))
-			_battle_add_log("📜 契约诅咒！造成 %d 伤害，敌人ATK降至70%%，持续3回合" % contract_dmg)
+			_battle_add_log("📜 契约诅咒!造成 %d 伤害,敌人ATK降至70%%,持续3回合" % contract_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % contract_dmg, "debuff", Vector2(0, -25))
 		"共鸣":
@@ -6457,7 +6466,7 @@ async func _on_skill_selected(skill_name: String):
 			var self_cost = int(player_data.max_hp * 0.05 * resonance_stacks)
 			current_enemy["hp"] -= reso_dmg
 			player_data.hp = max(1, player_data.hp - self_cost)
-			_battle_add_log("⚡ 共鸣爆发！造成 %d 伤害（%d层），自身消耗 %d HP" % [reso_dmg, resonance_stacks, self_cost])
+			_battle_add_log("⚡ 共鸣爆发!造成 %d 伤害(%d层),自身消耗 %d HP" % [reso_dmg, resonance_stacks, self_cost])
 			resonance_stacks = 0
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % reso_dmg, "crit", Vector2(0, -30))
@@ -6469,19 +6478,19 @@ async func _on_skill_selected(skill_name: String):
 			hunter_trap_turns = 3
 			hunter_trap_slow = 3
 			current_enemy["spd"] = max(1, current_enemy["spd"] - hunter_trap_slow)
-			_battle_add_log("🪤 致命陷阱！造成 %d 伤害，敌人速度-%d持续3回合，此后每回合受到 %d 灼烧伤害" % [trap_dmg, hunter_trap_slow, hunter_trap_dot_dmg])
+			_battle_add_log("🪤 致命陷阱!造成 %d 伤害,敌人速度-%d持续3回合,此后每回合受到 %d 灼烧伤害" % [trap_dmg, hunter_trap_slow, hunter_trap_dot_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % trap_dmg, "crit", Vector2(0, -35))
 		"猎豹加速":
 			hunter_evasion_turns = 2
 			hunter_speed_boost_turns = 2
-			_battle_add_log("🦌 猎豹加速！闪避率+50%%持续2回合，移速提升")
+			_battle_add_log("🦌 猎豹加速!闪避率+50%%持续2回合,移速提升")
 			_spawn_player_damage("EVASION+50%", "buff")
 		"穿甲箭":
 			hunter_armor_pierce_turns = 2
 			var pierce_dmg = _apply_hunter_mark(int(_get_effective_atk() * 2.5))
 			current_enemy["hp"] -= pierce_dmg
-			_battle_add_log("🏹 穿甲箭！无视防御，造成 %d 伤害，持续2回合穿透" % pierce_dmg)
+			_battle_add_log("🏹 穿甲箭!无视防御,造成 %d 伤害,持续2回合穿透" % pierce_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % pierce_dmg, "crit", Vector2(0, -35))
 		# 猎人 T3
@@ -6489,54 +6498,54 @@ async func _on_skill_selected(skill_name: String):
 			var escape_dmg = _apply_hunter_mark(int(_get_effective_atk() * 4.0))
 			current_enemy["hp"] -= escape_dmg
 			hunter_one_hit_escape = true  # 下次敌人攻击必闪避
-			_battle_add_log("⚡ 一击脱离！造成 %d 伤害，本回合100%%闪避敌人攻击" % escape_dmg)
+			_battle_add_log("⚡ 一击脱离!造成 %d 伤害,本回合100%%闪避敌人攻击" % escape_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % escape_dmg, "crit", Vector2(0, -40))
 		"万箭齐发":
 			var arrow_dmg = _apply_hunter_mark(int(_get_effective_atk() * 1.5))
 			current_enemy["hp"] -= arrow_dmg
-			# 标记：敌人受伤+20%持续3回合
+			# 标记:敌人受伤+20%持续3回合
 			hunter_mark_turns = 3
 			hunter_mark_mult = 1.2
-			_battle_add_log("🏹 万箭齐发！造成 %d 伤害，标记敌人受到伤害+20%%持续3回合" % arrow_dmg)
+			_battle_add_log("🏹 万箭齐发!造成 %d 伤害,标记敌人受到伤害+20%%持续3回合" % arrow_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % arrow_dmg, "crit", Vector2(0, -40))
 		"猎杀时刻":
 			if current_enemy["hp"] < current_enemy["max_hp"] * 0.5:
 				hunter_mark_turns = 2
 				hunter_mark_mult = 2.0
-				_battle_add_log("🎯 猎杀时刻！敌人HP<50%%，伤害+100%%持续2回合")
+				_battle_add_log("🎯 猎杀时刻!敌人HP<50%%,伤害+100%%持续2回合")
 				_spawn_player_damage("ATK×2.0!", "buff")
 			else:
-				# 敌人HP还高，改为造成较低伤害
+				# 敌人HP还高,改为造成较低伤害
 				var hunt_dmg = _apply_hunter_mark(int(_get_effective_atk() * 1.5))
 				current_enemy["hp"] -= hunt_dmg
-				_battle_add_log("🎯 猎杀时刻！敌人HP仍高，造成 %d 伤害" % hunt_dmg)
+				_battle_add_log("🎯 猎杀时刻!敌人HP仍高,造成 %d 伤害" % hunt_dmg)
 				_enemy_hit_effect()
 				_spawn_enemy_damage("%d" % hunt_dmg, "damage", Vector2(0, -30))
 		"野兽之力":
 			hunter_beast_turns = 4
 			hunter_beast_dmg = int(player_data.attack_power() * 0.8)
-			_battle_add_log("🐺 野兽之力！召唤巨狼，每回合对敌人造成 %d 伤害，持续4回合" % hunter_beast_dmg)
+			_battle_add_log("🐺 野兽之力!召唤巨狼,每回合对敌人造成 %d 伤害,持续4回合" % hunter_beast_dmg)
 			_spawn_player_damage("🐺 野兽之力!", "buff")
 		# ===== 猎人 T4 (觉醒技能·Lv40解锁) =====
 		"死标记":
-			# ATK×10.0，对HP>50%敌人伤害打折(×0.5)；HP<50%时真实伤害
+			# ATK×10.0,对HP>50%敌人伤害打折(×0.5);HP<50%时真实伤害
 			var death_dmg = int(_get_effective_atk() * 10.0)
 			if current_enemy["hp"] > current_enemy["max_hp"] * 0.5:
 				death_dmg = int(death_dmg * 0.5)
-				_battle_add_log("💀🏹 死标记！目标HP充足，伤害×0.5，造成 %d 伤害" % death_dmg)
+				_battle_add_log("💀🏹 死标记!目标HP充足,伤害×0.5,造成 %d 伤害" % death_dmg)
 			else:
-				_battle_add_log("💀🏹💀 死标记！对HP<50%%目标造成真实伤害 %d ！" % death_dmg)
+				_battle_add_log("💀🏹💀 死标记!对HP<50%%目标造成真实伤害 %d !" % death_dmg)
 			current_enemy["hp"] -= death_dmg
 			_enemy_hit_effect()
 			_critical_hit_effect()
 			_spawn_enemy_damage("%d" % death_dmg, "crit", Vector2(0, -65))
 		"自然之力":
-			# 场上每有种草/陷阱/召唤物，伤害+30%
+			# 场上每有种草/陷阱/召唤物,伤害+30%
 			hunter_nature_power_turns = 3
 			hunter_nature_power_bonus = 1.0
-			# 计算加成：巨狼+1，致命陷阱激活+1，猎豹+1等
+			# 计算加成:巨狼+1,致命陷阱激活+1,猎豹+1等
 			var nature_bonus = 1.0
 			if hunter_beast_turns > 0:
 				nature_bonus += 0.3
@@ -6545,12 +6554,12 @@ async func _on_skill_selected(skill_name: String):
 			if hunter_evasion_turns > 0:
 				nature_bonus += 0.3
 			hunter_nature_power_bonus = nature_bonus
-			_battle_add_log("🌿✨ 自然之力！当前伤害加成×%.1f，持续3回合" % nature_bonus)
+			_battle_add_log("🌿✨ 自然之力!当前伤害加成×%.1f,持续3回合" % nature_bonus)
 			_spawn_player_damage("自然之力!", "buff")
 		"狩猎领域":
-			# 全体队友SPD+5，先手率+50%，持续4回合
+			# 全体队友SPD+5,先手率+50%,持续4回合
 			hunter_hunting_field_turns = 4
-			_battle_add_log("🏹🌲 狩猎领域！全体队友速度+5，先手率+50%%，持续4回合！")
+			_battle_add_log("🏹🌲 狩猎领域!全体队友速度+5,先手率+50%%,持续4回合!")
 			_spawn_player_damage("狩猎领域!", "buff")
 		# ===== 法师 T3 =====
 		"陨石术":
@@ -6561,13 +6570,13 @@ async func _on_skill_selected(skill_name: String):
 			# 附加灼烧DOT
 			meteor_turns = 3
 			meteor_dmg = int(_get_effective_atk() * 0.8)
-			_battle_add_log("☄️ 陨石术！造成 %d 伤害，并引发爆炸对全体造成 %d 伤害" % [meteor_dmg1, meteor_dmg2])
-			_battle_add_log("🔥 陨石术灼烧！目标每回合受到 %d 伤害，持续3回合" % meteor_dmg)
+			_battle_add_log("☄️ 陨石术!造成 %d 伤害,并引发爆炸对全体造成 %d 伤害" % [meteor_dmg1, meteor_dmg2])
+			_battle_add_log("🔥 陨石术灼烧!目标每回合受到 %d 伤害,持续3回合" % meteor_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % meteor_dmg1, "crit", Vector2(0, -45))
 			_spawn_enemy_damage("爆!%d" % meteor_dmg2, "crit", Vector2(30, -20))
 		"绝对零度":
-			# ATK × 3.0 单体，冰冻3回合（Boss减半=1.5回合）
+			# ATK × 3.0 单体,冰冻3回合(Boss减半=1.5回合)
 			var freeze_dmg = int(_get_effective_atk() * 3.0)
 			current_enemy["hp"] -= freeze_dmg
 			var freeze_turns = 3
@@ -6575,62 +6584,62 @@ async func _on_skill_selected(skill_name: String):
 			if current_enemy.get("is_boss", false):
 				freeze_turns = 2
 			absolute_zero_turns = freeze_turns
-			_battle_add_log("❄️ 绝对零度！造成 %d 伤害，冰冻敌人 %d 回合！" % [freeze_dmg, freeze_turns])
+			_battle_add_log("❄️ 绝对零度!造成 %d 伤害,冰冻敌人 %d 回合!" % [freeze_dmg, freeze_turns])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % freeze_dmg, "crit", Vector2(0, -45))
 		"元素风暴":
-			# ATK × 2.5 全体，火+冰+雷三属性混合伤害
+			# ATK × 2.5 全体,火+冰+雷三属性混合伤害
 			var storm_dmg = int(_get_effective_atk() * 2.5)
 			current_enemy["hp"] -= storm_dmg
 			elemental_storm_turns = 3
 			elemental_storm_dmg = int(_get_effective_atk() * 0.5)
-			_battle_add_log("⚡🔥❄️ 元素风暴！火+冰+雷三系混合，造成 %d 伤害！" % storm_dmg)
-			_battle_add_log("⚡ 元素风暴持续！每回合额外受到 %d 伤害，持续3回合" % elemental_storm_dmg)
+			_battle_add_log("⚡🔥❄️ 元素风暴!火+冰+雷三系混合,造成 %d 伤害!" % storm_dmg)
+			_battle_add_log("⚡ 元素风暴持续!每回合额外受到 %d 伤害,持续3回合" % elemental_storm_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % storm_dmg, "crit", Vector2(0, -45))
 		"时间静止":
-			# 使全体敌人暂停1回合（期间我方先手）
+			# 使全体敌人暂停1回合(期间我方先手)
 			time_stop_turns = 2
 			time_stop_active = true
-			_battle_add_log("⏰ 时间静止！敌人被冻结 %d 回合，我方获得先手优势！" % time_stop_turns)
+			_battle_add_log("⏰ 时间静止!敌人被冻结 %d 回合,我方获得先手优势!" % time_stop_turns)
 			_spawn_player_damage("⏰ 时间静止!", "buff")
 		# ===== 法师 T4 (觉醒技能·Lv40解锁) =====
 		"元素湮灭":
-			# ATK × 8.0 单体，目标属性弱点伤害翻倍
+			# ATK × 8.0 单体,目标属性弱点伤害翻倍
 			var anni_dmg = int(_get_effective_atk() * 8.0)
-			# 检查敌人是否有火/冰/雷属性弱点，有则伤害翻倍
+			# 检查敌人是否有火/冰/雷属性弱点,有则伤害翻倍
 			var enemy_weakness = current_enemy.get("weakness", "")
 			var weakness_bonus = ""
 			if enemy_weakness.find("火") >= 0 or enemy_weakness.find("冰") >= 0 or enemy_weakness.find("雷") >= 0:
 				anni_dmg *= 2
-				weakness_bonus = "（弱点加成！伤害翻倍！）"
-			elemental_annihilation_weak_mult = 2.0  # 标记弱点翻倍（持续到战斗结束）
+				weakness_bonus = "(弱点加成!伤害翻倍!)"
+			elemental_annihilation_weak_mult = 2.0  # 标记弱点翻倍(持续到战斗结束)
 			current_enemy["hp"] -= anni_dmg
-			_battle_add_log("💥💥💥 元素湮灭！造成 %d 伤害！%s" % [anni_dmg, weakness_bonus])
+			_battle_add_log("💥💥💥 元素湮灭!造成 %d 伤害!%s" % [anni_dmg, weakness_bonus])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % anni_dmg, "crit", Vector2(0, -60))
 		"奥术真理":
-			# 本场战斗所有属性伤害+50%，所有属性抗性+30%
-			arcane_truth_turns = 999  # 持续到战斗结束（用大数模拟）
+			# 本场战斗所有属性伤害+50%,所有属性抗性+30%
+			arcane_truth_turns = 999  # 持续到战斗结束(用大数模拟)
 			arcane_truth_active = true
 			arcane_weaving_history.clear()  # 清除秘法编织记录
-			_battle_add_log("🔮✨ 奥术真理！本场战斗所有属性伤害+50%%，所有属性抗性+30%%！")
+			_battle_add_log("🔮✨ 奥术真理!本场战斗所有属性伤害+50%%,所有属性抗性+30%%!")
 			_spawn_player_damage("奥术真理!", "buff")
 		"秘法编织":
-			# 连续释放最后3个技能（各消耗50%MP）
+			# 连续释放最后3个技能(各消耗50%MP)
 			var history = arcane_weaving_history.duplicate()
 			if history.size() == 0:
-				_battle_add_log("⚠️ 秘法编织：无技能历史，无法编织！")
+				_battle_add_log("⚠️ 秘法编织:无技能历史,无法编织!")
 				_spawn_player_damage("无历史!", "debuff")
 			else:
-				_battle_add_log("🧶✨ 秘法编织！回放最近 %d 个技能..." % history.size())
+				_battle_add_log("🧶✨ 秘法编织!回放最近 %d 个技能..." % history.size())
 				_spawn_player_damage("秘法编织!", "buff")
-				# 回放技能（不消耗MP，不触发冷却，用reduced=true标记）
+				# 回放技能(不消耗MP,不触发冷却,用reduced=true标记)
 				for hist_skill in history:
 					var hist_cost = int(mp_cost.get(hist_skill, 0) * 0.5)
 					_battle_add_log("  → 【编织】%s (消耗50%%MP: %d)" % [hist_skill, hist_cost])
-					# 直接复用技能执行逻辑，但不记录到历史（避免死循环）
-					# 简化处理：以较低伤害再次触发技能效果
+					# 直接复用技能执行逻辑,但不记录到历史(避免死循环)
+					# 简化处理:以较低伤害再次触发技能效果
 					var replay_dmg = int(_get_effective_atk() * 0.5)
 					current_enemy["hp"] -= replay_dmg
 					_spawn_enemy_damage("%d(编织)" % replay_dmg, "crit", Vector2(randi()%40-20, -30-randi()%20))
@@ -6641,7 +6650,7 @@ async func _on_skill_selected(skill_name: String):
 			var vanish_dmg = int(_get_effective_atk() * 3.0)
 			current_enemy["hp"] -= vanish_dmg
 			vanish_turns = 2
-			_battle_add_log("💨 影遁！造成 %d 伤害，2回合内50%%闪避" % vanish_dmg)
+			_battle_add_log("💨 影遁!造成 %d 伤害,2回合内50%%闪避" % vanish_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % vanish_dmg, "crit", Vector2(0, -40))
 		"淬毒利刃":
@@ -6649,97 +6658,97 @@ async func _on_skill_selected(skill_name: String):
 			current_enemy["hp"] -= poison_dmg
 			thief_poison_turns = 4
 			thief_poison_dmg = int(_get_effective_atk() * 0.3)
-			_battle_add_log("🗡️ 淬毒利刃！造成 %d 伤害，4回合内每回合受到 %d 中毒伤害" % [poison_dmg, thief_poison_dmg])
+			_battle_add_log("🗡️ 淬毒利刃!造成 %d 伤害,4回合内每回合受到 %d 中毒伤害" % [poison_dmg, thief_poison_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % poison_dmg, "poison", Vector2(0, -30))
 		"锁喉":
 			var choke_dmg = int(_get_effective_atk() * 2.2)
 			current_enemy["hp"] -= choke_dmg
 			thief_choke_turns = 2
-			_battle_add_log("🗡️ 锁喉！造成 %d 伤害，敌人眩晕2回合" % choke_dmg)
+			_battle_add_log("🗡️ 锁喉!造成 %d 伤害,敌人眩晕2回合" % choke_dmg)
 			_enemy_hit_effect()
 			enemy_stun_turns = max(enemy_stun_turns, 2)
 			_spawn_enemy_damage("%d" % choke_dmg, "debuff", Vector2(0, -35))
 		# ===== 盗贼 T3 (终极技能·Lv25解锁) =====
 		"影分身":
-			# 制造2个分身（各30%HP，攻击无效），迷惑敌人，持续5回合
+			# 制造2个分身(各30%HP,攻击无效),迷惑敌人,持续5回合
 			thief_shadow_clone_turns = 5
-			_battle_add_log("👤👤 影分身！制造2个分身迷惑敌人，持续5回合！分身各30%HP")
+			_battle_add_log("👤👤 影分身!制造2个分身迷惑敌人,持续5回合!分身各30%HP")
 			_spawn_player_damage("影分身!", "buff")
 		"绝杀":
-			# ATK×6.0，仅对HP<30%目标生效
+			# ATK×6.0,仅对HP<30%目标生效
 			var exe_dmg = int(_get_effective_atk() * 6.0)
 			if current_enemy["hp"] > current_enemy["max_hp"] * 0.3:
 				exe_dmg = int(exe_dmg * 0.5)
-				_battle_add_log("🗡️💀 绝杀！目标HP>30%，伤害减半！造成 %d 伤害" % exe_dmg)
+				_battle_add_log("🗡️💀 绝杀!目标HP>30%,伤害减半!造成 %d 伤害" % exe_dmg)
 			else:
-				_battle_add_log("🗡️💀 绝杀！对残血目标造成 %d 伤害！" % exe_dmg)
+				_battle_add_log("🗡️💀 绝杀!对残血目标造成 %d 伤害!" % exe_dmg)
 			current_enemy["hp"] -= exe_dmg
 			_enemy_hit_effect()
 			_critical_hit_effect()
 			_spawn_enemy_damage("%d" % exe_dmg, "crit", Vector2(0, -55))
 		"暗影之牙":
-			# ATK×2.5全体，附带「影蚀」debuff（DEF-30%持续2回合）
+			# ATK×2.5全体,附带「影蚀」debuff(DEF-30%持续2回合)
 			var fang_dmg = int(_get_effective_atk() * 2.5)
 			current_enemy["hp"] -= fang_dmg
 			thief_shadow_fang_turns = 2
 			thief_shadow_fang_defdebuff = int(current_enemy["def"] * 0.3)
 			current_enemy["def"] = max(1, current_enemy["def"] - thief_shadow_fang_defdebuff)
-			_battle_add_log("🌑🗡️ 暗影之牙！造成 %d 伤害，敌人DEF-%d持续2回合！" % [fang_dmg, thief_shadow_fang_defdebuff])
+			_battle_add_log("🌑🗡️ 暗影之牙!造成 %d 伤害,敌人DEF-%d持续2回合!" % [fang_dmg, thief_shadow_fang_defdebuff])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % fang_dmg, "crit", Vector2(0, -45))
 		# ===== 盗贼 T4 (觉醒技能·Lv40解锁) =====
 		"千面杀手":
-			# 每回合自动攻击HP最低敌人（ATK×3.0），持续5回合
+			# 每回合自动攻击HP最低敌人(ATK×3.0),持续5回合
 			thief_thousand_faces_turns = 5
-			_battle_add_log("🎭💀 千面杀手！每回合自动攻击HP最低敌人，持续5回合！")
+			_battle_add_log("🎭💀 千面杀手!每回合自动攻击HP最低敌人,持续5回合!")
 			_spawn_player_damage("千面杀手!", "crit")
 		"暗影吞噬":
-			# ATK×8.0，吸收敌人50%已损失HP转化为自身HP
+			# ATK×8.0,吸收敌人50%已损失HP转化为自身HP
 			var devour_dmg = int(_get_effective_atk() * 8.0)
 			var absorb_hp = int((current_enemy["max_hp"] - current_enemy["hp"]) * 0.5)
 			current_enemy["hp"] -= devour_dmg
 			var actual_heal = min(absorb_hp, devour_dmg)
 			player_data.hp = min(player_data.max_hp, player_data.hp + actual_heal)
-			_battle_add_log("🌑💜 暗影吞噬！造成 %d 伤害，吸收 %d HP转化为自身治疗！" % [devour_dmg, actual_heal])
+			_battle_add_log("🌑💜 暗影吞噬!造成 %d 伤害,吸收 %d HP转化为自身治疗!" % [devour_dmg, actual_heal])
 			_enemy_hit_effect()
 			_critical_hit_effect()
 			_trigger_portrait_heal_glow()
 			_spawn_enemy_damage("%d" % devour_dmg, "crit", Vector2(0, -60))
 			_spawn_player_damage("+%d" % actual_heal, "heal")
 		"幻惑领域":
-			# 3回合内，敌人50%概率攻击自己人（精英/Boss为20%）
+			# 3回合内,敌人50%概率攻击自己人(精英/Boss为20%)
 			thief_illusion_domain_turns = 3
-			_battle_add_log("🌙✨ 幻惑领域！敌人30%概率混乱攻击自己人，持续3回合！")
+			_battle_add_log("🌙✨ 幻惑领域!敌人30%概率混乱攻击自己人,持续3回合!")
 			_spawn_player_damage("幻惑!", "buff")
 		# ===== 骑士 T4 (觉醒技能·Lv40解锁) =====
 		"天使守护":
-			# 5回合内，全队HP不会降至1以下（最低保留1HP）
+			# 5回合内,全队HP不会降至1以下(最低保留1HP)
 			knight_angel_guard_turns = 5
 			knight_angel_guard_triggered = false
-			_battle_add_log("👼✨ 天使守护！全队HP不会降至1以下，持续5回合！")
+			_battle_add_log("👼✨ 天使守护!全队HP不会降至1以下,持续5回合!")
 			_spawn_player_damage("天使守护!", "buff")
 		"神圣之锤":
-			# ATK×7.0单体，圣光属性，必然暴击
+			# ATK×7.0单体,圣光属性,必然暴击
 			knight_holy_hammer_turns = 3
 			knight_holy_hammer_mult = 2.0
 			var hammer_dmg = int(_get_effective_atk() * 7.0)
 			current_enemy["hp"] -= hammer_dmg
-			_battle_add_log("🔨⚡ 神圣之锤！必然暴击，造成 %d 圣光伤害，持续3回合内伤害×2！" % hammer_dmg)
+			_battle_add_log("🔨⚡ 神圣之锤!必然暴击,造成 %d 圣光伤害,持续3回合内伤害×2!" % hammer_dmg)
 			_enemy_hit_effect()
 			_critical_hit_effect()
 			_spawn_enemy_damage("%d" % hammer_dmg, "crit", Vector2(0, -65))
 		"正义执行":
-			# 对HP<30%敌人立即斩杀（无视免死），否则ATK×4.0
+			# 对HP<30%敌人立即斩杀(无视免死),否则ATK×4.0
 			knight_execution_turns = 2
 			var exe_dmg2 = int(_get_effective_atk() * 4.0)
 			if current_enemy["hp"] > current_enemy["max_hp"] * 0.3:
 				current_enemy["hp"] -= exe_dmg2
-				_battle_add_log("⚖️ 正义执行！对 %d 敌人造成 %d 伤害，斩杀生效中..." % (current_enemy["hp"], exe_dmg2))
+				_battle_add_log("⚖️ 正义执行!对 %d 敌人造成 %d 伤害,斩杀生效中..." % (current_enemy["hp"], exe_dmg2))
 				_spawn_enemy_damage("%d" % exe_dmg2, "crit", Vector2(0, -50))
 			else:
 				current_enemy["hp"] = 0
-				_battle_add_log("💀⚖️ 正义执行！敌人HP<30%%，立即处决！")
+				_battle_add_log("💀⚖️ 正义执行!敌人HP<30%%,立即处决!")
 				_spawn_enemy_damage("斩杀!", "crit", Vector2(0, -65))
 		# 牧师 T2
 		"群体治疗":
@@ -6748,14 +6757,14 @@ async func _on_skill_selected(skill_name: String):
 			priest_mass_heal_mp = heal_amt
 			player_shield += int(heal_amt * 0.3)
 			_trigger_portrait_heal_glow()
-			_battle_add_log("💚 群体治疗！恢复 %d HP，护盾+%d" % [heal_amt, int(heal_amt * 0.3)])
+			_battle_add_log("💚 群体治疗!恢复 %d HP,护盾+%d" % [heal_amt, int(heal_amt * 0.3)])
 			_spawn_player_damage("+%d" % heal_amt, "heal")
 		"驱散":
 			priest_dispel_done = true
 			var def_debuff = int(current_enemy["def"] * 0.3)
 			current_enemy["def"] = max(1, current_enemy["def"] - def_debuff)
 			# 驱散敌人增益
-			_battle_add_log("✨ 驱散！敌人防御-%d" % def_debuff)
+			_battle_add_log("✨ 驱散!敌人防御-%d" % def_debuff)
 			_spawn_enemy_damage("DEF-%d" % def_debuff, "debuff")
 		"神圣仲裁":
 			var smite_dmg = int(_get_effective_atk() * 2.8)
@@ -6765,7 +6774,7 @@ async func _on_skill_selected(skill_name: String):
 			current_enemy["def"] = max(1, current_enemy["def"] - priest_smite_defdebuff)
 			var smite_heal = int(player_data.max_hp * 0.1)
 			player_data.hp = min(player_data.max_hp, player_data.hp + smite_heal)
-			_battle_add_log("⚖️ 神圣仲裁！造成 %d 伤害，敌人DEF-%d持续2回合，恢复 %d HP" % [smite_dmg, priest_smite_defdebuff, smite_heal])
+			_battle_add_log("⚖️ 神圣仲裁!造成 %d 伤害,敌人DEF-%d持续2回合,恢复 %d HP" % [smite_dmg, priest_smite_defdebuff, smite_heal])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % smite_dmg, "crit", Vector2(0, -40))
 			_spawn_player_damage("+%d" % smite_heal, "heal")
@@ -6775,7 +6784,7 @@ async func _on_skill_selected(skill_name: String):
 			current_enemy["hp"] -= shield_bang
 			knight_shield_bang_dmg = shield_bang
 			enemy_stun_turns = 1
-			_battle_add_log("🛡️ 盾击！造成 %d 伤害，敌人眩晕1回合" % shield_bang)
+			_battle_add_log("🛡️ 盾击!造成 %d 伤害,敌人眩晕1回合" % shield_bang)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % shield_bang, "damage", Vector2(0, -25))
 		"圣光审判":
@@ -6784,49 +6793,49 @@ async func _on_skill_selected(skill_name: String):
 			knight_judgment_turns = 2
 			knight_judgment_defdebuff = int(current_enemy["def"] * 0.3)
 			current_enemy["def"] = max(1, current_enemy["def"] - knight_judgment_defdebuff)
-			_battle_add_log("⚔️ 圣光审判！造成 %d 伤害，敌人DEF-%d持续2回合" % [judgment_dmg, knight_judgment_defdebuff])
+			_battle_add_log("⚔️ 圣光审判!造成 %d 伤害,敌人DEF-%d持续2回合" % [judgment_dmg, knight_judgment_defdebuff])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % judgment_dmg, "crit", Vector2(0, -40))
 		"钢铁壁垒":
 			knight_iron_wall_turns = 3
 			knight_iron_wall_defboost = int(player_data.defense() * 1.0)
 			player_shield += int(player_data.defense() * 2.0)
-			_battle_add_log("🏰 钢铁壁垒！自身DEF+%d持续3回合，护盾+%d" % [knight_iron_wall_defboost, int(player_data.defense() * 2.0)])
+			_battle_add_log("🏰 钢铁壁垒!自身DEF+%d持续3回合,护盾+%d" % [knight_iron_wall_defboost, int(player_data.defense() * 2.0)])
 			_spawn_player_damage("+%d" % int(player_data.defense() * 2.0), "shield")
 		# ===== 骑士 T3 (终极技能·Lv25解锁) =====
 		"神圣复仇":
-			# ATK×4.0，附带神圣DOT（无视抗性）持续3回合
+			# ATK×4.0,附带神圣DOT(无视抗性)持续3回合
 			var avenger_dmg = int(_get_effective_atk() * 4.0)
 			current_enemy["hp"] -= avenger_dmg
 			knight_holy_avenger_turns = 3
 			knight_holy_avenger_dmg = int(_get_effective_atk() * 0.8)
-			_battle_add_log("⚔️✨ 神圣复仇！造成 %d 伤害，圣光灼烧每回合 %d 伤害持续3回合" % [avenger_dmg, knight_holy_avenger_dmg])
+			_battle_add_log("⚔️✨ 神圣复仇!造成 %d 伤害,圣光灼烧每回合 %d 伤害持续3回合" % [avenger_dmg, knight_holy_avenger_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % avenger_dmg, "crit", Vector2(0, -50))
 		"永恒守卫":
-			# 为生命值最低队友附加「守卫」效果：替他承受所有伤害持续2回合
+			# 为生命值最低队友附加「守卫」效果:替他承受所有伤害持续2回合
 			knight_eternal_guard_turns = 2
 			knight_eternal_guard_target = _get_lowest_hp_ally_index()
-			_battle_add_log("🛡️🛡️ 永恒守卫！保护队友 #%d 替他承受所有伤害持续2回合" % (knight_eternal_guard_target + 1))
+			_battle_add_log("🛡️🛡️ 永恒守卫!保护队友 #%d 替他承受所有伤害持续2回合" % (knight_eternal_guard_target + 1))
 			_spawn_player_damage("守卫!", "buff")
 		"圣光审判(全)":
-			# ATK×3.5全体，附加「审判」DOT每回合ATK×0.5持续3回合
+			# ATK×3.5全体,附加「审判」DOT每回合ATK×0.5持续3回合
 			var aoe_judgment_dmg = int(_get_effective_atk() * 3.5)
 			knight_judgment_aoe_turns = 3
 			knight_judgment_aoe_dmg = int(_get_effective_atk() * 0.5)
-			_battle_add_log("⚖️⚖️ 圣光审判(全体)！对全体敌人造成 %d 伤害，审判每回合 %d 伤害持续3回合" % [aoe_judgment_dmg, knight_judgment_aoe_dmg])
+			_battle_add_log("⚖️⚖️ 圣光审判(全体)!对全体敌人造成 %d 伤害,审判每回合 %d 伤害持续3回合" % [aoe_judgment_dmg, knight_judgment_aoe_dmg])
 			_spawn_enemy_damage("%d" % aoe_judgment_dmg, "crit", Vector2(0, -50))
 		# ===== 吟游诗人 T2
 		"战斗乐章":
 			bard_song_atk_turns = 3
 			bard_song_atk_boost = int(_get_effective_atk() * 0.25)
-			_battle_add_log("🎵 战斗乐章！攻击力+%d持续3回合" % bard_song_atk_boost)
+			_battle_add_log("🎵 战斗乐章!攻击力+%d持续3回合" % bard_song_atk_boost)
 			_spawn_player_damage("ATK+%d" % bard_song_atk_boost, "buff")
 		"疯狂节拍":
 			var rhythm_dmg = int(_get_effective_atk() * 1.8)
 			current_enemy["hp"] -= rhythm_dmg
 			bard_rhythm_turns = 2
-			_battle_add_log("🥁 疯狂节拍！造成 %d 伤害，敌人速度-40%%持续2回合" % rhythm_dmg)
+			_battle_add_log("🥁 疯狂节拍!造成 %d 伤害,敌人速度-40%%持续2回合" % rhythm_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % rhythm_dmg, "crit", Vector2(0, -35))
 		"天籁之音":
@@ -6836,53 +6845,53 @@ async func _on_skill_selected(skill_name: String):
 			player_data.mp = min(player_data.max_mp, player_data.mp + hm_mp)
 			bard_healing_melody_mp = hm_mp
 			_trigger_portrait_heal_glow()
-			_battle_add_log("🎶 天籁之音！恢复 %d HP 和 %d MP" % [hm_heal, hm_mp])
+			_battle_add_log("🎶 天籁之音!恢复 %d HP 和 %d MP" % [hm_heal, hm_mp])
 			_spawn_player_damage("+%d HP" % hm_heal, "heal")
 		# ===== 吟游诗人 T2 路线B 幻术师技能 =====
 		"催眠曲":
-			# 单体敌人「沉睡」2回合（受到攻击即苏醒）；沉睡期间若未被攻击，第3回合自动进入「深度沉睡」（再受击才醒）
+			# 单体敌人「沉睡」2回合(受到攻击即苏醒);沉睡期间若未被攻击,第3回合自动进入「深度沉睡」(再受击才醒)
 			# 精英/Boss为15%概率
 			if randi() % 100 < 30:
 				bard_hypno_turns = 3
-				_battle_add_log("🌙💤 催眠曲！敌人陷入沉睡（3回合内受到攻击才苏醒）")
+				_battle_add_log("🌙💤 催眠曲!敌人陷入沉睡(3回合内受到攻击才苏醒)")
 			else:
-				_battle_add_log("🌙  催眠曲... 敌人意志坚定，未被催眠")
+				_battle_add_log("🌙  催眠曲... 敌人意志坚定,未被催眠")
 		"幻听":
-			# 敌人攻击时30%概率打偏（闪避+50%），持续2回合；诗人和队友闪避+30%
+			# 敌人攻击时30%概率打偏(闪避+50%),持续2回合;诗人和队友闪避+30%
 			bard_hallucinate_turns = 2
-			_battle_add_log("👁️🎭 幻听！敌人攻击30%%概率打偏，全队闪避+30%%持续2回合")
+			_battle_add_log("👁️🎭 幻听!敌人攻击30%%概率打偏,全队闪避+30%%持续2回合")
 			_spawn_player_damage("闪避↑", "buff")
 		"混乱之音":
-			# ATK × 2.0 全体，附加「混乱」（敌人30%概率攻击自己人，持续2回合）；精英/Boss混乱概率为15%
+			# ATK × 2.0 全体,附加「混乱」(敌人30%概率攻击自己人,持续2回合);精英/Boss混乱概率为15%
 			var chaos_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 2.0)) - _get_pierced_defense()
 			chaos_dmg = max(1, chaos_dmg)
 			current_enemy["hp"] -= chaos_dmg
 			bard_chaos_turns = 2
-			# 先手效果：混乱之音命中时额外效果
+			# 先手效果:混乱之音命中时额外效果
 			if randi() % 100 < 30:
-				_battle_add_log("🎧🔀 混乱之音！敌人被迷惑，%s 将混乱攻击自己人2回合！" % current_enemy["name"])
+				_battle_add_log("🎧🔀 混乱之音!敌人被迷惑,%s 将混乱攻击自己人2回合!" % current_enemy["name"])
 			else:
-				_battle_add_log("🎧🔀 混乱之音！造成 %d 伤害，敌人可能混乱（30%%概率）持续2回合" % chaos_dmg)
+				_battle_add_log("🎧🔀 混乱之音!造成 %d 伤害,敌人可能混乱(30%%概率)持续2回合" % chaos_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % chaos_dmg, "crit", Vector2(0, -45))
 		# ===== 吟游诗人 T3 (终极技能·Lv25解锁) =====
 		"完美和弦":
-			# 全队ATK+40%，暴击+20%，持续4回合
+			# 全队ATK+40%,暴击+20%,持续4回合
 			bard_perfect_chord_turns = 4
 			bard_perfect_chord_atk_boost = int(_get_effective_atk() * 0.4)
-			# 暴击率+20%，这里通过luk提升模拟
-			_battle_add_log("🎵✨ 完美和弦！全队ATK+40%%，暴击+20%%持续4回合")
+			# 暴击率+20%,这里通过luk提升模拟
+			_battle_add_log("🎵✨ 完美和弦!全队ATK+40%%,暴击+20%%持续4回合")
 			_spawn_player_damage("完美和弦!", "buff")
 		"命运交响曲":
-			# 持续5回合，每回合：全队随机+buff，敌人随机-debuff
+			# 持续5回合,每回合:全队随机+buff,敌人随机-debuff
 			# 第一回合立即生效
-			_battle_add_log("🎻🎼 命运交响曲启动！持续5回合，命运之力轮转...")
+			_battle_add_log("🎻🎼 命运交响曲启动!持续5回合,命运之力轮转...")
 			var symph_buffs = ["ATK+15%", "DEF+15%", "SPD+2", "LUK+5"]
 			var symph_msg = symph_buffs[randi() % symph_buffs.size()]
-			_battle_add_log("  → 第一乐章：%s" % symph_msg)
+			_battle_add_log("  → 第一乐章:%s" % symph_msg)
 			_spawn_player_damage("命运!", "buff")
 		"终末安魂曲":
-			# ATK × 3.0 全体，附加"安魂"效果（敌人无法回复HP）持续5回合
+			# ATK × 3.0 全体,附加"安魂"效果(敌人无法回复HP)持续5回合
 			var requiem_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 3.0)) - _get_pierced_defense()
 			requiem_dmg = max(1, requiem_dmg)
 			current_enemy["hp"] -= requiem_dmg
@@ -6890,25 +6899,25 @@ async func _on_skill_selected(skill_name: String):
 			# 30%概率直接斩杀HP<30%敌人
 			if current_enemy["hp"] < current_enemy["max_hp"] * 0.3 and randi() % 100 < 30:
 				current_enemy["hp"] = 0
-				_battle_add_log("🕯️⚰️ 终末安魂曲！%s 生命力枯竭，被安魂曲终结！" % current_enemy["name"])
+				_battle_add_log("🕯️⚰️ 终末安魂曲!%s 生命力枯竭,被安魂曲终结!" % current_enemy["name"])
 				_critical_hit_effect()
 				_spawn_enemy_damage("安魂!", "crit", Vector2(0, -50))
 			else:
-				_battle_add_log("🕯️⚰️ 终末安魂曲！造成 %d 伤害，敌人无法回复HP持续5回合" % requiem_dmg)
+				_battle_add_log("🕯️⚰️ 终末安魂曲!造成 %d 伤害,敌人无法回复HP持续5回合" % requiem_dmg)
 				_enemy_hit_effect()
 				_spawn_enemy_damage("%d" % requiem_dmg, "crit", Vector2(0, -45))
 		# ===== 吟游诗人 T4 (觉醒技能·Lv40解锁) =====
 		"传奇之歌":
-			# 全队永久ATK+20%，DEF+20%（不随战斗结束消失）
+			# 全队永久ATK+20%,DEF+20%(不随战斗结束消失)
 			if bard_legendary_song_atk_boost == 0:
 				bard_legendary_song_atk_boost = int(_get_effective_atk() * 0.2)
 				bard_legendary_song_def_boost = int(player_data.defense() * 0.2)
-				_battle_add_log("🎤🌟 传奇之歌！ATK+20，DEF+20（永久生效，不随战斗结束消失）")
+				_battle_add_log("🎤🌟 传奇之歌!ATK+20,DEF+20(永久生效,不随战斗结束消失)")
 				_spawn_player_damage("传奇!", "buff")
 			else:
-				_battle_add_log("🎤🌟 传奇之歌已激活！ATK+20，DEF+20")
+				_battle_add_log("🎤🌟 传奇之歌已激活!ATK+20,DEF+20")
 		"虚空咏叹调":
-			# ATK × 5.0 单体，附加"虚空"效果（敌人所有属性-30%持续4回合）
+			# ATK × 5.0 单体,附加"虚空"效果(敌人所有属性-30%持续4回合)
 			var void_dmg = _roll_dmg_var_large(int(_get_effective_atk() * 5.0)) - _get_pierced_defense()
 			void_dmg = max(1, void_dmg)
 			current_enemy["hp"] -= void_dmg
@@ -6920,19 +6929,19 @@ async func _on_skill_selected(skill_name: String):
 			current_enemy["def"] = max(1, current_enemy["def"] - void_def_debuff)
 			var void_spd_debuff = int(current_enemy["spd"] * 0.3)
 			current_enemy["spd"] = max(1, current_enemy["spd"] - void_spd_debuff)
-			_battle_add_log("🌑🎭 虚空咏叹调！造成 %d 伤害，敌人全属性-30%%持续4回合" % void_dmg)
+			_battle_add_log("🌑🎭 虚空咏叹调!造成 %d 伤害,敌人全属性-30%%持续4回合" % void_dmg)
 			_enemy_hit_effect()
 			_critical_hit_effect()
 			_spawn_enemy_damage("%d" % void_dmg, "crit", Vector2(0, -55))
 		"生命赞歌":
-			# 使一名已死亡队友复活并回复50%HP，同时全队获得30%伤害加成持续3回合
+			# 使一名已死亡队友复活并回复50%HP,同时全队获得30%伤害加成持续3回合
 			if player_data.hp <= 0:
 				player_data.hp = int(player_data.max_hp * 0.5)
 				_trigger_portrait_heal_glow()
-				_battle_add_log("🎵✨ 生命赞歌！%s 复活并恢复50%%HP，全队伤害+30%%持续3回合！" % player_data.get_job_name())
+				_battle_add_log("🎵✨ 生命赞歌!%s 复活并恢复50%%HP,全队伤害+30%%持续3回合!" % player_data.get_job_name())
 				_spawn_player_damage("REVIVE! +30%Dmg", "heal")
 			else:
-				_battle_add_log("🎵✨ 生命赞歌！复活已死亡的队友（当前无阵亡队友），全队伤害+30%%持续3回合")
+				_battle_add_log("🎵✨ 生命赞歌!复活已死亡的队友(当前无阵亡队友),全队伤害+30%%持续3回合")
 				_spawn_player_damage("+30%Dmg x3", "buff")
 		# 召唤师 T2
 		"契约强化":
@@ -6940,19 +6949,19 @@ async func _on_skill_selected(skill_name: String):
 			summoner_contract_boost_dmg = int(_get_effective_atk() * 0.5)
 			var contract_boost_dmg = int(_get_effective_atk() * 1.8)
 			current_enemy["hp"] -= contract_boost_dmg
-			_battle_add_log("📜 契约强化！造成 %d 伤害，召唤兽伤害+%d/次持续3回合" % [contract_boost_dmg, summoner_contract_boost_dmg])
+			_battle_add_log("📜 契约强化!造成 %d 伤害,召唤兽伤害+%d/次持续3回合" % [contract_boost_dmg, summoner_contract_boost_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % contract_boost_dmg, "buff", Vector2(0, -30))
 		"灵魂连接":
 			summoner_soul_link_turns = 4
 			summoner_soul_link_dmg = int(player_data.max_hp * 0.08)
-			_battle_add_log("🔗 灵魂连接！每回合对敌人造成 %d 伤害，持续4回合" % summoner_soul_link_dmg)
+			_battle_add_log("🔗 灵魂连接!每回合对敌人造成 %d 伤害,持续4回合" % summoner_soul_link_dmg)
 			_spawn_player_damage("LINK x4", "buff")
 		"召唤兽强化":
 			summoner_beast_boost_turns = 3
 			var beast_dmg = int(_get_effective_atk() * 1.5 + player_data.luk * 3)
 			current_enemy["hp"] -= beast_dmg
-			_battle_add_log("🐉 召唤兽强化！召唤兽攻击力+%d，额外造成 %d 伤害" % [_get_effective_atk() / 3, beast_dmg])
+			_battle_add_log("🐉 召唤兽强化!召唤兽攻击力+%d,额外造成 %d 伤害" % [_get_effective_atk() / 3, beast_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % beast_dmg, "crit", Vector2(0, -35))
 		# 召唤师 T3 (终极技能·Lv25解锁)
@@ -6964,7 +6973,7 @@ async func _on_skill_selected(skill_name: String):
 			var heal_amt = int(player_data.max_hp * 0.3)
 			player_data.hp = min(player_data.max_hp, player_data.hp + heal_amt)
 			_trigger_portrait_heal_glow()
-			_battle_add_log("👼 究极召唤·天使！召唤天使（HP:%d ATK:%d）持续5回合，并治疗全队 %d HP" % [angel_hp, angel_atk, heal_amt])
+			_battle_add_log("👼 究极召唤·天使!召唤天使(HP:%d ATK:%d)持续5回合,并治疗全队 %d HP" % [angel_hp, angel_atk, heal_amt])
 			_spawn_player_damage("+%d HP" % heal_amt, "heal")
 		"究极召唤·恶魔":
 			var demon_hp = int(player_data.max_hp * 0.8)
@@ -6973,12 +6982,12 @@ async func _on_skill_selected(skill_name: String):
 			# 恶魔造成范围伤害
 			var demon_dmg = int(demon_atk * 1.2)
 			current_enemy["hp"] -= demon_dmg
-			_battle_add_log("😈 究极召唤·恶魔！召唤恶魔（HP:%d ATK:%d）持续5回合，造成 %d 范围伤害" % [demon_hp, demon_atk, demon_dmg])
+			_battle_add_log("😈 究极召唤·恶魔!召唤恶魔(HP:%d ATK:%d)持续5回合,造成 %d 范围伤害" % [demon_hp, demon_atk, demon_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % demon_dmg, "crit", Vector2(0, -35))
 		"召唤融合":
 			if active_summons.size() < 2:
-				_battle_add_log("⚠️ 召唤融合需要至少2只召唤物！当前召唤物：%d" % active_summons.size())
+				_battle_add_log("⚠️ 召唤融合需要至少2只召唤物!当前召唤物:%d" % active_summons.size())
 			else:
 				var total_hp = 0
 				var total_atk = 0
@@ -6993,7 +7002,7 @@ async func _on_skill_selected(skill_name: String):
 				active_summons.append({"name": "融合召唤", "hp": fused_hp, "max_hp": fused_hp, "atk": fused_atk, "turns": 3, "type": "fused"})
 				summoner_fusion_active = true
 				summoner_fusion_turns = 3
-				_battle_add_log("🌀 召唤融合！融合 %s 为超级召唤物（HP:%d ATK:%d）持续3回合" % [names.join("+"), fused_hp, fused_atk])
+				_battle_add_log("🌀 召唤融合!融合 %s 为超级召唤物(HP:%d ATK:%d)持续3回合" % [names.join("+"), fused_hp, fused_atk])
 				_spawn_player_damage("FUSED!", "buff")
 		# 召唤师 T4 (觉醒技能·Lv40解锁)
 		"万灵召唤":
@@ -7018,11 +7027,11 @@ async func _on_skill_selected(skill_name: String):
 			var demon_atk = int(_get_effective_atk() * 1.5)
 			active_summons.append({"name": "恶魔", "hp": demon_hp, "max_hp": demon_hp, "atk": demon_atk, "turns": 6, "type": "demon"})
 			summons_created.append("恶魔")
-			_battle_add_log("🌟 万灵召唤！召唤 %s，持续6回合" % summons_created.join("、"))
+			_battle_add_log("🌟 万灵召唤!召唤 %s,持续6回合" % summons_created.join("、"))
 			_spawn_player_damage("万灵!", "buff")
 		"灵魂献祭":
 			if active_summons.size() == 0:
-				_battle_add_log("⚠️ 灵魂献祭需要场上有召唤物！")
+				_battle_add_log("⚠️ 灵魂献祭需要场上有召唤物!")
 			else:
 				var total_sac_hp = 0
 				var names = []
@@ -7034,13 +7043,13 @@ async func _on_skill_selected(skill_name: String):
 				summoner_fusion_active = false
 				summoner_fusion_turns = 0
 				current_enemy["hp"] -= sac_dmg
-				_battle_add_log("💀 灵魂献祭！牺牲 %s，对敌人造成 %d 真实伤害！" % [names.join("、"), sac_dmg])
+				_battle_add_log("💀 灵魂献祭!牺牲 %s,对敌人造成 %d 真实伤害!" % [names.join("、"), sac_dmg])
 				_enemy_hit_effect()
 				_spawn_enemy_damage("%d" % sac_dmg, "crit", Vector2(0, -40))
 		"契约之魂":
 			summoner_soul_contract_turns = 5
 			summoner_soul_contract_dmg_boost = int(_get_effective_atk() * 1.0)
-			_battle_add_log("🔥 契约之魂！所有召唤物伤害+100%%，每回合自动攻击持续5回合")
+			_battle_add_log("🔥 契约之魂!所有召唤物伤害+100%%,每回合自动攻击持续5回合")
 			_spawn_player_damage("契约之魂!", "buff")
 
 	_update_enemy_hp_bar()
@@ -7050,7 +7059,7 @@ async func _on_skill_selected(skill_name: String):
 	var cd_to_set = _get_skill_cooldown(skill_name)
 	if cd_to_set > 0:
 		skill_cooldowns[skill_name] = cd_to_set
-	# 秘法编织：记录技能使用历史（秘法编织和奥术真理不记录）
+	# 秘法编织:记录技能使用历史(秘法编织和奥术真理不记录)
 	if skill_name != "秘法编织" and skill_name != "奥术真理" and skill_name != "":
 		arcane_weaving_history.append(skill_name)
 		if arcane_weaving_history.size() > 3:
@@ -7088,14 +7097,14 @@ func _spawn_enemy_damage(text: String, type: String = "damage", offset: Vector2 
 	var base_pos = enemy_panel.position + enemy_sprite.position + offset
 	_spawn_floating_text(battle_ui, base_pos, text, FLOAT_COLORS.get(type, FLOAT_COLORS["damage"]), 1.2)
 
-# 在玩家位置生成浮动文字（血条附近）
+# 在玩家位置生成浮动文字(血条附近)
 func _spawn_player_damage(text: String, type: String = "damage"):
 	if not battle_ui:
 		return
 	var player_panel = battle_ui.get_node_or_null("PlayerPanel")
 	if not player_panel:
 		return
-	# 追踪本层受到的伤害和本场战斗命中（用于成就）
+	# 追踪本层受到的伤害和本场战斗命中(用于成就)
 	if type == "damage" and text.is_valid_int():
 		var dmg_val = text.to_int()
 		if dmg_val > 0:
@@ -7128,7 +7137,7 @@ func _spawn_floating_text(parent: Control, pos: Vector2, text: String, col: Colo
 	var end_a = 0.0
 	tween.tween_method(func(v): lbl.add_theme_color_override("font_color", Color(col.r, col.g, col.b, v)), start_a, mid_a, duration * 0.35)
 	tween.tween_method(func(v): lbl.add_theme_color_override("font_color", Color(col.r, col.g, col.b, v)), mid_a, end_a, duration * 0.65)
-	# 字体放大效果（先大后正常）
+	# 字体放大效果(先大后正常)
 	var scale_tween = parent.create_tween()
 	scale_tween.tween_property(lbl, "scale", Vector2(1.5, 1.5), 0.1)
 	scale_tween.tween_property(lbl, "scale", Vector2(1.0, 1.0), 0.2)
@@ -7139,7 +7148,7 @@ func _spawn_floating_text(parent: Control, pos: Vector2, text: String, col: Colo
 
 func _end_player_turn():
 	is_player_turn = false
-	# 猎人消失技能：下回合后SPD恢复正常
+	# 猎人消失技能:下回合后SPD恢复正常
 	# 盗贼消失buff在敌人回合后清除
 	await get_tree().create_timer(0.4).timeout
 	_process_battle(0)
@@ -7177,7 +7186,7 @@ func _process_battle(delta: float):
 			s["turns"] -= 1
 			if s["turns"] <= 0:
 				summons_to_remove.append(i)
-				_battle_add_log("⏰ %s消失了（持续时间结束）" % s["name"])
+				_battle_add_log("⏰ %s消失了(持续时间结束)" % s["name"])
 				continue
 			# 计算召唤物伤害
 			var s_atk = s["atk"]
@@ -7186,25 +7195,25 @@ func _process_battle(delta: float):
 			var s_base_dmg = _roll_dmg_var_medium(s_atk)
 			var s_dmg = max(1, s_base_dmg - int(current_enemy["def"] * 0.5))
 			current_enemy["hp"] -= s_dmg
-			_battle_add_log("🌟 %s攻击！造成 %d 伤害（剩余%d回合）" % [s["name"], s_dmg, s["turns"])
+			_battle_add_log("🌟 %s攻击!造成 %d 伤害(剩余%d回合)" % [s["name"], s_dmg, s["turns"])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % s_dmg, "buff", Vector2(0, -20))
 			# 恶魔范围攻击
 			if s["type"] == "demon":
 				var demon_aoe = int(s_dmg * 0.4)
 				current_enemy["hp"] -= demon_aoe
-				_battle_add_log("😈 恶魔暗影！额外造成 %d 范围伤害" % demon_aoe)
+				_battle_add_log("😈 恶魔暗影!额外造成 %d 范围伤害" % demon_aoe)
 				_spawn_enemy_damage("+%d" % demon_aoe, "debuff", Vector2(20, -10))
-			# 召唤物受击（敌人反击，随机）
+			# 召唤物受击(敌人反击,随机)
 			if randf() < 0.25:
 				var counter_dmg = int(current_enemy["atk"] * 0.3)
 				s["hp"] -= counter_dmg
-				_battle_add_log("⚔️ %s受到反击！损失 %d HP" % [s["name"], counter_dmg])
+				_battle_add_log("⚔️ %s受到反击!损失 %d HP" % [s["name"], counter_dmg])
 			# 召唤物死亡检测
 			if s["hp"] <= 0:
-				_battle_add_log("💀 %s被消灭了！" % s["name"])
+				_battle_add_log("💀 %s被消灭了!" % s["name"])
 				summons_to_remove.append(i)
-		# 移除已消失/死亡的召唤物（倒序删除避免索引问题）
+		# 移除已消失/死亡的召唤物(倒序删除避免索引问题)
 		for idx in range(summons_to_remove.size() - 1, -1, -1):
 			active_summons.remove_at(summons_to_remove[idx])
 		if active_summons.size() > 0:
@@ -7213,22 +7222,22 @@ func _process_battle(delta: float):
 		if await _check_battle_end():
 			return
 		await get_tree().create_timer(0.3).timeout
-	# ===== 契约之魂：回合递减 =====
+	# ===== 契约之魂:回合递减 =====
 	if summoner_soul_contract_turns > 0:
 		summoner_soul_contract_turns -= 1
 		if summoner_soul_contract_turns <= 0:
 			summoner_soul_contract_dmg_boost = 0
-			_battle_add_log("🔥 契约之魂效果结束！")
+			_battle_add_log("🔥 契约之魂效果结束!")
 	# ===== 融合召唤持续时间递减 =====
 	if summoner_fusion_turns > 0:
 		summoner_fusion_turns -= 1
 		if summoner_fusion_turns <= 0:
 			summoner_fusion_active = false
-			_battle_add_log("🌀 召唤融合效果结束！")
-	# 时间静止：敌人被冻结
+			_battle_add_log("🌀 召唤融合效果结束!")
+	# 时间静止:敌人被冻结
 	if time_stop_turns > 0:
 		time_stop_turns -= 1
-		_battle_add_log("⏰ 时间静止！敌人无法行动！（剩余%d回合）" % time_stop_turns)
+		_battle_add_log("⏰ 时间静止!敌人无法行动!(剩余%d回合)" % time_stop_turns)
 		await get_tree().create_timer(0.5).timeout
 		if time_stop_turns <= 0:
 			time_stop_active = false
@@ -7237,7 +7246,7 @@ func _process_battle(delta: float):
 
 	if enemy_stun_turns > 0:
 		enemy_stun_turns -= 1
-		_battle_add_log("敌人仍然眩晕！")
+		_battle_add_log("敌人仍然眩晕!")
 		await get_tree().create_timer(0.5).timeout
 		_start_player_turn()
 		return
@@ -7246,7 +7255,7 @@ func _process_battle(delta: float):
 	if poison_turns > 0:
 		var total_poison = poison_stacks * poison_damage
 		current_enemy["hp"] -= total_poison
-		_battle_add_log("毒素发作！受到 %d 伤害（%d层）" % [total_poison, poison_stacks])
+		_battle_add_log("毒素发作!受到 %d 伤害(%d层)" % [total_poison, poison_stacks])
 		_spawn_enemy_damage("%d" % total_poison, "poison", Vector2(20, -10))
 		poison_turns -= 1
 		_update_enemy_hp_bar()
@@ -7256,7 +7265,7 @@ func _process_battle(delta: float):
 	# 流星火雨灼烧
 	if meteor_burn_turns > 0:
 		current_enemy["hp"] -= meteor_burn_dmg
-		_battle_add_log("🔥 灼烧！流星火雨造成 %d 伤害（剩余%d回合）" % [meteor_burn_dmg, meteor_burn_turns])
+		_battle_add_log("🔥 灼烧!流星火雨造成 %d 伤害(剩余%d回合)" % [meteor_burn_dmg, meteor_burn_turns])
 		_spawn_enemy_damage("%d" % meteor_burn_dmg, "poison", Vector2(-20, -10))
 		meteor_burn_turns -= 1
 		_update_enemy_hp_bar()
@@ -7266,7 +7275,7 @@ func _process_battle(delta: float):
 	# 法师T3: 陨石术灼烧DOT
 	if meteor_turns > 0:
 		current_enemy["hp"] -= meteor_dmg
-		_battle_add_log("☄️ 陨石灼烧！造成 %d 伤害（剩余%d回合）" % [meteor_dmg, meteor_turns])
+		_battle_add_log("☄️ 陨石灼烧!造成 %d 伤害(剩余%d回合)" % [meteor_dmg, meteor_turns])
 		_spawn_enemy_damage("%d" % meteor_dmg, "poison", Vector2(-10, -15))
 		meteor_turns -= 1
 		_update_enemy_hp_bar()
@@ -7276,7 +7285,7 @@ func _process_battle(delta: float):
 	# 法师T3: 元素风暴DOT
 	if elemental_storm_turns > 0:
 		current_enemy["hp"] -= elemental_storm_dmg
-		_battle_add_log("⚡🔥❄️ 元素风暴！造成 %d 伤害（剩余%d回合）" % [elemental_storm_dmg, elemental_storm_turns])
+		_battle_add_log("⚡🔥❄️ 元素风暴!造成 %d 伤害(剩余%d回合)" % [elemental_storm_dmg, elemental_storm_turns])
 		_spawn_enemy_damage("%d" % elemental_storm_dmg, "debuff", Vector2(10, -15))
 		elemental_storm_turns -= 1
 		_update_enemy_hp_bar()
@@ -7296,36 +7305,36 @@ func _process_battle(delta: float):
 			hunter_mark_mult = 1.0
 			_battle_add_log("🎯 猎杀时刻标记效果结束")
 
-	# 法术穿透buff（减少）
+	# 法术穿透buff(减少)
 	if spell_pierce_turns > 0:
 		spell_pierce_turns -= 1
 		if spell_pierce_turns <= 0:
 			_battle_add_log("💠 法术穿透效果结束")
 
-	# 魔力回旋（回合开始时触发：吸MP+回HP）
+	# 魔力回旋(回合开始时触发:吸MP+回HP)
 	if mana_drain_turns > 0:
 		mana_drain_turns -= 1
 		player_data.mp = min(player_data.max_mp, player_data.mp + mana_drain_amount)
 		var drain_heal = int(player_data.max_hp * 0.05)
 		player_data.hp = min(player_data.max_hp, player_data.hp + drain_heal)
-		_battle_add_log("🌀 魔力回旋！回复 %d MP 和 %d HP（剩余%d回合）" % [mana_drain_amount, drain_heal, mana_drain_turns])
+		_battle_add_log("🌀 魔力回旋!回复 %d MP 和 %d HP(剩余%d回合)" % [mana_drain_amount, drain_heal, mana_drain_turns])
 		_spawn_player_damage("+%d MP" % mana_drain_amount, "heal")
 		if mana_drain_turns <= 0:
 			_battle_add_log("🌀 魔力回旋结束")
 
-	# 血之狂暴debuff（每回合自损10HP）
+	# 血之狂暴debuff(每回合自损10HP)
 	if berserk_turns > 0:
 		player_data.hp -= 10
 		berserk_turns -= 1
-		_battle_add_log("💢 血之狂暴反噬！受到 10 伤害（剩余%d回合）" % berserk_turns)
+		_battle_add_log("💢 血之狂暴反噬!受到 10 伤害(剩余%d回合)" % berserk_turns)
 		_spawn_player_damage("-10", "debuff")
 		if player_data.hp <= 0:
-			player_data.hp = 1  # 不会倒下，但很危险
-			_battle_add_log("💢 血之狂暴！濒死状态！")
+			player_data.hp = 1  # 不会倒下,但很危险
+			_battle_add_log("💢 血之狂暴!濒死状态!")
 		if await _check_battle_end():
 			return
 
-	# 战吼buff处理（回合开始时减少）
+	# 战吼buff处理(回合开始时减少)
 	if battle_cry_turns > 0:
 		battle_cry_turns -= 1
 		if battle_cry_turns <= 0:
@@ -7366,7 +7375,7 @@ func _process_battle(delta: float):
 		var dd_heal = priest_divine_domain_heal
 		player_data.hp = min(player_data.max_hp, player_data.hp + dd_heal)
 		_trigger_portrait_heal_glow()
-		_battle_add_log("⛪ 神圣领域！回复 %d HP（剩余%d回合）" % [dd_heal, priest_divine_domain_turns])
+		_battle_add_log("⛪ 神圣领域!回复 %d HP(剩余%d回合)" % [dd_heal, priest_divine_domain_turns])
 		_spawn_player_damage("+%d" % dd_heal, "heal")
 		if priest_divine_domain_turns <= 0:
 			priest_divine_domain_heal = 0
@@ -7378,7 +7387,7 @@ func _process_battle(delta: float):
 		var lf_heal = priest_life_fountain_heal
 		player_data.hp = min(player_data.max_hp, player_data.hp + lf_heal)
 		_trigger_portrait_heal_glow()
-		_battle_add_log("⛲ 生命之泉！回复 %d HP（剩余%d回合）" % [lf_heal, priest_life_fountain_turns])
+		_battle_add_log("⛲ 生命之泉!回复 %d HP(剩余%d回合)" % [lf_heal, priest_life_fountain_turns])
 		_spawn_player_damage("+%d" % lf_heal, "heal")
 		if priest_life_fountain_turns <= 0:
 			priest_life_fountain_heal = 0
@@ -7416,35 +7425,35 @@ func _process_battle(delta: float):
 		warrior_wargod_mark_turns -= 1
 		if warrior_wargod_mark_turns <= 0:
 			warrior_wargod_mark_dmg_boost = 0
-			_battle_add_log("⚔️ 战神印记消退！")
+			_battle_add_log("⚔️ 战神印记消退!")
 
 	# 战士T4: 征服者怒吼 - 敌人ATK降低恐惧效果
 	if warrior_conqueror_fear_turns > 0:
 		warrior_conqueror_fear_turns -= 1
 		if warrior_conqueror_fear_turns <= 0:
-			_battle_add_log("😨 征服者怒吼的恐惧效果结束！")
+			_battle_add_log("😨 征服者怒吼的恐惧效果结束!")
 
 	# 战士T3: 碎甲敌人DEF debuff
 	if warrior_shatter_turns > 0:
 		warrior_shatter_turns -= 1
 		if warrior_shatter_turns <= 0:
 			current_enemy["def"] = warrior_shatter_orig_def
-			_battle_add_log("⚔️ 碎甲效果结束，敌人DEF恢复")
+			_battle_add_log("⚔️ 碎甲效果结束,敌人DEF恢复")
 
-	# 猎人T2: 穿甲箭（穿透效果已在内置，穿透减少在_on_skill_selected里处理）
+	# 猎人T2: 穿甲箭(穿透效果已在内置,穿透减少在_on_skill_selected里处理)
 	if hunter_armor_pierce_turns > 0:
 		hunter_armor_pierce_turns -= 1
 		if hunter_armor_pierce_turns <= 0:
 			_battle_add_log("🏹 穿甲箭效果结束")
 
-	# 契约诅咒（生命吸取）
+	# 契约诅咒(生命吸取)
 	if contract_active:
 		var drain_dmg = int(player_data.attack_power() * 0.4)
 		current_enemy["hp"] -= drain_dmg
 		var heal_amt = int(drain_dmg * 0.5)
 		player_data.hp = min(player_data.max_hp, player_data.hp + heal_amt)
 		contract_turns -= 1
-		_battle_add_log("📜 契约吸取！对敌人造成 %d 伤害，回复 %d HP（剩余%d回合）" % [drain_dmg, heal_amt, contract_turns])
+		_battle_add_log("📜 契约吸取!对敌人造成 %d 伤害,回复 %d HP(剩余%d回合)" % [drain_dmg, heal_amt, contract_turns])
 		_spawn_enemy_damage("%d" % drain_dmg, "debuff", Vector2(30, -10))
 		if contract_turns <= 0:
 			contract_active = false
@@ -7456,7 +7465,7 @@ func _process_battle(delta: float):
 	# 猎人T2: 致命陷阱DOT
 	if hunter_trap_turns > 0:
 		current_enemy["hp"] -= hunter_trap_dot_dmg
-		_battle_add_log("🪤 陷阱灼烧！受到 %d 伤害（剩余%d回合）" % [hunter_trap_dot_dmg, hunter_trap_turns])
+		_battle_add_log("🪤 陷阱灼烧!受到 %d 伤害(剩余%d回合)" % [hunter_trap_dot_dmg, hunter_trap_turns])
 		_spawn_enemy_damage("%d" % hunter_trap_dot_dmg, "poison", Vector2(-10, -10))
 		hunter_trap_turns -= 1
 		_update_enemy_hp_bar()
@@ -7466,7 +7475,7 @@ func _process_battle(delta: float):
 	# 盗贼T2: 淬毒利刃DOT
 	if thief_poison_turns > 0:
 		current_enemy["hp"] -= thief_poison_dmg
-		_battle_add_log("🗡️ 中毒！淬毒利刃造成 %d 伤害（剩余%d回合）" % [thief_poison_dmg, thief_poison_turns])
+		_battle_add_log("🗡️ 中毒!淬毒利刃造成 %d 伤害(剩余%d回合)" % [thief_poison_dmg, thief_poison_turns])
 		_spawn_enemy_damage("%d" % thief_poison_dmg, "poison", Vector2(10, -10))
 		thief_poison_turns -= 1
 		_update_enemy_hp_bar()
@@ -7479,21 +7488,21 @@ func _process_battle(delta: float):
 		if thief_shadow_fang_turns <= 0:
 			current_enemy["def"] += thief_shadow_fang_defdebuff
 			thief_shadow_fang_defdebuff = 0
-			_battle_add_log("🌑 暗影之牙的DEF减益效果结束！")
+			_battle_add_log("🌑 暗影之牙的DEF减益效果结束!")
 
-	# 盗贼T3: 影分身效果（持续时间递减）
+	# 盗贼T3: 影分身效果(持续时间递减)
 	if thief_shadow_clone_turns > 0:
 		thief_shadow_clone_turns -= 1
 		if thief_shadow_clone_turns <= 0:
-			_battle_add_log("👤 影分身消散！")
+			_battle_add_log("👤 影分身消散!")
 
-	# 盗贼T4: 千面杀手自动攻击（每回合开始时）
+	# 盗贼T4: 千面杀手自动攻击(每回合开始时)
 	if thief_thousand_faces_turns > 0:
 		thief_thousand_faces_turns -= 1
-		# 千面杀手：自动攻击HP最低的敌人
+		# 千面杀手:自动攻击HP最低的敌人
 		var tf_dmg = int(_get_effective_atk() * 3.0)
 		current_enemy["hp"] -= tf_dmg
-		_battle_add_log("🎭💀 千面杀手！自动追踪残血目标，造成 %d 伤害！（剩余%d回合）" % [tf_dmg, thief_thousand_faces_turns])
+		_battle_add_log("🎭💀 千面杀手!自动追踪残血目标,造成 %d 伤害!(剩余%d回合)" % [tf_dmg, thief_thousand_faces_turns])
 		_enemy_hit_effect()
 		_critical_hit_effect()
 		_spawn_enemy_damage("%d" % tf_dmg, "crit", Vector2(0, -40))
@@ -7501,24 +7510,24 @@ func _process_battle(delta: float):
 		if await _check_battle_end():
 			return
 		if thief_thousand_faces_turns <= 0:
-			_battle_add_log("🎭 千面杀手效果结束！")
+			_battle_add_log("🎭 千面杀手效果结束!")
 
-	# 盗贼T4: 暗影吞噬（持续时间追踪）
+	# 盗贼T4: 暗影吞噬(持续时间追踪)
 	if thief_shadow_devour_turns > 0:
 		thief_shadow_devour_turns -= 1
 		if thief_shadow_devour_turns <= 0:
-			_battle_add_log("🌑 暗影吞噬效果结束！")
+			_battle_add_log("🌑 暗影吞噬效果结束!")
 
-	# 盗贼T4: 幻惑领域（持续时间递减）
+	# 盗贼T4: 幻惑领域(持续时间递减)
 	if thief_illusion_domain_turns > 0:
 		thief_illusion_domain_turns -= 1
 		if thief_illusion_domain_turns <= 0:
-			_battle_add_log("🌙 幻惑领域效果结束！")
+			_battle_add_log("🌙 幻惑领域效果结束!")
 
 	# 召唤师T2: 灵魂连接DOT
 	if summoner_soul_link_turns > 0:
 		current_enemy["hp"] -= summoner_soul_link_dmg
-		_battle_add_log("🔗 灵魂连接！受到 %d 伤害（剩余%d回合）" % [summoner_soul_link_dmg, summoner_soul_link_turns])
+		_battle_add_log("🔗 灵魂连接!受到 %d 伤害(剩余%d回合)" % [summoner_soul_link_dmg, summoner_soul_link_turns])
 		_spawn_enemy_damage("%d" % summoner_soul_link_dmg, "debuff", Vector2(20, -10))
 		summoner_soul_link_turns -= 1
 		_update_enemy_hp_bar()
@@ -7528,17 +7537,17 @@ func _process_battle(delta: float):
 	# 猎人T3: 野兽之力 召唤狼每回合伤害
 	if hunter_beast_turns > 0:
 		current_enemy["hp"] -= hunter_beast_dmg
-		_battle_add_log("🐺 巨狼撕咬！对敌人造成 %d 伤害（剩余%d回合）" % [hunter_beast_dmg, hunter_beast_turns])
+		_battle_add_log("🐺 巨狼撕咬!对敌人造成 %d 伤害(剩余%d回合)" % [hunter_beast_dmg, hunter_beast_turns])
 		_spawn_enemy_damage("%d" % hunter_beast_dmg, "damage", Vector2(30, -10))
 		hunter_beast_turns -= 1
 		_update_enemy_hp_bar()
 		if await _check_battle_end():
 			return
 
-	# 骑士T3: 神圣复仇DOT（圣光灼烧，每回合额外伤害）
+	# 骑士T3: 神圣复仇DOT(圣光灼烧,每回合额外伤害)
 	if knight_holy_avenger_turns > 0:
 		current_enemy["hp"] -= knight_holy_avenger_dmg
-		_battle_add_log("⚔️✨ 圣光灼烧！神圣复仇造成 %d 伤害（剩余%d回合）" % [knight_holy_avenger_dmg, knight_holy_avenger_turns])
+		_battle_add_log("⚔️✨ 圣光灼烧!神圣复仇造成 %d 伤害(剩余%d回合)" % [knight_holy_avenger_dmg, knight_holy_avenger_turns])
 		_spawn_enemy_damage("%d" % knight_holy_avenger_dmg, "poison", Vector2(-15, -10))
 		knight_holy_avenger_turns -= 1
 		_update_enemy_hp_bar()
@@ -7549,7 +7558,7 @@ func _process_battle(delta: float):
 	if knight_judgment_aoe_turns > 0:
 		var aoe_dmg2 = knight_judgment_aoe_dmg
 		current_enemy["hp"] -= aoe_dmg2
-		_battle_add_log("⚖️⚖️ 圣光审判！审判造成 %d 伤害（剩余%d回合）" % [aoe_dmg2, knight_judgment_aoe_turns])
+		_battle_add_log("⚖️⚖️ 圣光审判!审判造成 %d 伤害(剩余%d回合)" % [aoe_dmg2, knight_judgment_aoe_turns])
 		_spawn_enemy_damage("%d" % aoe_dmg2, "debuff", Vector2(15, -10))
 		knight_judgment_aoe_turns -= 1
 		_update_enemy_hp_bar()
@@ -7560,34 +7569,34 @@ func _process_battle(delta: float):
 	if hunter_nature_power_turns > 0:
 		hunter_nature_power_turns -= 1
 		if hunter_nature_power_turns <= 0:
-			_battle_add_log("🌿 自然之力效果结束！")
+			_battle_add_log("🌿 自然之力效果结束!")
 
 	# 猎人T4: 狩猎领域持续时间
 	if hunter_hunting_field_turns > 0:
 		hunter_hunting_field_turns -= 1
 		if hunter_hunting_field_turns <= 0:
-			_battle_add_log("🏹 狩猎领域效果结束！")
+			_battle_add_log("🏹 狩猎领域效果结束!")
 
 	# 骑士T4: 神圣之锤持续时间
 	if knight_holy_hammer_turns > 0:
 		knight_holy_hammer_turns -= 1
 		if knight_holy_hammer_turns <= 0:
-			_battle_add_log("🔨 神圣之锤效果结束！")
+			_battle_add_log("🔨 神圣之锤效果结束!")
 
 	# 骑士T4: 天使守护持续时间
 	if knight_angel_guard_turns > 0:
 		knight_angel_guard_turns -= 1
 		if knight_angel_guard_turns <= 0:
-			_battle_add_log("👼 天使守护效果结束！")
+			_battle_add_log("👼 天使守护效果结束!")
 
 	await get_tree().create_timer(0.5).timeout
 
-	# 陷阱触发：敌人被困住，无法攻击并受到伤害
+	# 陷阱触发:敌人被困住,无法攻击并受到伤害
 	if trapped:
 		var trap_dmg = int(player_data.attack_power() * 1.2)
 		current_enemy["hp"] -= trap_dmg
 		trapped = false
-		_battle_add_log("🪤 陷阱触发！敌人被困住，受到 %d 伤害！" % trap_dmg)
+		_battle_add_log("🪤 陷阱触发!敌人被困住,受到 %d 伤害!" % trap_dmg)
 		_spawn_enemy_damage("%d" % trap_dmg, "damage", Vector2(0, -30))
 		_update_enemy_hp_bar()
 		if await _check_battle_end():
@@ -7596,10 +7605,10 @@ func _process_battle(delta: float):
 		_start_player_turn()
 		return
 
-	# 一击脱离：100%闪避
+	# 一击脱离:100%闪避
 	if hunter_one_hit_escape:
 		hunter_one_hit_escape = false
-		_battle_add_log("⚡ 一击脱离！完美闪避了敌人攻击！")
+		_battle_add_log("⚡ 一击脱离!完美闪避了敌人攻击!")
 		_spawn_player_damage("MISS!", "miss")
 		_start_player_turn()
 		return
@@ -7612,7 +7621,7 @@ func _process_battle(delta: float):
 			hunter_evasion_turns -= 1
 		if randf() < VANISH_EVASION_CHANCE:
 			var evade_name = "消失" if vanish_turns >= 0 else "猎豹加速"
-			_battle_add_log("💨 %s！完美闪避了敌人攻击！" % evade_name)
+			_battle_add_log("💨 %s!完美闪避了敌人攻击!" % evade_name)
 			_spawn_player_damage("MISS!", "miss")
 			_start_player_turn()
 			return
@@ -7629,10 +7638,10 @@ func _process_battle(delta: float):
 	# 战士T4: 幻惑领域效果 - 敌人有概率混乱攻击自己
 	if thief_illusion_domain_turns > 0 and not current_enemy.get("is_boss", false):
 		if randf() < 0.3:
-			# 敌人被幻惑，攻击自己
+			# 敌人被幻惑,攻击自己
 			var illusion_dmg = int(e_dmg * 0.8)
 			current_enemy["hp"] -= illusion_dmg
-			_battle_add_log("🌙✨ 幻惑领域！%s 被迷惑，攻击自己！受到 %d 伤害！" % [current_enemy["name"], illusion_dmg])
+			_battle_add_log("🌙✨ 幻惑领域!%s 被迷惑,攻击自己!受到 %d 伤害!" % [current_enemy["name"], illusion_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % illusion_dmg, "crit", Vector2(0, -30))
 			_update_enemy_hp_bar()
@@ -7645,7 +7654,7 @@ func _process_battle(delta: float):
 			# Boss有更低概率混乱
 			var illusion_dmg = int(e_dmg * 0.8)
 			current_enemy["hp"] -= illusion_dmg
-			_battle_add_log("🌙✨ 幻惑领域！Boss %s 被迷惑，攻击自己！受到 %d 伤害！" % [current_enemy["name"], illusion_dmg])
+			_battle_add_log("🌙✨ 幻惑领域!Boss %s 被迷惑,攻击自己!受到 %d 伤害!" % [current_enemy["name"], illusion_dmg])
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % illusion_dmg, "crit", Vector2(0, -30))
 			_update_enemy_hp_bar()
@@ -7659,7 +7668,7 @@ func _process_battle(delta: float):
 		if player_shield >= e_dmg:
 			player_shield -= e_dmg
 			e_dmg = 0
-			_battle_add_log("🛡️ 护盾吸收了伤害！")
+			_battle_add_log("🛡️ 护盾吸收了伤害!")
 		else:
 			e_dmg -= player_shield
 			player_shield = 0
@@ -7671,7 +7680,7 @@ func _process_battle(delta: float):
 		warrior_guard_active = false
 		var guard_dmg = int(e_dmg * 1.5)
 		current_enemy["hp"] -= guard_dmg
-		_battle_add_log("🛡️ 援护生效！将 %d 伤害转移给敌人！" % guard_dmg)
+		_battle_add_log("🛡️ 援护生效!将 %d 伤害转移给敌人!" % guard_dmg)
 		_spawn_enemy_damage("%d" % guard_dmg, "crit", Vector2(0, -30))
 		_enemy_hit_effect()
 		_update_enemy_hp_bar()
@@ -7679,14 +7688,14 @@ func _process_battle(delta: float):
 			return
 		# 玩家本身不受伤
 		_trigger_portrait_damage_flash()
-		_battle_add_log("👹 %s 攻击！（援护）" % current_enemy["name"])
+		_battle_add_log("👹 %s 攻击!(援护)" % current_enemy["name"])
 		_spawn_player_damage("援护!", "shield")
 		_update_battle_player_ui()
 		_start_player_turn()
 		return
 	# 战士T4: 绝对防御 - 免疫所有伤害
 	if warrior_absolute_def_turns > 0:
-		_battle_add_log("🏰⚔️ 绝对防御！免疫了 %s 的攻击！" % current_enemy["name"])
+		_battle_add_log("🏰⚔️ 绝对防御!免疫了 %s 的攻击!" % current_enemy["name"])
 		_spawn_player_damage("免疫!", "shield")
 		_update_battle_player_ui()
 		await get_tree().create_timer(0.4).timeout
@@ -7698,19 +7707,19 @@ func _process_battle(delta: float):
 		player_data.hp = int(player_data.max_hp * 0.3)
 		warrior_undying_used = false
 		_trigger_portrait_damage_flash()
-		_battle_add_log("🛡️ 不死不灭触发！HP回复至30%%！")
+		_battle_add_log("🛡️ 不死不灭触发!HP回复至30%%!")
 		_spawn_player_damage("不死不灭!", "shield")
 		_update_battle_player_ui()
 		if await _check_battle_end():
 			return
 		_start_player_turn()
 		return
-	# 牧师T4: 永恒庇护 - 神圣之魂，死亡时自动复活（限1次）
+	# 牧师T4: 永恒庇护 - 神圣之魂,死亡时自动复活(限1次)
 	if player_data.hp <= 0 and priest_holy_sentinel_active:
 		priest_holy_sentinel_active = false
 		player_data.hp = int(player_data.max_hp * 0.5)
 		_trigger_portrait_heal_glow()
-		_battle_add_log("🛡️✨ 永恒庇护！神圣之魂触发！HP回复至50%%！")
+		_battle_add_log("🛡️✨ 永恒庇护!神圣之魂触发!HP回复至50%%!")
 		_spawn_player_damage("神圣之魂!", "heal")
 		_update_battle_player_ui()
 		if await _check_battle_end():
@@ -7722,7 +7731,7 @@ func _process_battle(delta: float):
 		player_data.hp = 1
 		knight_angel_guard_triggered = true
 		_trigger_portrait_heal_glow()
-		_battle_add_log("👼✨ 天使守护！HP保留在1点！")
+		_battle_add_log("👼✨ 天使守护!HP保留在1点!")
 		_spawn_player_damage("天使守护!", "shield")
 		_update_battle_player_ui()
 		if await _check_battle_end():
@@ -7730,7 +7739,7 @@ func _process_battle(delta: float):
 		_start_player_turn()
 		return
 	_trigger_portrait_damage_flash()
-	_battle_add_log("👹 %s 攻击！造成 %d 伤害" % [current_enemy["name"], e_dmg])
+	_battle_add_log("👹 %s 攻击!造成 %d 伤害" % [current_enemy["name"], e_dmg])
 	_spawn_player_damage("-%d" % e_dmg, "damage")
 	if audio_manager:
 		audio_manager.play_sfx("hit")
@@ -7755,15 +7764,15 @@ func _process_boss_turn():
 	if boss_key == 8:
 		if boss_phase == 1 and hp_ratio <= 0.6:
 			boss_phase = 2
-			_show_boss_phase_announcement("第二阶段: 纯阳无极！ATK+30%！")
+			_show_boss_phase_announcement("第二阶段: 纯阳无极!ATK+30%!")
 			current_enemy["atk"] = int(current_enemy["atk"] * 1.3)
-			_battle_add_log("☯️ 【阶段2】纯阳无极！张三丰发动纯阳内力，攻击力大幅提升！")
+			_battle_add_log("☯️ 【阶段2】纯阳无极!张三丰发动纯阳内力,攻击力大幅提升!")
 			_update_enemy_hp_bar()
 			await get_tree().create_timer(1.0).timeout
 		elif boss_phase == 2 and hp_ratio <= 0.3:
 			boss_phase = 3
-			_show_boss_phase_announcement("最终阶段: 一代宗师！")
-			_battle_add_log("🙏 【最终阶段】一代宗师降临！这是最后的考验！")
+			_show_boss_phase_announcement("最终阶段: 一代宗师!")
+			_battle_add_log("🙏 【最终阶段】一代宗师降临!这是最后的考验!")
 			_update_enemy_hp_bar()
 			await get_tree().create_timer(1.0).timeout
 
@@ -7775,17 +7784,17 @@ func _process_boss_turn():
 		if boss_key == 1:  # 山贼王狂暴
 			current_enemy["atk"] = int(current_enemy["atk"] * 1.5)
 			current_enemy["spd"] += 3
-			_show_boss_phase_announcement("狂暴化！ATK+50%！SPD+3！")
-			_battle_add_log("👹 %s 狂暴化！ATK+50%%，速度提升！但每回合自残10HP！" % boss_name_str)
+			_show_boss_phase_announcement("狂暴化!ATK+50%!SPD+3!")
+			_battle_add_log("👹 %s 狂暴化!ATK+50%%,速度提升!但每回合自残10HP!" % boss_name_str)
 		elif boss_key == 3:  # 血刀门护法血战到底
 			boss_revived = true
 			current_enemy["atk"] = int(current_enemy["atk"] * 1.8)
 			current_enemy["spd"] += 4
-			_show_boss_phase_announcement("血战到底！ATK+80%！SPD+4！")
-			_battle_add_log("🩸 %s 触发【血战到底】！ATK+80%%，SPD+4！每回合自残20HP！" % boss_name_str)
+			_show_boss_phase_announcement("血战到底!ATK+80%!SPD+4!")
+			_battle_add_log("🩸 %s 触发【血战到底】!ATK+80%%,SPD+4!每回合自残20HP!" % boss_name_str)
 		else:
-			_show_boss_phase_announcement("Boss狂暴！")
-			_battle_add_log("👹 %s 进入狂暴状态！" % boss_name_str)
+			_show_boss_phase_announcement("Boss狂暴!")
+			_battle_add_log("👹 %s 进入狂暴状态!" % boss_name_str)
 		_update_enemy_hp_bar()
 		await get_tree().create_timer(1.0).timeout
 
@@ -7803,23 +7812,23 @@ func _process_boss_turn():
 func _enemy_execute_action():
 	# 智能敌人AI系统 - 条件决策而非纯随机
 	# 决策顺序: 1)HP危机 2)玩家护盾高 3)原型优先技能 4)普攻
-	
+
 	var enemy_type = current_enemy.get("type", "")
 	var archetype = ENEMY_ARCHETYPE.get(enemy_type, "brute")
 	var hp_ratio = float(current_enemy["hp"]) / float(current_enemy["max_hp"])
 	var player_hp_ratio = float(player_data.hp) / float(player_data.max_hp)
 	var shield_ratio = float(player_shield) / float(max(1, player_data.max_hp))
-	
-	# 追踪敌人已用技能（避免连续重复，80%概率避免重复）
+
+	# 追踪敌人已用技能(避免连续重复,80%概率避免重复)
 	var last_skill = current_enemy.get("_last_skill", "")
-	
+
 	# === 决策节点1: HP危机时使用维持技能 ===
 	if hp_ratio < 0.25:
-		# 危机时刻：根据原型选择维持手段
+		# 危机时刻:根据原型选择维持手段
 		var sustain_roll = randi() % 100
 		match archetype:
 			"guardian":
-				# 守护型: 优先铁壁自保，再考虑撤退反击
+				# 守护型: 优先铁壁自保,再考虑撤退反击
 				if sustain_roll < 60:
 					_ai_execute_skill_safe("铁壁", last_skill)
 					return
@@ -7829,20 +7838,20 @@ func _enemy_execute_action():
 					_ai_execute_skill_safe("吸血", last_skill)
 					return
 			"brute":
-				# 粗暴型: 狂暴反扑，高伤害赌一把
+				# 粗暴型: 狂暴反扑,高伤害赌一把
 				if sustain_roll < 50:
 					_ai_execute_skill_safe("重击", last_skill)
 					return
 			"rogue":
-				# 盗贼型: 锁喉控制，试图翻盘
+				# 盗贼型: 锁喉控制,试图翻盘
 				if sustain_roll < 60:
 					_ai_execute_skill_safe("锁喉", last_skill)
 					return
 		# 默认: 孤注一掷用最强技能
 		_ai_execute_archetype_skill(archetype, last_skill)
 		return
-	
-	# === 决策节点2: 玩家HP极低，激进收割 ===
+
+	# === 决策节点2: 玩家HP极低,激进收割 ===
 	if player_hp_ratio < 0.20:
 		var kill_roll = randi() % 100
 		match archetype:
@@ -7864,8 +7873,8 @@ func _enemy_execute_action():
 		# 默认普攻收割
 		_boss_default_attack("普通攻击")
 		return
-	
-	# === 决策节点3: 玩家护盾极高，优先破盾 ===
+
+	# === 决策节点3: 玩家护盾极高,优先破盾 ===
 	if shield_ratio > 0.5:
 		var shield_break_roll = randi() % 100
 		match archetype:
@@ -7884,18 +7893,18 @@ func _enemy_execute_action():
 				if shield_break_roll < 50:
 					_ai_execute_skill_safe("碎骨", last_skill)
 					return
-	
-	# === 决策节点4: HP中高时，原型优先技能 (45%概率) ===
+
+	# === 决策节点4: HP中高时,原型优先技能 (45%概率) ===
 	var skill_roll = randi() % 100
 	if skill_roll < 45:
 		_ai_execute_archetype_skill(archetype, last_skill)
 		return
-	
+
 	# === 默认: 普通攻击 ===
 	_boss_default_attack("普通攻击")
 
 func _ai_execute_archetype_skill(archetype: String, last_skill: String):
-	# 根据原型选择代表性技能（带去重逻辑）
+	# 根据原型选择代表性技能(带去重逻辑)
 	var skills: Array
 	match archetype:
 		"brute":   skills = ["重击", "碎骨"]
@@ -7904,19 +7913,19 @@ func _ai_execute_archetype_skill(archetype: String, last_skill: String):
 		"guardian": skills = ["盾击", "铁壁"]
 		"beast":   skills = ["撕咬", "利爪"]
 		_:          skills = ["重击"]
-	
-	# 去重：80%概率避免重复
+
+	# 去重:80%概率避免重复
 	if not skills.is_empty():
 		var available = skills.filter(func(s): return s != last_skill)
 		if not available.is_empty() and randi() % 100 < 80:
 			skills = available
-	
+
 	var chosen = skills[randi() % skills.size()]
 	current_enemy["_last_skill"] = chosen
 	_ai_dispatch_skill(chosen)
 
 func _ai_execute_skill_safe(skill_name: String, last_skill: String):
-	# 安全执行技能（含去重后备）
+	# 安全执行技能(含去重后备)
 	if skill_name == last_skill and randi() % 100 < 80:
 		_ai_execute_archetype_skill(ENEMY_ARCHETYPE.get(current_enemy.get("type", ""), "brute"), last_skill)
 		return
@@ -7939,7 +7948,7 @@ func _ai_dispatch_skill(skill_name: String):
 		_: _boss_default_attack(skill_name)
 
 func _enemy_skill_heavy_strike():
-	# 重击：2x伤害，降低玩家防御2点，持续2回合
+	# 重击:2x伤害,降低玩家防御2点,持续2回合
 	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_HIGH))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
@@ -7954,9 +7963,9 @@ func _enemy_skill_heavy_strike():
 		player_defending = false
 	dmg = max(1, dmg)
 	player_data.hp -= dmg
-	# 降低玩家防御2点（简化：下2回合受伤+20%）
+	# 降低玩家防御2点(简化:下2回合受伤+20%)
 	battle_cry_team_boost = max(battle_cry_team_boost, 2)  # 复用变量记录回合
-	_battle_add_log("💥 【重击】！%s 发动重击，造成 %d 伤害，碎甲效果！" % [current_enemy["name"], dmg])
+	_battle_add_log("💥 【重击】!%s 发动重击,造成 %d 伤害,碎甲效果!" % [current_enemy["name"], dmg])
 	_spawn_player_damage("-%d" % dmg, "damage")
 	_trigger_portrait_damage_flash()
 	if audio_manager:
@@ -7969,7 +7978,7 @@ func _enemy_skill_heavy_strike():
 	_start_player_turn()
 
 func _enemy_skill_bone_crusher():
-	# 碎骨：1.5x伤害，30%几率眩晕玩家1回合
+	# 碎骨:1.5x伤害,30%几率眩晕玩家1回合
 	var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED) + randi() % 5
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
@@ -7987,9 +7996,9 @@ func _enemy_skill_bone_crusher():
 	var stun_chance = randi() % 100 < 30
 	if stun_chance:
 		player_stun_turns = max(player_stun_turns, 1)
-		_battle_add_log("💀 【碎骨】！%s 发动碎骨，造成 %d 伤害，30%%几率眩晕！★眩晕成功！" % [current_enemy["name"], dmg])
+		_battle_add_log("💀 【碎骨】!%s 发动碎骨,造成 %d 伤害,30%%几率眩晕!★眩晕成功!" % [current_enemy["name"], dmg])
 	else:
-		_battle_add_log("💀 【碎骨】！%s 发动碎骨，造成 %d 伤害！（眩晕未中）" % [current_enemy["name"], dmg])
+		_battle_add_log("💀 【碎骨】!%s 发动碎骨,造成 %d 伤害!(眩晕未中)" % [current_enemy["name"], dmg])
 	_spawn_player_damage("-%d" % dmg, "damage")
 	_trigger_portrait_damage_flash()
 	if audio_manager:
@@ -8002,7 +8011,7 @@ func _enemy_skill_bone_crusher():
 	_start_player_turn()
 
 func _enemy_skill_poison_thrust():
-	# 淬毒：正常伤害 + 附加3层中毒（每层3伤害，持续3回合）
+	# 淬毒:正常伤害 + 附加3层中毒(每层3伤害,持续3回合)
 	var dmg = _roll_dmg_var_small(int(current_enemy["atk"]))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
@@ -8020,7 +8029,7 @@ func _enemy_skill_poison_thrust():
 	poison_stacks += 3
 	poison_damage = max(poison_damage, 3)
 	poison_turns = max(poison_turns, 3)
-	_battle_add_log("🗡️ 【淬毒】！%s 刺出淬毒一击，造成 %d 伤害并附加中毒！" % [current_enemy["name"], dmg])
+	_battle_add_log("🗡️ 【淬毒】!%s 刺出淬毒一击,造成 %d 伤害并附加中毒!" % [current_enemy["name"], dmg])
 	_spawn_player_damage("-%d" % dmg, "poison")
 	_trigger_portrait_damage_flash()
 	if audio_manager:
@@ -8033,7 +8042,7 @@ func _enemy_skill_poison_thrust():
 	_start_player_turn()
 
 func _enemy_skill_strangle():
-	# 锁喉：0.8x伤害 + 必定眩晕1回合
+	# 锁喉:0.8x伤害 + 必定眩晕1回合
 	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
@@ -8049,7 +8058,7 @@ func _enemy_skill_strangle():
 	dmg = max(1, dmg)
 	player_data.hp -= dmg
 	player_stun_turns = max(player_stun_turns, 1)
-	_battle_add_log("🤏 【锁喉】！%s 锁住咽喉，造成 %d 伤害，玩家眩晕1回合！" % [current_enemy["name"], dmg])
+	_battle_add_log("🤏 【锁喉】!%s 锁住咽喉,造成 %d 伤害,玩家眩晕1回合!" % [current_enemy["name"], dmg])
 	_spawn_player_damage("-%d" % dmg, "damage")
 	_trigger_portrait_damage_flash()
 	if audio_manager:
@@ -8062,7 +8071,7 @@ func _enemy_skill_strangle():
 	_start_player_turn()
 
 func _enemy_skill_life_drain():
-	# 吸血：0.7x伤害，回复自身50%伤害量的HP
+	# 吸血:0.7x伤害,回复自身50%伤害量的HP
 	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_XLOW))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
@@ -8080,7 +8089,7 @@ func _enemy_skill_life_drain():
 	var heal = int(dmg * 0.5)
 	if priest_divine_judgment_turns <= 0:
 		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
-	_battle_add_log("🩸 【吸血】！%s 吸取生命，造成 %d 伤害，%s！" % [current_enemy["name"], dmg, "回复被神判阻止！" if priest_divine_judgment_turns > 0 else ("回复 %d HP！" % heal)])
+	_battle_add_log("🩸 【吸血】!%s 吸取生命,造成 %d 伤害,%s!" % [current_enemy["name"], dmg, "回复被神判阻止!" if priest_divine_judgment_turns > 0 else ("回复 %d HP!" % heal)])
 	_spawn_player_damage("-%d" % dmg, "damage")
 	_spawn_enemy_damage("+%d" % heal, "heal", Vector2(0, -30))
 	_trigger_portrait_damage_flash()
@@ -8095,7 +8104,7 @@ func _enemy_skill_life_drain():
 	_start_player_turn()
 
 func _enemy_skill_soul_drain():
-	# 噬魂：0.6x伤害 + 偷取3点MP
+	# 噬魂:0.6x伤害 + 偷取3点MP
 	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_0D6))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
@@ -8112,7 +8121,7 @@ func _enemy_skill_soul_drain():
 	player_data.hp -= dmg
 	var mp_steal = min(3, player_data.mp)
 	player_data.mp -= mp_steal
-	_battle_add_log("👻 【噬魂】！%s 吞噬灵魂，造成 %d 伤害，偷取 %d MP！" % [current_enemy["name"], dmg, mp_steal])
+	_battle_add_log("👻 【噬魂】!%s 吞噬灵魂,造成 %d 伤害,偷取 %d MP!" % [current_enemy["name"], dmg, mp_steal])
 	_spawn_player_damage("-%d" % dmg, "damage")
 	_trigger_portrait_damage_flash()
 	if audio_manager:
@@ -8125,7 +8134,7 @@ func _enemy_skill_soul_drain():
 	_start_player_turn()
 
 func _enemy_skill_shield_bash():
-	# 盾击：1.5x伤害，50%几率眩晕1回合
+	# 盾击:1.5x伤害,50%几率眩晕1回合
 	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_MED))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
@@ -8143,9 +8152,9 @@ func _enemy_skill_shield_bash():
 	var stun_chance = randi() % 100 < 50
 	if stun_chance:
 		player_stun_turns = max(player_stun_turns, 1)
-		_battle_add_log("🛡️ 【盾击】！%s 盾牌重击，造成 %d 伤害！★眩晕成功！" % [current_enemy["name"], dmg])
+		_battle_add_log("🛡️ 【盾击】!%s 盾牌重击,造成 %d 伤害!★眩晕成功!" % [current_enemy["name"], dmg])
 	else:
-		_battle_add_log("🛡️ 【盾击】！%s 盾牌重击，造成 %d 伤害！（眩晕未中）" % [current_enemy["name"], dmg])
+		_battle_add_log("🛡️ 【盾击】!%s 盾牌重击,造成 %d 伤害!(眩晕未中)" % [current_enemy["name"], dmg])
 	_spawn_player_damage("-%d" % dmg, "damage")
 	_trigger_portrait_damage_flash()
 	if audio_manager:
@@ -8158,17 +8167,17 @@ func _enemy_skill_shield_bash():
 	_start_player_turn()
 
 func _enemy_skill_iron_wall():
-	# 铁壁：给自己加护盾（30%最大HP），然后普攻
+	# 铁壁:给自己加护盾(30%最大HP),然后普攻
 	var shield_gain = int(current_enemy["max_hp"] * 0.3)
 	current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + shield_gain)
 	_update_enemy_hp_bar()
-	_battle_add_log("🛡️ 【铁壁】！%s 进入防御姿态，回复 %d HP！" % [current_enemy["name"], shield_gain])
+	_battle_add_log("🛡️ 【铁壁】!%s 进入防御姿态,回复 %d HP!" % [current_enemy["name"], shield_gain])
 	_spawn_enemy_damage("+%d" % shield_gain, "heal", Vector2(0, -30))
 	await get_tree().create_timer(0.4).timeout
 	_boss_default_attack("铁壁反击")
 
 func _enemy_skill_bite():
-	# 撕咬：1.2x伤害，附加2层流血（每回合3伤害，持续2回合）
+	# 撕咬:1.2x伤害,附加2层流血(每回合3伤害,持续2回合)
 	var dmg = _roll_dmg_var_tiny(int(current_enemy["atk"] * BOSS_SKILL_MULT_MED2))
 	if player_defending or player_shield > 0:
 		dmg = int(dmg * 0.5)
@@ -8186,7 +8195,7 @@ func _enemy_skill_bite():
 	poison_stacks += 2
 	poison_damage = max(poison_damage, 3)
 	poison_turns = max(poison_turns, 2)
-	_battle_add_log("🐺 【撕咬】！%s 撕咬攻击，造成 %d 伤害，附加流血！" % [current_enemy["name"], dmg])
+	_battle_add_log("🐺 【撕咬】!%s 撕咬攻击,造成 %d 伤害,附加流血!" % [current_enemy["name"], dmg])
 	_spawn_player_damage("-%d" % dmg, "poison")
 	_trigger_portrait_damage_flash()
 	if audio_manager:
@@ -8199,7 +8208,7 @@ func _enemy_skill_bite():
 	_start_player_turn()
 
 func _enemy_skill_claw():
-	# 利爪：1.3x伤害，连续攻击2次（各0.7x），但第二次必中
+	# 利爪:1.3x伤害,连续攻击2次(各0.7x),但第二次必中
 	var total_dmg = 0
 	for i in range(2):
 		var d = _roll_dmg_var_tiny(int(current_enemy["atk"] * (BOSS_SKILL_MULT_1D3 if i == 0 else BOSS_SKILL_MULT_XLOW)))
@@ -8217,7 +8226,7 @@ func _enemy_skill_claw():
 		d = max(1, d)
 		player_data.hp -= d
 		total_dmg += d
-		_battle_add_log("🦴 【利爪%d】！%s 爪击，造成 %d 伤害" % [i+1, current_enemy["name"], d])
+		_battle_add_log("🦴 【利爪%d】!%s 爪击,造成 %d 伤害" % [i+1, current_enemy["name"], d])
 		_spawn_player_damage("-%d" % d, "damage")
 		_trigger_portrait_damage_flash()
 		if audio_manager:
@@ -8228,7 +8237,7 @@ func _enemy_skill_claw():
 			_game_over()
 			return
 		await get_tree().create_timer(0.3).timeout
-	_battle_add_log("🦴 【利爪】！%s 共造成 %d 伤害！" % [current_enemy["name"], total_dmg])
+	_battle_add_log("🦴 【利爪】!%s 共造成 %d 伤害!" % [current_enemy["name"], total_dmg])
 	_start_player_turn()
 
 func _boss_hanbatian_action(hp_ratio: float):
@@ -8237,23 +8246,23 @@ func _boss_hanbatian_action(hp_ratio: float):
 	if roll < 30:
 		_boss_default_attack("开山刀斩")
 	elif roll < 55:
-		# 战吼：全体攻击+震慑
+		# 战吼:全体攻击+震慑
 		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW)
 		_apply_player_damage(dmg)
-		_battle_add_log("⚡ 战吼！全体受到 %d 伤害震慑！" % dmg)
+		_battle_add_log("⚡ 战吼!全体受到 %d 伤害震慑!" % dmg)
 		enemy_stun_turns = max(enemy_stun_turns, 1)
 	elif roll < 80 and boss_action_counter > 2:
 		# 召集喽啰
 		var summon_dmg = int(player_data.attack_power() * 0.5)
 		_apply_player_damage(summon_dmg)
-		_battle_add_log("👺 召集喽啰！两名山贼参战，造成 %d 伤害！" % summon_dmg)
+		_battle_add_log("👺 召集喽啰!两名山贼参战,造成 %d 伤害!" % summon_dmg)
 	else:
-		# 狂暴化：自残+高伤攻击
+		# 狂暴化:自残+高伤攻击
 		var self_dmg = 10
 		current_enemy["hp"] -= self_dmg
 		var atk_dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED)
 		_apply_player_damage(atk_dmg)
-		_battle_add_log("🔥 狂暴化！自残%d HP，造成 %d 伤害！" % [self_dmg, atk_dmg])
+		_battle_add_log("🔥 狂暴化!自残%d HP,造成 %d 伤害!" % [self_dmg, atk_dmg])
 		_spawn_enemy_damage("-%d" % self_dmg, "poison", Vector2(0, -20))
 	_update_enemy_hp_bar()
 
@@ -8261,31 +8270,31 @@ func _boss_helian_action(hp_ratio: float):
 	# 血刀门护法·血手赫连铁树: 一线斩/血雾/血刀斩/嗜血狂刀/血战到底
 	var roll = randi() % 100
 	if roll < 25:
-		# 一线斩：高伤单体+破甲
+		# 一线斩:高伤单体+破甲
 		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_3D0)
 		_apply_player_damage(dmg)
-		_battle_add_log("🗡️ 一线斩！造成 %d 伤害，斩断护甲！" % dmg)
+		_battle_add_log("🗡️ 一线斩!造成 %d 伤害,斩断护甲!" % dmg)
 	elif roll < 45:
-		# 血雾：回复并进入强化状态
+		# 血雾:回复并进入强化状态
 		var heal = int(current_enemy["max_hp"] * 0.15)
 		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
 		current_enemy["atk"] = int(current_enemy["atk"] * 1.2)
-		_battle_add_log("🩸 血雾！回复 %d HP，ATK+20%%！" % heal)
+		_battle_add_log("🩸 血雾!回复 %d HP,ATK+20%%!" % heal)
 	elif roll < 65:
-		# 血刀斩：持续掉血
+		# 血刀斩:持续掉血
 		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_1D8)
 		_apply_player_damage(dmg)
 		poison_stacks += 2
 		poison_damage += 5
 		poison_turns += 2
-		_battle_add_log("🗡️ 血刀斩！造成 %d 伤害，附加流血！" % dmg)
+		_battle_add_log("🗡️ 血刀斩!造成 %d 伤害,附加流血!" % dmg)
 	elif roll < 80 and hp_ratio < 0.3:
-		# 嗜血狂刀：低血量斩杀
+		# 嗜血狂刀:低血量斩杀
 		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_2D5)
 		_apply_player_damage(dmg)
 		var heal = int(dmg * 0.4)
 		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
-		_battle_add_log("🩸 嗜血狂刀！造成 %d 伤害，吸血 %d HP！" % [dmg, heal])
+		_battle_add_log("🩸 嗜血狂刀!造成 %d 伤害,吸血 %d HP!" % [dmg, heal])
 	else:
 		_boss_default_attack("血刀斩")
 
@@ -8293,25 +8302,25 @@ func _boss_sima_action(hp_ratio: float):
 	# 门派叛徒·司马青云: 御剑术/剑气纵横/夺命十三剑/金蝉脱壳
 	var roll = randi() % 100
 	if roll < 30:
-		# 御剑术：高伤单体+穿刺
+		# 御剑术:高伤单体+穿刺
 		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED)
 		_apply_player_damage(dmg)
-		_battle_add_log("🗡️ 御剑术！飞剑穿刺，造成 %d 伤害！" % dmg)
+		_battle_add_log("🗡️ 御剑术!飞剑穿刺,造成 %d 伤害!" % dmg)
 	elif roll < 55:
-		# 剑气纵横：全体攻击
+		# 剑气纵横:全体攻击
 		var dmg = int(current_enemy["atk"] * 1.2)
 		_apply_player_damage(dmg)
-		_battle_add_log("⚡ 剑气纵横！全体受到 %d 剑气伤害！" % dmg)
+		_battle_add_log("⚡ 剑气纵横!全体受到 %d 剑气伤害!" % dmg)
 	elif roll < 75:
-		# 夺命十三剑：极高单体伤害
+		# 夺命十三剑:极高单体伤害
 		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_2D8)
 		_apply_player_damage(dmg)
 		enemy_stun_turns = max(enemy_stun_turns, 1)
-		_battle_add_log("💀 夺命十三剑！连刺十三剑，%d 伤害，眩晕1回合！" % dmg)
+		_battle_add_log("💀 夺命十三剑!连刺十三剑,%d 伤害,眩晕1回合!" % dmg)
 	elif roll < 90:
-		# 金蝉脱壳：闪避+反击
+		# 金蝉脱壳:闪避+反击
 		vanish_turns = 2
-		_battle_add_log("🌫️ 金蝉脱壳！隐身闪避2回合！")
+		_battle_add_log("🌫️ 金蝉脱壳!隐身闪避2回合!")
 	else:
 		_boss_default_attack("夺命剑法")
 
@@ -8319,100 +8328,100 @@ func _boss_yue_action(hp_ratio: float):
 	# 华山掌门·岳不群: 紫霞神功/独孤九剑/吸星大法/辟邪剑法/伪君子真面目
 	var roll = randi() % 100
 	if roll < 20:
-		# 紫霞神功：全体+内功debuff
+		# 紫霞神功:全体+内功debuff
 		var dmg = int(current_enemy["atk"] * 1.3)
 		_apply_player_damage(dmg)
 		player_data.atk = int(player_data.atk * 0.85)
-		_battle_add_log("🌀 紫霞神功！全体 %d 伤害，我方ATK降低15%%！" % dmg)
+		_battle_add_log("🌀 紫霞神功!全体 %d 伤害,我方ATK降低15%%!" % dmg)
 	elif roll < 40:
-		# 独孤九剑：破招极高伤
+		# 独孤九剑:破招极高伤
 		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_2D5)
 		_apply_player_damage(dmg)
-		_battle_add_log("⚔️ 独孤九剑！破尽天下招式，%d 伤害！" % dmg)
+		_battle_add_log("⚔️ 独孤九剑!破尽天下招式,%d 伤害!" % dmg)
 	elif roll < 55:
-		# 吸星大法：吸玩家HP
+		# 吸星大法:吸玩家HP
 		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED)
 		_apply_player_damage(dmg)
 		var heal = int(dmg * 0.6)
 		current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
-		_battle_add_log("🖐️ 吸星大法！造成 %d 伤害，吸取 %d HP！" % [dmg, heal])
+		_battle_add_log("🖐️ 吸星大法!造成 %d 伤害,吸取 %d HP!" % [dmg, heal])
 	elif roll < 75:
-		# 辟邪剑法：连续攻击
+		# 辟邪剑法:连续攻击
 		for i in range(3):
 			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW)
 			_apply_player_damage(dmg)
-		_battle_add_log("🗡️ 辟邪剑法！快剑三连击，每击 %d 伤害！" % int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW))
+		_battle_add_log("🗡️ 辟邪剑法!快剑三连击,每击 %d 伤害!" % int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW))
 	else:
-		# 伪君子真面目：爆发+护盾
+		# 伪君子真面目:爆发+护盾
 		var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_HIGH)
 		_apply_player_damage(dmg)
 		player_shield += 80
-		_battle_add_log("🎭 伪君子真面目！露出獠牙，%d 伤害，获得80护盾！" % dmg)
+		_battle_add_log("🎭 伪君子真面目!露出獠牙,%d 伤害,获得80护盾!" % dmg)
 
 func _boss_zhang_action(hp_ratio: float):
 	# 武当真人·张三丰: 太极拳/太极剑/梯云纵/纯阳无极功/武当九阳功/一代宗师
 	if boss_phase == 1:
-		# 第一阶段：太极以柔克刚
+		# 第一阶段:太极以柔克刚
 		var roll = randi() % 100
 		if roll < 25:
-			# 太极拳：借力打力，反弹伤害
+			# 太极拳:借力打力,反弹伤害
 			var dmg = int(current_enemy["atk"] * 1.2)
 			_apply_player_damage(dmg)
-			_battle_add_log("☯️ 太极拳！以柔克刚，%d 伤害并吸收攻势！" % dmg)
+			_battle_add_log("☯️ 太极拳!以柔克刚,%d 伤害并吸收攻势!" % dmg)
 		elif roll < 50:
-			# 太极剑：群体攻击
+			# 太极剑:群体攻击
 			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_MED)
 			_apply_player_damage(dmg)
-			_battle_add_log("⚔️ 太极剑！剑意如风，%d 伤害！" % dmg)
+			_battle_add_log("⚔️ 太极剑!剑意如风,%d 伤害!" % dmg)
 		elif roll < 75:
-			# 梯云纵：轻盈闪避+反击
+			# 梯云纵:轻盈闪避+反击
 			vanish_turns = 1
 			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_LOW)
 			_apply_player_damage(dmg)
-			_battle_add_log("🦶 梯云纵！纵云梯飞身闪避，顺手一击 %d 伤害！" % dmg)
+			_battle_add_log("🦶 梯云纵!纵云梯飞身闪避,顺手一击 %d 伤害!" % dmg)
 		else:
 			_boss_default_attack("太极推手")
 	elif boss_phase == 2:
-		# 第二阶段：纯阳无极功爆发
+		# 第二阶段:纯阳无极功爆发
 		var roll = randi() % 100
 		if roll < 30:
-			# 武当九阳功：全体高伤害
+			# 武当九阳功:全体高伤害
 			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_2D5)
 			_apply_player_damage(dmg)
-			_battle_add_log("🔥 武当九阳功！纯阳内力爆发，全体 %d 伤害！" % dmg)
+			_battle_add_log("🔥 武当九阳功!纯阳内力爆发,全体 %d 伤害!" % dmg)
 		elif roll < 55:
-			# 纯阳无极功：回复+强化
+			# 纯阳无极功:回复+强化
 			var heal = int(current_enemy["max_hp"] * 0.2)
 			current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
 			current_enemy["atk"] = int(current_enemy["atk"] * 1.15)
-			_battle_add_log("☯️ 纯阳无极功！回复 %d HP，ATK+15%%！" % heal)
+			_battle_add_log("☯️ 纯阳无极功!回复 %d HP,ATK+15%%!" % heal)
 		elif roll < 80:
 			# 太极剑·连绵不绝
 			for i in range(4):
 				var dmg = int(current_enemy["atk"] * 0.7)
 				_apply_player_damage(dmg)
-			_battle_add_log("⚔️ 太极剑·连绵不绝！四剑连发，每击 %d 伤害！" % int(current_enemy["atk"] * BOSS_SKILL_MULT_XLOW))
+			_battle_add_log("⚔️ 太极剑·连绵不绝!四剑连发,每击 %d 伤害!" % int(current_enemy["atk"] * BOSS_SKILL_MULT_XLOW))
 		else:
 			_boss_default_attack("武当剑法")
 	else:
-		# 第三阶段：一代宗师·收徒考验
+		# 第三阶段:一代宗师·收徒考验
 		var roll = randi() % 100
 		if roll < 35:
-			# 太极拳·云手：全体+推退
+			# 太极拳·云手:全体+推退
 			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_3D0)
 			_apply_player_damage(dmg)
-			_battle_add_log("☯️ 太极拳·云手！一代宗师全力一击，%d 伤害！" % dmg)
+			_battle_add_log("☯️ 太极拳·云手!一代宗师全力一击,%d 伤害!" % dmg)
 		elif roll < 60:
-			# 太极剑·无形：必中沉默
+			# 太极剑·无形:必中沉默
 			var dmg = int(current_enemy["atk"] * BOSS_SKILL_MULT_HIGH)
 			_apply_player_damage(dmg)
 			silenced = true
-			_battle_add_log("⚔️ 太极剑·无形！剑意无形，%d 伤害，我方沉默1回合！" % dmg)
+			_battle_add_log("⚔️ 太极剑·无形!剑意无形,%d 伤害,我方沉默1回合!" % dmg)
 		else:
-			# 一代宗师：考验结束，回复
+			# 一代宗师:考验结束,回复
 			var heal = int(current_enemy["max_hp"] * 0.25)
 			current_enemy["hp"] = min(current_enemy["max_hp"], current_enemy["hp"] + heal)
-			_battle_add_log("🙏 一代宗师！张三丰：\"你已通过考验！\" 回复 %d HP！" % heal)
+			_battle_add_log("🙏 一代宗师!张三丰:\"你已通过考验!\" 回复 %d HP!" % heal)
 	_update_enemy_hp_bar()
 
 func _boss_default_attack(skill_name: String = "攻击"):
@@ -8423,7 +8432,7 @@ func _boss_default_attack(skill_name: String = "攻击"):
 		if player_shield >= e_dmg:
 			player_shield -= e_dmg
 			e_dmg = 0
-			_battle_add_log("🛡️ 护盾吸收了伤害！")
+			_battle_add_log("🛡️ 护盾吸收了伤害!")
 		else:
 			e_dmg -= player_shield
 			player_shield = 0
@@ -8432,14 +8441,14 @@ func _boss_default_attack(skill_name: String = "攻击"):
 	e_dmg = max(1, e_dmg)
 	# 战士T4: 绝对防御 - 免疫Boss伤害
 	if warrior_absolute_def_turns > 0:
-		_battle_add_log("🏰⚔️ 绝对防御！免疫了 %s 的【%s】！" % [current_enemy["name"], skill_name])
+		_battle_add_log("🏰⚔️ 绝对防御!免疫了 %s 的【%s】!" % [current_enemy["name"], skill_name])
 		_spawn_player_damage("免疫!", "shield")
 		_update_battle_player_ui()
 		await get_tree().create_timer(0.4).timeout
 		_start_player_turn()
 		return
 	player_data.hp -= e_dmg
-	_battle_add_log("👹 %s 使用【%s】！造成 %d 伤害" % [current_enemy["name"], skill_name, e_dmg])
+	_battle_add_log("👹 %s 使用【%s】!造成 %d 伤害" % [current_enemy["name"], skill_name, e_dmg])
 	_spawn_player_damage("-%d" % e_dmg, "damage")
 	if audio_manager:
 		audio_manager.play_sfx("hit")
@@ -8458,7 +8467,7 @@ func _apply_player_damage(dmg: int):
 		if player_shield >= dmg:
 			player_shield -= dmg
 			dmg = 0
-			_battle_add_log("🛡️ 护盾吸收了伤害！")
+			_battle_add_log("🛡️ 护盾吸收了伤害!")
 		else:
 			dmg -= player_shield
 			player_shield = 0
@@ -8502,20 +8511,20 @@ func _start_player_turn():
 	# 战士T4: 绝对防御 - 无法行动但免疫伤害
 	if warrior_absolute_def_turns > 0:
 		warrior_absolute_def_turns -= 1
-		_battle_add_log("🏰⚔️ 绝对防御！本回合免疫所有伤害！（剩余%d回合）" % warrior_absolute_def_turns)
+		_battle_add_log("🏰⚔️ 绝对防御!本回合免疫所有伤害!(剩余%d回合)" % warrior_absolute_def_turns)
 		_spawn_player_damage("免疫!", "shield")
-		# 绝对防御期间仍然触发敌人回合，但不扣血
+		# 绝对防御期间仍然触发敌人回合,但不扣血
 		await get_tree().create_timer(0.3).timeout
 		is_player_turn = false
 		if warrior_absolute_def_turns > 0:
 			_process_battle(0)
 		else:
-			_battle_add_log("🏰 绝对防御结束！")
+			_battle_add_log("🏰 绝对防御结束!")
 		return
 	# 检查玩家是否被眩晕
 	if player_stun_turns > 0:
 		player_stun_turns -= 1
-		_battle_add_log("⏰ 玩家被眩晕！无法行动！（剩余%d回合）" % player_stun_turns)
+		_battle_add_log("⏰ 玩家被眩晕!无法行动!(剩余%d回合)" % player_stun_turns)
 		await get_tree().create_timer(0.5).timeout
 		is_player_turn = false
 		_process_battle(0)
@@ -8540,10 +8549,10 @@ func _on_attack():
 		base_dmg = int(base_dmg * 1.3)
 	var dmg = max(1, base_dmg) * (2 if is_crit else 1)
 	current_enemy["hp"] -= dmg
-	var attack_msg = "暴击！" if is_crit else ""
+	var attack_msg = "暴击!" if is_crit else ""
 	if warrior_wargod_mark_turns > 0:
 		attack_msg += "【战神印记+30%】"
-	_battle_add_log("⚔️ 攻击！" + attack_msg + "造成 %d 伤害" % dmg)
+	_battle_add_log("⚔️ 攻击!" + attack_msg + "造成 %d 伤害" % dmg)
 	var attack_dmg_type = "crit" if is_crit else "damage"
 	var attack_offset_x = (randi() % 15) - 7
 	var attack_offset_y = -25 if is_crit else -18
@@ -8569,7 +8578,7 @@ func _on_defend():
 	var shield_gain = int(player_data.defense() * 0.3)
 	player_shield += shield_gain
 	player_data.mp = min(player_data.max_mp, player_data.mp + 3)
-	_battle_add_log("🛡️ 防御！受伤-50%%，获得护盾，回复3MP")
+	_battle_add_log("🛡️ 防御!受伤-50%%,获得护盾,回复3MP")
 	_spawn_player_damage("+%d" % shield_gain, "shield")
 	_update_battle_player_ui()
 	await get_tree().create_timer(0.4).timeout
@@ -8579,7 +8588,7 @@ func _on_flee():
 	if not is_player_turn or game_state != State.BATTLE:
 		return
 	if randf() < FLEE_SUCCESS_CHANCE:
-		_battle_add_log("🏃 逃跑成功！")
+		_battle_add_log("🏃 逃跑成功!")
 		_close_battle_ui()
 		game_state = State.EXPLORE
 		is_player_turn = true
@@ -8588,7 +8597,7 @@ func _on_flee():
 			audio_manager.play_sfx("flee")
 			audio_manager.play_bgm("explore")
 	else:
-		_battle_add_log("❌ 逃跑失败！")
+		_battle_add_log("❌ 逃跑失败!")
 		is_player_turn = false
 		await get_tree().create_timer(0.4).timeout
 		_process_battle(0)
@@ -8597,9 +8606,9 @@ func _on_item():
 	if not is_player_turn or game_state != State.BATTLE:
 		return
 	if player_data.inventory.size() == 0:
-		_battle_add_log("背包是空的！")
+		_battle_add_log("背包是空的!")
 		return
-	# 简单实现：使用第一个药水
+	# 简单实现:使用第一个药水
 	var used_item = null
 	var item_idx = -1
 	for i in range(player_data.inventory.size()):
@@ -8609,7 +8618,7 @@ func _on_item():
 			item_idx = i
 			break
 	if used_item == null:
-		_battle_add_log("没有可用的药水！")
+		_battle_add_log("没有可用的药水!")
 		return
 	var hhp = used_item.get("heal_hp", 0)
 	var hmp = used_item.get("heal_mp", 0)
@@ -8624,13 +8633,13 @@ func _on_item():
 		used_item["count"] -= 1
 		if used_item["count"] <= 0:
 			player_data.inventory.remove_at(item_idx)
-		_battle_add_log("🧪 使用 %s！" % used_item["type"])
+		_battle_add_log("🧪 使用 %s!" % used_item["type"])
 		is_player_turn = false
 		_update_battle_player_ui()
 		await get_tree().create_timer(0.4).timeout
 		_process_battle(0)
 	else:
-		_battle_add_log("状态已经是满的！")
+		_battle_add_log("状态已经是满的!")
 
 async func _check_battle_end() -> bool:
 	if current_enemy["hp"] <= 0:
@@ -8660,19 +8669,19 @@ async func _check_battle_end() -> bool:
 					unique_jobs += 1
 			achievement_stats["unique_jobs_boss_wins"] = unique_jobs
 
-		# 完美胜利成就（敌人本回合没打中玩家）
+		# 完美胜利成就(敌人本回合没打中玩家)
 		if current_enemy.get("is_boss", false) == false and not enemy_hit_this_battle:
 			achievement_stats["perfect_victories"] += 1
 
-		# 无伤通关成就检测（如果本层没受伤且击败了本层所有敌人则由下楼梯时触发）
+		# 无伤通关成就检测(如果本层没受伤且击败了本层所有敌人则由下楼梯时触发)
 		_check_achievements()
 
 		# Boss击败特殊提示
 		if current_enemy.get("is_boss", false):
-			_battle_add_log("🏆⭐ BOSS击破！⭐+%d EXP，+%d 金币！" % [exp_gain, gold_gain])
+			_battle_add_log("🏆⭐ BOSS击破!⭐+%d EXP,+%d 金币!" % [exp_gain, gold_gain])
 			_show_boss_victory_screen()
 		else:
-			_battle_add_log("🏆 胜利！+%d EXP，+%d 金币" % [exp_gain, gold_gain])
+			_battle_add_log("🏆 胜利!+%d EXP,+%d 金币" % [exp_gain, gold_gain])
 
 		_exp_check()
 		_close_battle_ui()
@@ -8685,9 +8694,9 @@ async func _check_battle_end() -> bool:
 			audio_manager.play_bgm("explore")
 
 		if current_enemy.get("is_boss", false):
-			show_message("⭐ BOSS击破: %s！+%d EXP" % [current_enemy["name"], exp_gain])
+			show_message("⭐ BOSS击破: %s!+%d EXP" % [current_enemy["name"], exp_gain])
 		else:
-			show_message("击败了 %s！获得 %d EXP" % [current_enemy["name"], exp_gain])
+			show_message("击败了 %s!获得 %d EXP" % [current_enemy["name"], exp_gain])
 		return true
 	if player_data.hp <= 0:
 		_battle_add_log("💀 你倒下了...")
@@ -8785,16 +8794,16 @@ func _exp_check():
 		player_data.def += 1
 		player_data.spd += 1
 		player_data.luk += 1
-		_battle_add_log("⬆️ 升级！Lv.%d → Lv.%d" % [player_data.level - 1, player_data.level])
+		_battle_add_log("⬆️ 升级!Lv.%d → Lv.%d" % [player_data.level - 1, player_data.level])
 		if audio_manager:
 			audio_manager.play_sfx("levelup")
-		# 成就追踪：最高等级
+		# 成就追踪:最高等级
 		if player_data.level > achievement_stats["max_level_reached"]:
 			achievement_stats["max_level_reached"] = player_data.level
 		_check_achievements()
-	show_message("升级了！Lv.%d" % player_data.level)
+	show_message("升级了!Lv.%d" % player_data.level)
 
-# 肖像动画更新（每帧调用）
+# 肖像动画更新(每帧调用)
 func _update_portrait_animation(delta: float):
 	if not battle_ui:
 		return
@@ -8837,7 +8846,7 @@ func _update_portrait_animation(delta: float):
 			if heal_flash_reset:
 				heal_flash_reset.modulate = Color(1, 1, 1, 0.0)
 
-	# 更新肖像面板的HP/MP条（每次动画帧都更新）
+	# 更新肖像面板的HP/MP条(每次动画帧都更新)
 	_update_portrait_bars(portrait_panel)
 
 func _update_portrait_bars(portrait_panel: Panel):
@@ -8850,7 +8859,7 @@ func _update_portrait_bars(portrait_panel: Panel):
 	if php_bar:
 		php_bar.max_value = player_data.max_hp
 		php_bar.value = max(0, player_data.hp)
-		# HP条颜色随血量变化（仅在阈值跨越时重建StyleBoxFlat，避免每帧创建新对象）
+		# HP条颜色随血量变化(仅在阈值跨越时重建StyleBoxFlat,避免每帧创建新对象)
 		var hp_ratio = float(player_data.hp) / float(player_data.max_hp)
 		var threshold_crossed = (
 			(_last_portrait_hp_ratio > 0.5 and hp_ratio <= 0.5) or
@@ -8962,7 +8971,7 @@ func _game_over():
 	_close_battle_ui()
 	game_state = State.EXPLORE
 	is_player_turn = false
-	show_message("💀 游戏结束！按R重新开始...")
+	show_message("💀 游戏结束!按R重新开始...")
 	if audio_manager:
 		audio_manager.play_sfx("death")
 		audio_manager.play_bgm("explore")
@@ -9047,23 +9056,23 @@ func save_game(slot: int) -> bool:
 	if file:
 		file.store_string(json_str)
 		file.close()
-		show_message("💾 存档成功！存档槽 %d" % (slot + 1))
+		show_message("💾 存档成功!存档槽 %d" % (slot + 1))
 		if audio_manager:
 			audio_manager.play_sfx("purchase")
 		return true
 	else:
-		show_message("❌ 存档失败！")
+		show_message("❌ 存档失败!")
 		return false
 
 func load_game(slot: int) -> bool:
 	var path = _get_save_path(slot)
 	if not FileAccess.file_exists(path):
-		show_message("存档槽 %d 不存在！" % (slot + 1))
+		show_message("存档槽 %d 不存在!" % (slot + 1))
 		return false
 
 	var file = FileAccess.open(path, FileAccess.READ)
 	if not file:
-		show_message("❌ 读取存档失败！")
+		show_message("❌ 读取存档失败!")
 		return false
 
 	var json_str = file.get_as_text()
@@ -9072,12 +9081,12 @@ func load_game(slot: int) -> bool:
 	var json = JSON.new()
 	var parse_result = json.parse(json_str)
 	if parse_result != OK:
-		show_message("❌ 存档数据损坏！")
+		show_message("❌ 存档数据损坏!")
 		return false
 
 	var save_data = json.get_data()
 	if typeof(save_data) != TYPE_DICTIONARY:
-		show_message("❌ 存档格式错误！")
+		show_message("❌ 存档格式错误!")
 		return false
 
 	# 恢复玩家数据
@@ -9110,7 +9119,7 @@ func load_game(slot: int) -> bool:
 	var prog = save_data.get("progress", {})
 	current_floor = prog.get("current_floor", 1)
 
-	# 恢复游戏状态（吟游诗人永久增益/技能冷却/召唤融合）
+	# 恢复游戏状态(吟游诗人永久增益/技能冷却/召唤融合)
 	var gst = save_data.get("game_state", {})
 	bard_legendary_song_atk_boost = gst.get("bard_legendary_song_atk_boost", 0)
 	bard_legendary_song_def_boost = gst.get("bard_legendary_song_def_boost", 0)
@@ -9131,7 +9140,7 @@ func load_game(slot: int) -> bool:
 		achievement_notification_ui.queue_free()
 		achievement_notification_ui = null
 
-	show_message("📂 读档成功！%s Lv.%d" % [player_data.get_job_name(), player_data.level])
+	show_message("📂 读档成功!%s Lv.%d" % [player_data.get_job_name(), player_data.level])
 	if audio_manager:
 		audio_manager.play_sfx("purchase")
 	return true
@@ -9301,7 +9310,7 @@ func _open_save_ui():
 			new_btn.add_theme_font_size_override("font_size", 13)
 			new_btn.pressed.connect(_on_save_slot_write.bind(slot))
 			slot_panel.add_child(new_btn)
-			# 空槽追加3个占位元素保持数组对称（与有存档槽一致）
+			# 空槽追加3个占位元素保持数组对称(与有存档槽一致)
 			_save_slot_buttons.append(new_btn)
 			_save_slot_buttons.append(null)  # load_btn占位
 			_save_slot_buttons.append(null)  # del_btn占位
@@ -9338,7 +9347,7 @@ func _on_save_slot_delete(slot: int):
 	_close_save_ui()
 
 func _rebuild_ui_from_player_data():
-	# 当读档后，重新设置玩家精灵
+	# 当读档后,重新设置玩家精灵
 	if player:
 		var sprite = player.get_node_or_null("Sprite")
 		if sprite:
