@@ -77,6 +77,25 @@ var hunter_armor_pierce_turns: int = 0  # 穿甲箭穿透回合
 var hunter_trap_dot_dmg: int = 0     # 致命陷阱每回合伤害
 var hunter_trap_turns: int = 0        # 致命陷阱持续回合
 var hunter_trap_slow: int = 0         # 致命陷阱减速量
+# 猎人T2路线A状态
+var hunter_snipe_turns: int = 0        # 狙击弹:无视防御回合
+var hunter_snipe_ignore_def: int = 0   # 狙击弹:无视防御量
+var hunter_multi_shot_count: int = 0    # 多重射击:剩余射击次数
+var hunter_multi_shot_dmg: int = 0     # 多重射击:每次伤害
+var hunter_mark_shot_turns: int = 0    # 标记射击:标记持续回合
+var hunter_mark_shot_def_debuff: int = 0  # 标记射击:防御降低量
+# 猎人T2路线B状态
+var hunter_heal_potion_turns: int = 0  # 急救药水:减速debuff回合
+var hunter_bait_turns: int = 0         # 诱饵布置:诱饵持续回合
+var hunter_bait_hp: int = 0            # 诱饵HP
+var hunter_escape_turns: int = 0       # 逃脱术:闪避回合
+# 猎人T2路线C状态
+var hunter_hawk_turns: int = 0         # 召唤猎鹰:持续回合
+var hunter_hawk_dmg: int = 0           # 召唤猎鹰:每次伤害
+var hunter_beast_resonance_active: bool = false  # 野兽共鸣:已激活
+var hunter_deadly_poison_count: int = 0  # 致命毒药:剩余攻击次数
+var hunter_deadly_poison_dmg: int = 0  # 致命毒药:每回合伤害
+var hunter_deadly_poison_turns: int = 0  # 致命毒药:持续回合数
 # 猎人T3状态
 var hunter_one_hit_escape: bool = false  # 一击脱离:下次攻击必闪避
 var hunter_mark_turns: int = 0          # 猎杀时刻标记回合
@@ -4270,6 +4289,25 @@ func _start_battle():
 	hunter_trap_dot_dmg = 0
 	hunter_trap_turns = 0
 	hunter_trap_slow = 0
+	# 猎人T2路线A状态重置
+	hunter_snipe_turns = 0
+	hunter_snipe_ignore_def = 0
+	hunter_multi_shot_count = 0
+	hunter_multi_shot_dmg = 0
+	hunter_mark_shot_turns = 0
+	hunter_mark_shot_def_debuff = 0
+	# 猎人T2路线B状态重置
+	hunter_heal_potion_turns = 0
+	hunter_bait_turns = 0
+	hunter_bait_hp = 0
+	hunter_escape_turns = 0
+	# 猎人T2路线C状态重置
+	hunter_hawk_turns = 0
+	hunter_hawk_dmg = 0
+	hunter_beast_resonance_active = false
+	hunter_deadly_poison_count = 0
+	hunter_deadly_poison_dmg = 0
+	hunter_deadly_poison_turns = 0
 	# 猎人T3状态重置
 	hunter_one_hit_escape = false
 	hunter_mark_turns = 0
@@ -4488,6 +4526,25 @@ func _start_boss_battle():
 	hunter_trap_dot_dmg = 0
 	hunter_trap_turns = 0
 	hunter_trap_slow = 0
+	# 猎人T2路线A状态重置
+	hunter_snipe_turns = 0
+	hunter_snipe_ignore_def = 0
+	hunter_multi_shot_count = 0
+	hunter_multi_shot_dmg = 0
+	hunter_mark_shot_turns = 0
+	hunter_mark_shot_def_debuff = 0
+	# 猎人T2路线B状态重置
+	hunter_heal_potion_turns = 0
+	hunter_bait_turns = 0
+	hunter_bait_hp = 0
+	hunter_escape_turns = 0
+	# 猎人T2路线C状态重置
+	hunter_hawk_turns = 0
+	hunter_hawk_dmg = 0
+	hunter_beast_resonance_active = false
+	hunter_deadly_poison_count = 0
+	hunter_deadly_poison_dmg = 0
+	hunter_deadly_poison_turns = 0
 	# 猎人T3状态重置
 	hunter_one_hit_escape = false
 	hunter_mark_turns = 0
@@ -5715,8 +5772,13 @@ var _SKILL_COOLDOWNS: Dictionary = {
 	"鼓舞": 3, "旋律": 3, "沉默": 3,
 	# 召唤师 T1
 	"召唤": 3, "契约": 4, "共鸣": 2,
-	# 猎人 T2
+	# 猎人 T2 (路线A:狙击手)
 	"致命陷阱": 4, "猎豹加速": 3, "穿甲箭": 3,
+	"狙击弹": 2, "多重射击": 3, "标记射击": 3,
+	# 猎人 T2 (路线B:生存专家)
+	"急救药水": 3, "诱饵布置": 4, "逃脱术": 3,
+	# 猎人 T2 (路线C:野兽控制)
+	"召唤猎鹰": 4, "野兽共鸣": 3, "致命毒药": 5,
 	# 猎人 T3
 	"一击脱离": 4, "万箭齐发": 4, "猎杀时刻": 5, "野兽之力": 6,
 	# 盗贼 T2
@@ -5778,6 +5840,8 @@ func _get_effective_atk() -> int:
 		atk = int(atk * 1.5)  # 奥术真理:所有属性伤害+50%
 	if hunter_nature_power_turns > 0:
 		atk = int(atk * hunter_nature_power_bonus)  # 自然之力:每召唤物+30%伤害
+	if hunter_beast_resonance_active:
+		atk = int(atk * 1.25)  # 野兽共鸣:ATK+25%
 	if knight_holy_hammer_turns > 0:
 		atk = int(atk * knight_holy_hammer_mult)  # 神圣之锤:伤害×2持续3回合
 	return atk
@@ -5789,10 +5853,27 @@ func _apply_hunter_mark(base_dmg: int) -> int:
 	return base_dmg
 
 # 获取穿透后的防御值(法术穿透:无视敌人防御,消耗1层)
+func _get_effective_def() -> int:
+	# 玩家有效防御(含buff)
+	var def = player_data.defense()
+	if hunter_beast_resonance_active:
+		def = int(def * 1.15)  # 野兽共鸣:DEF+15%
+	return def
+
+func _get_effective_spd() -> int:
+	# 玩家有效速度(含debuff)
+	var spd = player_data.spd
+	if hunter_heal_potion_turns > 0:
+		spd = max(1, spd - 2)  # 急救药水:下一回合速度-2
+	return spd
+
 func _get_pierced_defense() -> int:
-	# 穿甲箭:无视防御
+	# 穿甲箭:完全无视防御
 	if hunter_armor_pierce_turns > 0:
 		return 0
+	# 狙击弹:无视30%防御
+	if hunter_snipe_turns > 0:
+		return int(current_enemy["def"] * 0.7)
 	# 法术穿透:无视防御
 	if spell_pierce_turns > 0:
 		spell_pierce_turns -= 1
@@ -5997,6 +6078,9 @@ async func _on_skill_selected(skill_name: String):
 		"鼓舞": 10, "旋律": 15, "沉默": 20,
 		"召唤": 20, "契约": 20, "共鸣": 25,
 		"致命陷阱": 25, "猎豹加速": 20, "穿甲箭": 30,
+		"狙击弹": 20, "多重射击": 30, "标记射击": 25,
+		"急救药水": 15, "诱饵布置": 20, "逃脱术": 10,
+		"召唤猎鹰": 30, "野兽共鸣": 25, "致命毒药": 35,
 		"一击脱离": 35, "万箭齐发": 50, "猎杀时刻": 40, "野兽之力": 45,
 		"影遁": 25, "淬毒利刃": 25, "锁喉": 30,
 		"群体治疗": 35, "驱散": 20, "神圣仲裁": 35,
@@ -6051,7 +6135,7 @@ async func _on_skill_selected(skill_name: String):
 			_spawn_enemy_damage("%d" % dmg)
 		"防御":
 			player_defending = true
-			player_shield = int(player_data.defense() * 0.5)
+			player_shield = int(_get_effective_def() * 0.5)
 			player_data.mp = min(player_data.max_mp, player_data.mp + 5)
 			_battle_add_log("🛡️ 防御姿态!伤害减半,回复5MP")
 		"冲锋":
@@ -6322,7 +6406,7 @@ async func _on_skill_selected(skill_name: String):
 			_battle_add_log("💚 治疗!恢复 %d HP" % heal)
 			_spawn_player_damage("+%d" % heal, "heal")
 		"护盾":
-			player_shield = int(player_data.defense() * 1.5)
+			player_shield = int(_get_effective_def() * 1.5)
 			_battle_add_log("🛡️ 神圣护盾!获得 %d 护盾值" % player_shield)
 			_spawn_player_damage("+%d" % player_shield, "shield")
 		"复活":
@@ -6403,7 +6487,7 @@ async func _on_skill_selected(skill_name: String):
 		# 骑士
 		"格挡":
 			player_defending = true
-			player_shield = int(player_data.defense() * 1.2)
+			player_shield = int(_get_effective_def() * 1.2)
 			_battle_add_log("⚔️ 格挡!伤害减少,护盾+%d" % player_shield)
 			_spawn_player_damage("+%d" % player_shield, "shield")
 		"斩击":
@@ -6493,6 +6577,108 @@ async func _on_skill_selected(skill_name: String):
 			_battle_add_log("🏹 穿甲箭!无视防御,造成 %d 伤害,持续2回合穿透" % pierce_dmg)
 			_enemy_hit_effect()
 			_spawn_enemy_damage("%d" % pierce_dmg, "crit", Vector2(0, -35))
+		# 猎人 T2 路线A (狙击手)
+		"狙击弹":
+			# ATK×2.2,无视30%敌人DEF,必定命中
+			hunter_snipe_turns = 2
+			hunter_snipe_ignore_def = int(current_enemy["def"] * 0.3)
+			var snipe_dmg = int(_get_effective_atk() * 2.2) - hunter_snipe_ignore_def
+			current_enemy["hp"] -= snipe_dmg
+			_battle_add_log("🏹 狙击弹!无视30%%防御,必定命中,造成 %d 伤害" % snipe_dmg)
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % snipe_dmg, "crit", Vector2(0, -35))
+		"多重射击":
+			# ATK×1.2连续攻击3个随机敌人,附带穿甲
+			hunter_multi_shot_count = 3
+			hunter_multi_shot_dmg = int(_get_effective_atk() * 1.2)
+			hunter_armor_pierce_turns = 2  # 附带穿甲效果
+			_battle_add_log("🏹🏹🏹 多重射击!连续%d次射击,每次伤害 %d" % [hunter_multi_shot_count, hunter_multi_shot_dmg])
+			current_enemy["hp"] -= hunter_multi_shot_dmg
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % hunter_multi_shot_dmg, "crit", Vector2(0, -35))
+			hunter_multi_shot_count -= 1
+			if hunter_multi_shot_count > 0:
+				await get_tree().create_timer(0.3).timeout
+				_battle_add_log("  第2发!伤害 %d" % hunter_multi_shot_dmg)
+				current_enemy["hp"] -= hunter_multi_shot_dmg
+				_update_enemy_hp_bar()
+				_spawn_enemy_damage("%d" % hunter_multi_shot_dmg, "crit", Vector2(0, -35))
+				hunter_multi_shot_count -= 1
+			if hunter_multi_shot_count > 0:
+				await get_tree().create_timer(0.3).timeout
+				_battle_add_log("  第3发!伤害 %d" % hunter_multi_shot_dmg)
+				current_enemy["hp"] -= hunter_multi_shot_dmg
+				_update_enemy_hp_bar()
+				_spawn_enemy_damage("%d" % hunter_multi_shot_dmg, "crit", Vector2(0, -35))
+		"标记射击":
+			# ATK×2.5,对已标记目标伤害+50%,目标DEF-20%
+			var mark_dmg = _apply_hunter_mark(int(_get_effective_atk() * 2.5))
+			if hunter_mark_turns > 0:
+				mark_dmg = int(mark_dmg * 1.5)
+				_battle_add_log("🎯🏹 标记射击!目标已被标记,伤害+50%%!")
+			current_enemy["hp"] -= mark_dmg
+			hunter_mark_shot_turns = 2
+			hunter_mark_shot_def_debuff = int(current_enemy["def"] * 0.2)
+			current_enemy["def"] -= hunter_mark_shot_def_debuff
+			_battle_add_log("🏹 标记射击!造成 %d 伤害,目标DEF-%d持续2回合" % [mark_dmg, hunter_mark_shot_def_debuff])
+			_enemy_hit_effect()
+			_spawn_enemy_damage("%d" % mark_dmg, "crit", Vector2(0, -40))
+		# 猎人 T2 路线B (生存专家)
+		"急救药水":
+			# 立即回复40%HP,下一回合SPD-2
+			var heal_amount = int(player_data.max_hp * 0.4)
+			player_data.hp = min(player_data.max_hp, player_data.hp + heal_amount)
+			hunter_heal_potion_turns = 2  # 持续2回合后速度恢复
+			_battle_add_log("💊 急救药水!回复 %d HP,下回合速度暂时下降" % heal_amount)
+			_astar_player_hp_display()
+			_spawn_player_damage("+%d" % heal_amount, "heal")
+		"诱饵布置":
+			# 召唤诱饵吸引敌人攻击,持续2回合,诱饵HP=猎人HP×30%
+			hunter_bait_turns = 2
+			hunter_bait_hp = int(player_data.max_hp * 0.3)
+			_battle_add_log("🎯 诱饵布置!诱饵HP=%d,吸引敌人攻击持续2回合" % hunter_bait_hp)
+			_spawn_player_damage("诱饵!", "buff")
+		"逃脱术":
+			# 闪避+80%持续1回合,若成功闪避则立即脱离战斗(不扣奖励)
+			hunter_escape_turns = 1
+			_battle_add_log("💨 逃脱术!闪避+80%%持续1回合,成功闪避可立即脱离战斗!")
+			_spawn_player_damage("EVASION+80%!", "buff")
+		# 猎人 T2 路线C (野兽控制)
+		"召唤猎鹰":
+			# 召唤猎鹰助战(ATK=猎人ATK×70%,SPD=猎人SPD×120%),持续3回合
+			hunter_hawk_turns = 3
+			hunter_hawk_dmg = int(_get_effective_atk() * 0.7)
+			hunter_beast_resonance_active = true
+			_battle_add_log("🦅 召唤猎鹰!ATK=%d,持续3回合攻击前排" % hunter_hawk_dmg)
+			# 猎鹰立即攻击一次
+			var hawk_dmg = _apply_hunter_mark(hunter_hawk_dmg)
+			current_enemy["hp"] -= hawk_dmg
+			_enemy_hit_effect()
+			_spawn_enemy_damage("🦅%d" % hawk_dmg, "crit", Vector2(0, -35))
+			# 激活野兽共鸣加成
+			if hunter_hawk_turns > 0:
+				_battle_add_log("🐺 野兽共鸣!猎鹰在场,猎人ATK+25%%,DEF+15%%")
+		"野兽共鸣":
+			# 场上每有1只野兽类召唤物,猎人和召唤物ATK+25%,DEF+15%
+			var beast_count = 0
+			if hunter_hawk_turns > 0:
+				beast_count += 1
+			if hunter_beast_turns > 0:
+				beast_count += 1
+			if beast_count == 0:
+				_battle_add_log("🐺 野兽共鸣!场上有召唤物才可激活加成!")
+			else:
+				_battle_add_log("🐺✨ 野兽共鸣!%d只召唤物,猎人ATK+25%%/DEF+15%%,持续3回合" % beast_count)
+				hunter_beast_resonance_active = true
+				_spawn_player_damage("ATK+25%!", "buff")
+		"致命毒药":
+			# 为武器涂上剧毒:接下来3次攻击附带「剧毒」(每回合ATK×0.5伤害/持续4回合),对Boss额外+30%伤害
+			hunter_deadly_poison_count = 3
+			hunter_deadly_poison_dmg = int(_get_effective_atk() * 0.5)
+			hunter_deadly_poison_turns = 4  # 持续4回合
+			_battle_add_log("☠️ 致命毒药!涂毒完成,接下来3次攻击附带剧毒(每回合%d伤害/持续4回合)" % hunter_deadly_poison_dmg)
+			skill_cooldowns["致命毒药"] = 5  # 重置为完整冷却
+			_spawn_player_damage("POISON!", "debuff")
 		# 猎人 T3
 		"一击脱离":
 			var escape_dmg = _apply_hunter_mark(int(_get_effective_atk() * 4.0))
@@ -7472,6 +7658,72 @@ func _process_battle(delta: float):
 		if await _check_battle_end():
 			return
 
+	# 猎人T2路线C: 致命毒药DOT
+	if hunter_deadly_poison_turns > 0:
+		current_enemy["hp"] -= hunter_deadly_poison_dmg
+		_battle_add_log("☠️ 剧毒发作!受到 %d 伤害(剩余%d回合)" % [hunter_deadly_poison_dmg, hunter_deadly_poison_turns])
+		_spawn_enemy_damage("%d" % hunter_deadly_poison_dmg, "poison", Vector2(10, -10))
+		hunter_deadly_poison_turns -= 1
+		_update_enemy_hp_bar()
+		if await _check_battle_end():
+			return
+
+	# 猎人T2路线A: 狙击弹无视防御效果结束
+	if hunter_snipe_turns > 0:
+		hunter_snipe_turns -= 1
+		if hunter_snipe_turns <= 0:
+			hunter_snipe_ignore_def = 0
+			_battle_add_log("🏹 狙击弹的无视防御效果结束")
+
+	# 猎人T2路线A: 标记射击DEF debuff效果结束
+	if hunter_mark_shot_turns > 0:
+		hunter_mark_shot_turns -= 1
+		if hunter_mark_shot_turns <= 0:
+			current_enemy["def"] += hunter_mark_shot_def_debuff
+			hunter_mark_shot_def_debuff = 0
+			_battle_add_log("🏹 标记射击的DEF减益效果结束")
+
+	# 猎人T2路线A: 多重射击剩余次数衰减
+	if hunter_multi_shot_count > 0:
+		_battle_add_log("🏹 多重射击剩余 %d 次未使用,本次浪费" % hunter_multi_shot_count)
+		hunter_multi_shot_count = 0
+
+	# 猎人T2路线B: 急救药水速度降低效果结束
+	if hunter_heal_potion_turns > 0:
+		hunter_heal_potion_turns -= 1
+		if hunter_heal_potion_turns <= 0:
+			_battle_add_log("💊 急救药水的速度降低效果结束")
+
+	# 猎人T2路线B: 诱饵持续时间处理
+	if hunter_bait_turns > 0:
+		hunter_bait_turns -= 1
+		if hunter_bait_turns <= 0:
+			_battle_add_log("🎯 诱饵消失!")
+
+	# 猎人T2路线B: 逃脱术效果结束
+	if hunter_escape_turns > 0:
+		hunter_escape_turns -= 1
+		if hunter_escape_turns <= 0:
+			_battle_add_log("💨 逃脱术效果结束")
+
+	# 猎人T2路线C: 召唤猎鹰每回合攻击
+	if hunter_hawk_turns > 0:
+		hunter_hawk_turns -= 1
+		# 野兽共鸣:有召唤物时激活
+		hunter_beast_resonance_active = (hunter_hawk_turns > 0 or hunter_beast_turns > 0)
+		var hawk_dmg = int(_get_effective_atk() * 0.7)
+		if hunter_beast_resonance_active:
+			hawk_dmg = int(hawk_dmg * 1.25)  # 野兽共鸣加成
+		current_enemy["hp"] -= hawk_dmg
+		_battle_add_log("🦅 猎鹰攻击!造成 %d 伤害(剩余%d回合)" % [hawk_dmg, hunter_hawk_turns])
+		_spawn_enemy_damage("🦅%d" % hawk_dmg, "crit", Vector2(0, -35))
+		_update_enemy_hp_bar()
+		if await _check_battle_end():
+			return
+	else:
+		# 猎鹰消失时重新检查野兽共鸣状态
+		hunter_beast_resonance_active = (hunter_beast_turns > 0)
+
 	# 盗贼T2: 淬毒利刃DOT
 	if thief_poison_turns > 0:
 		current_enemy["hp"] -= thief_poison_dmg
@@ -7613,16 +7865,29 @@ func _process_battle(delta: float):
 		_start_player_turn()
 		return
 
-	# 消失/猎豹加速闪避检测
-	if vanish_turns > 0 or hunter_evasion_turns > 0:
+	# 消失/猎豹加速/逃脱术闪避检测
+	var has_escape_active = (hunter_escape_turns > 0)
+	var has_evasion_active = (hunter_evasion_turns > 0 or vanish_turns > 0)
+	if has_evasion_active or has_escape_active:
 		if vanish_turns > 0:
 			vanish_turns -= 1
 		if hunter_evasion_turns > 0:
 			hunter_evasion_turns -= 1
-		if randf() < VANISH_EVASION_CHANCE:
-			var evade_name = "消失" if vanish_turns >= 0 else "猎豹加速"
+		if hunter_escape_turns > 0:
+			hunter_escape_turns -= 1
+		# 逃脱术80%闪避,消失/猎豹50%闪避
+		var evade_chance = 0.8 if has_escape_active else VANISH_EVASION_CHANCE
+		var evade_name = "消失" if vanish_turns > 0 else ("猎豹加速" if hunter_evasion_turns > 0 else "逃脱术")
+		if randf() < evade_chance:
 			_battle_add_log("💨 %s!完美闪避了敌人攻击!" % evade_name)
 			_spawn_player_damage("MISS!", "miss")
+			# 逃脱术:成功闪避后立即脱离战斗(不扣奖励)
+			if has_escape_active:
+				_battle_add_log("🏃 逃脱术成功!立即脱离战斗!")
+				# 直接跳到地图界面,不扣奖励
+				await get_tree().create_timer(0.5).timeout
+				_show_map_view()
+				return
 			_start_player_turn()
 			return
 		else:
@@ -7662,6 +7927,22 @@ func _process_battle(delta: float):
 				return
 			_start_player_turn()
 			return
+	# 猎人T2路线B: 诱饵效果 - 诱饵吸引敌人攻击
+	if hunter_bait_turns > 0:
+		_battle_add_log("🎯 诱饵!敌人的攻击被诱饵吸引!")
+		# 诱饵承受伤害后消失
+		var bait_dmg = min(hunter_bait_hp, e_dmg)
+		hunter_bait_hp -= bait_dmg
+		if hunter_bait_hp <= 0:
+			hunter_bait_turns = 0
+			_battle_add_log("🎯 诱饵被摧毁!")
+		else:
+			_battle_add_log("🎯 诱饵剩余HP: %d" % hunter_bait_hp)
+		_spawn_player_damage("诱饵!", "shield")
+		_update_battle_player_ui()
+		await get_tree().create_timer(0.4).timeout
+		_end_enemy_turn()
+		return
 	if player_defending or player_shield > 0:
 		e_dmg = int(e_dmg * 0.5)
 	if player_shield > 0:
@@ -8563,6 +8844,12 @@ func _on_attack():
 		else:
 			audio_manager.play_sfx("attack")
 	_enemy_hit_effect()
+	# 猎人T2路线C: 致命毒药 - 每次攻击消耗涂毒次数
+	if hunter_deadly_poison_count > 0:
+		current_enemy["hp"] -= hunter_deadly_poison_dmg
+		_battle_add_log("☠️ 致命毒毒效!额外 %d 伤害(剩余%d次)" % [hunter_deadly_poison_dmg, hunter_deadly_poison_count])
+		_spawn_enemy_damage("☠%d" % hunter_deadly_poison_dmg, "poison", Vector2(20, -15))
+		hunter_deadly_poison_count -= 1
 	_update_enemy_hp_bar()
 	_update_battle_player_ui()
 	if await _check_battle_end():
